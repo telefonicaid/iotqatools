@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
+This file is part of fiware-orion-pep
+orchestrator is free software: you can redistribute it and/or
+modify it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version.
+orchestrator is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU Affero General Public License for more details.
+You should have received a copy of the GNU Affero General Public
+License along with orchestrator.
+If not, seehttp://www.gnu.org/licenses/.
+For those usages not covered by the GNU Affero General Public License
+please contact with::[iot_support@tid.es]
+"""
+
+import os
+import sys
+import re
+import setuptools.command.build_py
+from setuptools import setup, find_packages, Command
+
+
+def parse_requirements(file_name):
+    requirements = []
+    for line in open(file_name, 'r').read().split('\n'):
+        if re.match(r'(\s*#)|(\s*$)', line):
+            continue
+        if re.match(r'\s*-e\s+', line):
+            # TODO support version numbers
+            requirements.append(re.sub(r'\s*-e\s+.*#egg=(.*)$', r'\1', line))
+        elif re.match(r'\s*-f\s+', line):
+            pass
+        elif re.match(r'\s*-r\s+', line):
+            pass
+        else:
+            requirements.append(line)
+
+    return requirements
+
+
+def parse_dependency_links(file_name):
+    dependency_links = []
+    for line in open(file_name, 'r').read().split('\n'):
+        if re.match(r'\s*-[ef]\s+', line):
+            dependency_links.append(re.sub(r'\s*-[ef]\s+', '', line))
+    return dependency_links
+
+
+def get_requirements(filename):
+    return open(filename).read().splitlines()
+
+
+readme = []
+with open('README.md', 'r') as fh:
+    readme = fh.readlines()
+
+req = get_requirements('iotqautils/requirements.txt')
+req_dev = get_requirements('iotqautils/requirements-dev.txt')
+
+setup(
+    name='iot-qa-tools',
+    version='0.0.1',
+    description='Iot QA Tools',
+    url='https://github.com/telefonicaid/iot-qa-tools',
+    author='Telefonica I+D',
+    zip_safe=False,
+    long_description='\n'.join(readme),
+    install_requires=req,
+    develop_requires=req_dev,
+    include_package_data=True,
+    classifiers=[
+        'Development Status :: 2 - Development',
+        'Framework :: Behave',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Quality Assurance',
+        'Operating System :: OS Independent',
+        'Topic :: Software Development',
+        'Programming Language :: Python :: 2.7'
+    ],
+    py_modules=[
+        'common_utils.iot_logger',
+        'orchestrator_utils.orchestrator_utils'],
+#       'common_utils.helpers_utils'],
+    packages=[
+        'common_utils',
+        'orchestrator_utils'],
+)
