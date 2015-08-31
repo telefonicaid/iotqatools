@@ -1,0 +1,3 @@
+[submodule "component_module"]
+	path = component_module
+	url = https://github.com/qaenablers/component_module.git
