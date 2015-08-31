@@ -59,8 +59,8 @@ readme = []
 with open('README.md', 'r') as fh:
     readme = fh.readlines()
 
-req = get_requirements('iotqautils/requirements.txt')
-req_dev = get_requirements('iotqautils/requirements-dev.txt')
+req = get_requirements('requirements.txt')
+req_dev = get_requirements('requirements.txt') 
 
 setup(
     name='iot-qa-tools',
