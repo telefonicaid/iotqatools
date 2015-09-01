@@ -60,11 +60,11 @@ with open('README.md', 'r') as fh:
     readme = fh.readlines()
 
 req = get_requirements('requirements.txt')
-req_dev = get_requirements('requirements.txt') 
+req_dev = get_requirements('requirements.txt')
 
 setup(
-    name='iot-qa-tools',
-    version='0.0.1',
+    name='iotqatools',
+    version='0.0.2',
     description='Iot QA Tools',
     url='https://github.com/telefonicaid/iot-qa-tools',
     author='Telefonica I+D',
@@ -88,6 +88,7 @@ setup(
         'iotqatools.orchestrator_utils.orchestrator_utils'
 ],
     packages=[
+        'iotqatools',
         'iotqatools.common_utils',
         'iotqatools.component_module',
         'iotqatools.orchestrator_utils'],
