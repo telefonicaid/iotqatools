@@ -71,7 +71,7 @@ setup(
     zip_safe=False,
     long_description='\n'.join(readme),
     install_requires=req,
-    develop_requires=req_dev,
+    #develop_requires=req_dev,
     include_package_data=True,
     classifiers=[
         'Development Status :: 2 - Development',
@@ -86,10 +86,12 @@ setup(
         'iotqatools.common_utils.iot_logger',
         'iotqatools.component_module.module',
         'iotqatools.orchestrator_utils.orchestrator_utils'
-],
+    ],
     packages=[
         'iotqatools',
         'iotqatools.common_utils',
         'iotqatools.component_module',
-        'iotqatools.orchestrator_utils'],
+        'iotqatools.orchestrator_utils.orchestrator_utils'
+        'iotqatools.orchestrator_utils'
+    ],
 )

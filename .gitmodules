@@ -1,6 +1,0 @@
-[submodule "component_module"]
-	path = iotqatools/component_module
-	url = https://github.com/qaenablers/component_module.git
-[submodule "orchestrator_utils"]
-	path = iotqatools/orchestrator_utils
-	url = https://github.com/qaenablers/orchestrator_utils.git
