@@ -23,7 +23,7 @@ please contact with::[iot_support@tid.es]
 """
 
 from iotqatools.cb_utils import CBUtils
-from iotqatools.keystone import KeystoneUtils
+from iotqatools.ks_utils import KeystoneUtils
 from iotqatools.ac_utils import AC
 from iotqatools.iot_logger import get_logger
 
