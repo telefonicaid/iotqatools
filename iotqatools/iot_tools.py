@@ -22,19 +22,11 @@ For those usages not covered by the GNU Affero General Public License
 please contact with::[iot_support@tid.es]
 """
 
-
 import re
 import ast
 import pprint
 import json
 from iotqatools.iot_logger import get_logger
-
-# Default Logging level if not defined
-if not hasattr(world, 'vm'):
-    world.vm = 1
-
-if world.vm >= 1:
-    verbosity = 'DEBUG'
 
 
 class PqaTools(object):
@@ -58,11 +50,7 @@ class PqaTools(object):
         :param response: response of a request (optional)
         :return: Nan
         """
-        # initialize logger
-        if not hasattr(world, 'log'):
-            log = get_logger('pqa_tools', verbosity)
-        else:
-            log = world.log
+        log = get_logger('iot_tools')
 
         log_msg = '>>>>>>>>>>>>>\t Data sent:     \t>>>>>>>>>>>>> \n'
         if comp:
@@ -107,21 +95,13 @@ class PqaTools(object):
         :param comp: IoT component under test (needed to recover the data)
         :return: Nan
         """
-        # collect data from world.c (if any)
-        if comp:
-            PqaTools.log_requestAndResponse(url=url, headers=headers, params=params,
-                                            data=data, comp=comp, response=world.c[comp]["response"])
-        else:
-            PqaTools.log_requestAndResponse(url=url, headers=headers, params=params,
-                                            data=data, comp=comp)
+        PqaTools.log_requestAndResponse(url=url, headers=headers, params=params,
+                                        data=data, comp=comp)
 
     @staticmethod
     def log_fullRequest(comp='', response='', params=dict()):
         # initialize logger
-        if not hasattr(world, 'log'):
-            log = get_logger('pqa_tools', verbosity)
-        else:
-            log = world.log
+        log = get_logger('iot_tools')
 
         # Introduce info in log text
         log_msg = '>>>>>>>>>>>>>\t Data sent:     \t>>>>>>>>>>>>> \n'
@@ -157,17 +137,6 @@ class PqaTools(object):
         return 0
 
     @staticmethod
-    def secure_headers(headers={}, secure=False):
-        """
-        Add a Secure access header
-        """
-        if secure:
-            headers['X-Auth-Token'] = world.g['access_token'] if 'access_token' in world.g else 'notcorrectaccesstoken'
-            return headers
-        else:
-            return headers
-
-    @staticmethod
     def pattern_mapping(cad, mapping):
         """
         Fill the template with all the values available in world
@@ -175,39 +144,27 @@ class PqaTools(object):
         mapping: dictionary with substitutions
         """
         for it in mapping:
-            if isinstance(mapping[it],str) or isinstance(mapping[it],unicode):
+            if isinstance(mapping[it], str) or isinstance(mapping[it], unicode):
                 # Only try with content 'str' or 'unicode'
-                cad = re.sub('<%' + it + '%>' ,mapping[it], cad)
+                cad = re.sub('<%' + it + '%>', mapping[it], cad)
         return cad
 
     @staticmethod
-    def remember(key, value):
+    def remember(place, key, value):
         """The 'selection' parameters management """
-        world.g[key] = value
-        if world.vm == 1:
-            print "#>> {0} AS {1}".format(value, key)
+        log = get_logger('iot_tools')
+        place[key] = value
+        log.debug("#>> {0} AS {1} in {2}".format(value, key, place))
 
     @staticmethod
-    def replace(key, value):
-        """The 'replacement' for parameters sets """
-        world.g[key] = value
-        if world.vm == 1:
-            print "#>> Updated {0} AS {1}".format(value, key)
-
-    @staticmethod
-    def pm(cad, mapping):
-        """ alias of pattern_mapping"""
-        return PqaTools.pattern_mapping(cad, mapping)
-
-    @staticmethod
-    def recall(cad):
+    def recall(cad, place):
         """Mapping of a cad from world.g -remembered data-"""
-        return PqaTools.pm(cad, world.g)
+        return PqaTools.pattern_mapping(cad, place)
 
     @staticmethod
-    def pattern_recall(comp, pattern):
-        """Mapping of world.c[comp][pattern] from world.g -remembered data-"""
-        return PqaTools.recall(world.c[comp][pattern])
+    def pattern_recall(comp, pattern, place):
+        """Mapping of world.c[comp][pattern] from dict -remembered data-"""
+        return PqaTools.recall(place[comp][pattern])
 
     @staticmethod
     def dict_recall(cad):
@@ -215,9 +172,9 @@ class PqaTools(object):
         return ast.literal_eval(PqaTools.recall(cad))
 
     @staticmethod
-    def dict_pattern_recall(comp, pattern):
+    def dict_pattern_recall(comp, pattern, place):
         """Mapping of world.c[comp][pattern] from world.g -remembered data-, but transformed into a dict"""
-        return PqaTools.dict_recall(world.c[comp][pattern])
+        return PqaTools.dict_recall(place[comp][pattern])
 
     @staticmethod
     def get_attribute(attr, data):
