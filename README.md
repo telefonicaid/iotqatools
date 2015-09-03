@@ -233,3 +233,9 @@ iot_logger
 ```
 
 
+License
+---------
+
+( c ) 2013-2015 Telefónica I+D, GNU Affero General Public License
+
+
