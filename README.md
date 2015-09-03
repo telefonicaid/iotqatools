@@ -227,6 +227,7 @@ NOTE: You may need to set GIT_SSL_NO_VERIFY=true environment variable in your ma
 
 Library Summary
 ---------------
+```
 ac_utils
 cb_utils
 cb_v2_utils
@@ -239,5 +240,6 @@ ks_utils
 pep_utils
 iot_tools
 iot_logger
+```
 
 
