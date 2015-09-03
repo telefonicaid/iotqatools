@@ -164,12 +164,12 @@ class PqaTools(object):
     @staticmethod
     def pattern_recall(comp, pattern, place):
         """Mapping of world.c[comp][pattern] from dict -remembered data-"""
-        return PqaTools.recall(place[comp][pattern])
+        return PqaTools.recall(place[comp][pattern], place)
 
     @staticmethod
-    def dict_recall(cad):
+    def dict_recall(cad, place):
         """Mapping of a cad from world.g -remembered data-, but transformed into a dict"""
-        return ast.literal_eval(PqaTools.recall(cad))
+        return ast.literal_eval(PqaTools.recall(cad, place))
 
     @staticmethod
     def dict_pattern_recall(comp, pattern, place):

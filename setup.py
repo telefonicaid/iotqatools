@@ -64,14 +64,13 @@ req_dev = get_requirements('requirements.txt')
 
 setup(
     name='iotqatools',
-    version='0.0.2',
+    version='0.0.3',
     description='Iot QA Tools',
     url='https://github.com/telefonicaid/iot-qa-tools',
     author='Telefonica I+D',
     zip_safe=False,
     long_description='\n'.join(readme),
     install_requires=req,
-    #develop_requires=req_dev,
     include_package_data=True,
     classifiers=[
         'Development Status :: 2 - Development',
@@ -84,8 +83,20 @@ setup(
     ],
     py_modules=[
         'iotqatools.iot_logger',
+        'iotqatools.ac_utils',
+        'iotqatools.cb_utils',
+        'iotqatools.cb_v2_utils',
+        'iotqatools.cep_utils',
+        'iotqatools.helpers_utils',
+        'iotqatools.iot_tools',
+        'iotqatools.iota_utils',
+        'iotqatools.ks_utils',
+        'iotqatools.orchestator_utils',
+        'iotqatools.pep_utils',
+        'iotqatools.sth_utils'
     ],
     packages=[
-        'iotqatools'
+        'iotqatools',
+        'iotqatools.templates'
     ],
 )
