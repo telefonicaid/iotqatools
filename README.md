@@ -211,17 +211,7 @@ pip 1.3.1 (https://pypi.python.org/pypi/pip)
 Installation
 ------------
 
-Configure a virtual environment with the required packages:
-
-pip install --upgrade -r iotqautils/requirements.txt
-
-The following packages will be installed:
-  * lettuce (http://lettuce.it)
-  * nose (https://pypi.python.org/pypi/nose/)
-  * fiware-iotqaUtils
-    * seleniumtid (https://pdihub.hi.inet/QA/selenium-tid-python)
-    * selenium (http://docs.seleniumhq.org/)
-    * Actually not used: Appium-Python-Client (https://github.com/appium/python-client)
+Configure a virtual environment with the required packages
 
 NOTE: You may need to set GIT_SSL_NO_VERIFY=true environment variable in your machine
 
