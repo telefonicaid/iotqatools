@@ -2,7 +2,7 @@
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
-This file is part of fiware-orion-pep
+This file is part of telefonica-iot-qa-tools
 
 orchestrator is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as

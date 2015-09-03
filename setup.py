@@ -83,14 +83,9 @@ setup(
         'Programming Language :: Python :: 2.7'
     ],
     py_modules=[
-        'iotqatools.common_utils.iot_logger',
-        'iotqatools.component_module',
-        'iotqatools.orchestrator_utils.orchestrator_utils'
+        'iotqatools.iot_logger',
     ],
     packages=[
-        'iotqatools',
-        'iotqatools.common_utils',
-        'iotqatools.component_module',
-        'iotqatools.orchestrator_utils'
+        'iotqatools'
     ],
 )
