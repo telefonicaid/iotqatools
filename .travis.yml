@@ -10,5 +10,6 @@ script:
 python setup.py test
 
 branches:
+  only:
     - develop
     - master
