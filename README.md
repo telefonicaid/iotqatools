@@ -1,5 +1,8 @@
-# iot-qa-tools
+# iot-qa-tools [![Build Status](https://travis-ci.org/telefonicaid/iot-qa-tools.svg?branch=master)](https://travis-ci.org/telefonicaid/iot-qa-tools)
+
 Common IoT tools and libs used by QA
+
+
 
 ## Overview
 
