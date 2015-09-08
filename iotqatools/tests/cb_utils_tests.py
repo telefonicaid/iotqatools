@@ -28,7 +28,7 @@ import json
 from nose.tools import eq_, ok_, assert_in
 from iotqatools.cb_utils import CBUtils
 
-cb = CBUtils(instance='127.0.0.1', verbosity=0)
+cb = CBUtils(instance='130.206.81.86', verbosity=0)
 
 print "### Test ---> Version: "
 print cb.version().content
