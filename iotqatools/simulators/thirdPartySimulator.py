@@ -4,6 +4,7 @@ __author__ = 'macs'
 
 from flask import Flask, request, Response
 from sys import argv
+import random
 
 app = Flask(__name__)
 
@@ -24,6 +25,30 @@ def treat_sync_request():
     lastRequest = request.data
     resp = Response()
     return Response(response=myResponse, status=200, content_type='application/json', headers=resp.headers)
+
+
+@app.route('/async/create', methods=['POST','GET'])
+def treat_async_create():
+    global asyncRequest
+
+    uid = '12345678990'
+    asyncRequest[uid] = {'state': 'P'}
+    myresp = {"id": uid, "details": {"rgb" : "66CCDD", "t": 2}}
+    return Response(response=myresp, status=200, content_type='application/json')
+
+
+@app.route('/async/requests', methods=['POST','GET'])
+def treat_async_request_all():
+    global asyncRequest
+
+    return Response(response=asyncRequest, status=200, content_type='application/json')
+
+
+@app.route('/async/request/<uid>', methods=['POST','GET'])
+def treat_async_request(uid):
+    global asyncRequest
+
+    return Response(response=asyncRequest[uid], status=200, content_type='application/json')
 
 
 @app.route('/setResponseToError', methods=['GET'])
@@ -69,6 +94,7 @@ lastRequest = ''
 responseError = ''
 myResponse = '{"details": {"rgb":"66CC00","t":2}}'
 cont = 0
+asyncRequest = []
 
 if __name__ == '__main__':
     app.run(host=host, port=port)
