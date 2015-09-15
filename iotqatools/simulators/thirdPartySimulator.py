@@ -5,6 +5,7 @@ __author__ = 'macs'
 from flask import Flask, request, Response
 from sys import argv
 import random
+import json
 
 app = Flask(__name__)
 
@@ -27,13 +28,14 @@ def treat_sync_request():
     return Response(response=myResponse, status=200, content_type='application/json', headers=resp.headers)
 
 
-@app.route('/async/create', methods=['POST','GET'])
+@app.route('/async/create', methods=['POST'])
 def treat_async_create():
     global asyncRequest
 
-    uid = '12345678990'
-    asyncRequest[uid] = {'state': 'P'}
-    myresp = {"id": uid, "details": {"rgb" : "66CCDD", "t": 2}}
+    uid = str(random.randint(1, 999))
+    asyncRequest[uid] = '{"state": "P"}'
+    print asyncRequest
+    myresp = '{"id": ' + uid + ', "details": {"rgb" : "66CCDD", "t": 2}}'
     return Response(response=myresp, status=200, content_type='application/json')
 
 
@@ -41,7 +43,7 @@ def treat_async_create():
 def treat_async_request_all():
     global asyncRequest
 
-    return Response(response=asyncRequest, status=200, content_type='application/json')
+    return Response(response=str(asyncRequest), status=200)
 
 
 @app.route('/async/request/<uid>', methods=['POST','GET'])
@@ -83,8 +85,9 @@ def count():
 
 @app.route('/reset', methods=['GET'])
 def reset():
-    global lastRequest, cont
+    global lastRequest, asyncRequest, cont
     lastRequest = ''
+    asyncRequest = {}
     cont = 0
     return Response(status=200)
 
@@ -94,7 +97,7 @@ lastRequest = ''
 responseError = ''
 myResponse = '{"details": {"rgb":"66CC00","t":2}}'
 cont = 0
-asyncRequest = []
+asyncRequest = {}
 
 if __name__ == '__main__':
     app.run(host=host, port=port)
