@@ -22,10 +22,13 @@ if len(argv) > 1:
 def treat_sync_request():
     global lastRequest, myResponse, cont
 
+    my_result = {}
     cont += 1
     lastRequest = request.data
+    jdata = json.loads(request.data)
+    my_result["result"] = 'action-' + jdata['action'] + ', extra-' + jdata['extra']
     resp = Response()
-    return Response(response=myResponse, status=200, content_type='application/json', headers=resp.headers)
+    return Response(response=json.dumps(my_result), status=200, content_type='application/json', headers=resp.headers)
 
 
 @app.route('/async/create', methods=['POST'])
