@@ -138,6 +138,18 @@ class CB:
         __logger__.info(" -- status code is 200 OK in API entry point request")
         return resp
 
+    def harakiri(self):
+        """
+        Orion context broker exits in an ordered manner
+        # hint: the -harakiri option is used to kill contextBroker (must be compiled in DEBUG mode)
+        """
+        resp = self.__send_request("GET", "exit/harakiri", show=False)
+        assert resp.status_code == 200, " ERROR - status code in harakiri request. \n" \
+                                        " status code: %s \n " \
+                                        " body: %s" % (resp.status_code, resp.text)
+        __logger__.info(" -- status code is 200 OK in harakiri request and contextBroker exits in an ordered manner")
+
+
     @staticmethod
     def __generate_service_path(length, levels=1):
         """
@@ -236,6 +248,7 @@ class CB:
         payload = kwargs.get("payload", None)
         show = kwargs.get("show", True)
         parameters = kwargs.get("parameters", None)
+        __logger__.info("Request and Response are shown: %s" % show)
         if show:
             __logger__.debug("----------------- Request ---------------------------------")
             p = EMPTY
