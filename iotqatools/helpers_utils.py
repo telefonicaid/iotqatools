@@ -21,7 +21,6 @@ If not, seehttp://www.gnu.org/licenses/.
 For those usages not covered by the GNU Affero General Public License
 please contact with::[iot_support@tid.es]
 """
-
 __author__ = 'Iván Arias León (ivan dot ariasleon at telefonica dot com)'
 
 import json
@@ -61,7 +60,7 @@ def number_generator(size=5, decimals="%0.1f"):
     :param size: define the number size
     :return: random float
     """
-    return float(decimals % (random.random() * (10 ** size)))
+    return float(decimals % (random.random() * (10**size)))
 
 
 def convert_str_to_dict(body, content):
@@ -77,9 +76,9 @@ def convert_str_to_dict(body, content):
         else:
             return json.loads(body)
     except Exception, e:
-        assert False, " ERROR - converting string to %s dictionary: \n" \
-                      "  %s \n  " \
-                      "  Exception error: %s" % (str(content), str(body), str(e))
+        assert False,  " ERROR - converting string to %s dictionary: \n" \
+                       "  %s \n  " \
+                       "  Exception error: %s" % (str(content), str(body), str(e))
 
 
 def convert_dict_to_str(body, content):
@@ -95,9 +94,9 @@ def convert_dict_to_str(body, content):
         else:
             return json.dumps(body)
     except Exception, e:
-        assert False, " ERROR - converting %s dictionary to string: \n" \
-                      "  %s \n" \
-                      "  Exception error: %s" % (str(content), str(body), str(e))
+        assert False,  " ERROR - converting %s dictionary to string: \n" \
+                       "  %s \n" \
+                       "  Exception error: %s" % (str(content), str(body), str(e))
 
 
 def convert_str_to_list(text, separator):
@@ -110,8 +109,8 @@ def convert_str_to_list(text, separator):
     try:
         return text.split(separator)
     except Exception, e:
-        assert False, " ERROR - converting %s string to list with separator: %s \n" \
-                      "   Exception error:%s" % (str(text), str(separator), str(e))
+        assert False,  " ERROR - converting %s string to list with separator: %s \n" \
+                       "   Exception error:%s" % (str(text), str(separator), str(e))
 
 
 def convert_list_to_string(list, separator):
@@ -124,8 +123,8 @@ def convert_list_to_string(list, separator):
     try:
         return separator.join(list)
     except Exception, e:
-        assert False, " ERROR - converting list to string with separator: %s \n" \
-                      "    Exception error:%s" % (str(separator), str(e))
+        assert False,  " ERROR - converting list to string with separator: %s \n" \
+                       "    Exception error:%s" % (str(separator), str(e))
 
 
 def show_times(init_value):
@@ -204,16 +203,16 @@ def generate_hash_sha512(input, limit=-1):
 
 
 def mapping_quotes(attr_value):
-    """
-    limitation in lettuce change ' by " in mysql
-    """
-    temp = ""
-    for i in range(len(attr_value)):
-        if attr_value[i] == "'":
-            temp = temp + "\""
-        else:
-            temp = temp + attr_value[i]
-    return temp
+        """
+        limitation in lettuce and behave change \' by " char
+        """
+        temp = ""
+        for i in range(len(attr_value)):
+            if attr_value[i] == "\'":
+                temp = temp + "\""
+            else:
+                temp = temp + attr_value[i]
+        return temp
 
 
 def read_file_to_json(file_name):
