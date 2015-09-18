@@ -101,8 +101,12 @@ class FabricSupport:
         :param sudo_run: with superuser privileges (True | False)
         """
         with cd(path):
+            __logger__.debug(" is it localhost?: %s" % self.localhost)
             if self.localhost:
-                return local(command)
+                if sudo_run:
+                    return local("sudo %s" % command)
+                else:
+                    return local(command)
             elif sudo_run:
                 return sudo(command)
             else:
