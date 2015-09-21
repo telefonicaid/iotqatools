@@ -157,7 +157,7 @@ class CB:
         try:
             url = "%s/%s" % (self.cb_url, "version")
             resp = requests.get(url=url)
-            return resp.status_code == 200
+            return (resp.status_code == 200)
         except Exception, e:
             return False
 
@@ -552,9 +552,10 @@ class CB:
                                    headers=self.headers, parameters=self.entities_parameters)
         return resp
 
-    def update_or_append_an_attribute_by_id(self, context, entity_id):
+    def update_or_append_an_attribute_by_id(self, method, context, entity_id):
         """
         update or append an attribute by id
+        :param method: method used in request (POST, PATCH, PUT)
         :param context: new values to update or append
         :param entity_id: entity used to update or append
         Hint: if would like a wrong query parameter name, use `qp_` prefix
@@ -570,10 +571,7 @@ class CB:
                 elif row[PARAMETER] == "op":
                     self.entities_parameters[row[PARAMETER]] = row[VALUE]
                 elif row[PARAMETER].find("qp_") >= 0:
-                    __logger__.debug("pepe: %s" % row[PARAMETER])
-                    __logger__.debug("pepe type: %s" % str(type(row[PARAMETER])))
                     qp = str(row[PARAMETER]).split("qp_")[1]
-                    __logger__.debug("pepe: %s" % str(qp))
                     self.entities_parameters[qp] = row[VALUE]
 
             self.entity_context["entities_id"] = entity_id
@@ -601,12 +599,11 @@ class CB:
 
         payload = convert_dict_to_str(entities, "JSON")
         if entities != {}:
-            resp = self.__send_request("POST", "%s/%s" % (V2_ENTITIES, entity_id), headers=self.headers, payload=payload,
+            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, entity_id), headers=self.headers, payload=payload,
                                    parameters=self.entities_parameters)
         else:
-            resp = self.__send_request("POST", "%s/%s" % (V2_ENTITIES, entity_id), headers=self.headers,
+            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, entity_id), headers=self.headers,
                                    parameters=self.entities_parameters)
-
         return resp
 
     def update_or_append_an_attribute_in_raw_by_id(self, context, entity_id):
