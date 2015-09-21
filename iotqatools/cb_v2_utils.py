@@ -143,12 +143,23 @@ class CB:
         Orion context broker exits in an ordered manner
         # hint: the -harakiri option is used to kill contextBroker (must be compiled in DEBUG mode)
         """
-        resp = self.__send_request("GET", "exit/harakiri", show=False)
-        assert resp.status_code == 200, " ERROR - status code in harakiri request. \n" \
-                                        " status code: %s \n " \
-                                        " body: %s" % (resp.status_code, resp.text)
-        __logger__.info(" -- status code is 200 OK in harakiri request and contextBroker exits in an ordered manner")
+        try:
+            url = "%s/%s" % (self.cb_url, "exit/harakiri")
+            resp = requests.get(url=url)
+            return resp.status_code
+        except Exception, e:
+            return -1
 
+    def is_cb_started(self):
+        """
+        determine whether cb is started or not
+        """
+        try:
+            url = "%s/%s" % (self.cb_url, "version")
+            resp = requests.get(url=url)
+            return resp.status_code == 200
+        except Exception, e:
+            return False
 
     @staticmethod
     def __generate_service_path(length, levels=1):
@@ -267,11 +278,15 @@ class CB:
                 __logger__.debug("payload: %s" % payload)
                 __logger__.debug("payload length: %s" % str(len(payload)))
             __logger__.debug("-------------------------------------------------------------------------")
-        resp = requests.request(method=method,
-                                url="%s/%s" % (self.cb_url, path),
+        try:
+            url = "%s/%s" % (self.cb_url, path)
+            resp = requests.request(method=method,
+                                url=url,
                                 headers=headers,
                                 data=payload,
                                 params=parameters)
+        except Exception, e:
+            assert False, "ERROR  - send request \n     - url: %s\n    - %s" % (url, str(e))
         if show:
             __logger__.debug("----------------- Response ---------------------------------")
             __logger__.debug(" http code: %s" % (resp.status_code))
