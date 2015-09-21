@@ -150,14 +150,14 @@ class CB:
         except Exception, e:
             return -1
 
-    def is_cb_installed(self):
+    def is_cb_started(self):
         """
-        determine whether cb is installed or not
+        determine whether cb is started or not
         """
         try:
             url = "%s/%s" % (self.cb_url, "version")
             resp = requests.get(url=url)
-            return (resp.status_code == 200)
+            return resp.status_code == 200
         except Exception, e:
             return False
 
