@@ -68,8 +68,7 @@ def convert_str_to_bool(value):
     :return boolean
     """
     if type(value) == str or type(value) == unicode:
-        temp = value.lower() in ("yes", "true", "t", "1", "y")
-        return temp
+        return value.lower() in ("yes", "true", "t", "1", "y")
     return value
 
 def convert_str_to_dict(body, content):
