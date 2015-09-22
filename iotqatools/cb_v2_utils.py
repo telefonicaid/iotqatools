@@ -688,4 +688,3 @@ class CB:
         """
         return self.attribute_name_to_request
     
-		
