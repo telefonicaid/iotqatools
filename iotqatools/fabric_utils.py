@@ -30,6 +30,8 @@ from fabric.context_managers import hide, cd
 from fabric.operations import sudo, local, put
 from StringIO import StringIO
 
+from helpers_utils import *
+
 
 #constants
 EMPTY = u''
@@ -71,8 +73,8 @@ class FabricSupport:
         """
         self.host = kwargs.get(HOST, HOST_DEFAULT)
         self.port = kwargs.get(PORT, PORT_DEFAULT)
-        self.hide = kwargs.get(HIDE, True)
-        self.sudo = kwargs.get(SUDO, False)
+        self.hide = convert_str_to_bool(kwargs.get(HIDE, True))
+        self.sudo = convert_str_to_bool(kwargs.get(SUDO, False))
         env.host_string = "%s:%s" % (self.host, self.port)
         env.user = kwargs.get(USER, USER_DEFAULT)
         env.password = kwargs.get(PASSWORD, EMPTY)
@@ -101,7 +103,8 @@ class FabricSupport:
         :param sudo_run: with superuser privileges (True | False)
         """
         with cd(path):
-            __logger__.debug(" is it localhost?: %s" % self.localhost)
+            __logger__.debug(" is it localhost? %s" % self.localhost)
+            __logger__.debug(" is it sudo used? %s" % str(sudo_run))
             if self.localhost:
                 if sudo_run:
                     return local("sudo %s" % command)

@@ -62,6 +62,15 @@ def number_generator(size=5, decimals="%0.1f"):
     """
     return float(decimals % (random.random() * (10**size)))
 
+def convert_str_to_bool(value):
+    """
+    convert string to boolean
+    :return boolean
+    """
+    if type(value) == str or type(value) == unicode:
+        temp = value.lower() in ("yes", "true", "t", "1", "y")
+        return temp
+    return value
 
 def convert_str_to_dict(body, content):
     """
