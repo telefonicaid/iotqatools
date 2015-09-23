@@ -1,17 +1,21 @@
 #!/usr/bin/python
 
+
 __author__ = 'macs'
 
-from flask import Flask, request, Response
+from flask import Flask, request, Response, g
 from sys import argv
+from time import sleep
+import threading
 import random
 import json
+import requests
 
 app = Flask(__name__)
 
 # Default arguments
-port = 7010
-host = '0.0.0.0'
+port = 6500
+host = '127.0.0.1'
 
 # Arguments from command line
 if len(argv) > 1:
@@ -20,40 +24,91 @@ if len(argv) > 1:
 
 @app.route('/sync/request', methods=['POST'])
 def treat_sync_request():
-    global lastRequest, myResponse, cont
+    global last_request, sync_response, cont, delay
 
-    my_result = {}
+    print "Recived sync request"
+    # Increase the number of requests
     cont += 1
-    lastRequest = request.data
-    jdata = json.loads(request.data)
-    my_result["result"] = 'action-' + jdata['action'] + ', extra-' + jdata['extra']
-    resp = Response()
-    return Response(response=json.dumps(my_result), status=200, content_type='application/json', headers=resp.headers)
+
+    # Store the last request
+    last_request = request.data
+
+    # Set delay if needed
+    if delay is not '':
+        sleep(int(delay))
+        delay = ''
+
+    # Retrieve request information
+    service = request.headers['fiware-service']
+    subservice = request.headers['fiware-servicepath']
+    button_id = json.loads(request.data)['button']
+    headers = {'Accept': 'application/json', 'content-type': 'application/json', 'fiware-service': service,
+               'fiware-servicepath': subservice}
+
+    # Generate sync response
+    sync_response['externalId'] = generate_uid()
+    sync_response['buttonId'] = button_id
+    sync_response['details'] = {}
+    sync_response['details']['rgb'] = '66CCDD'
+    sync_response['details']['t'] = '2'
+
+    return Response(response=json.dumps(sync_response), status=200, headers=headers)
 
 
 @app.route('/async/create', methods=['POST'])
 def treat_async_create():
-    global asyncRequest
+    global last_request, async_request, url_callback, async_response, service, subservice
 
-    uid = str(random.randint(1, 999))
-    asyncRequest[uid] = '{"state": "P"}'
-    print asyncRequest
-    myresp = '{"id": ' + uid + ', "details": {"rgb" : "66CCDD", "t": 2}}'
-    return Response(response=myresp, status=200, content_type='application/json')
+    print "Recived async create"
+    # Store the last request
+    last_request = request.data
+
+    # Retrieve callback url and buttonId from request
+    service = request.headers['fiware-service']
+    subservice = request.headers['fiware-servicepath']
+    url_callback = json.loads(request.data)['callback']
+    button_id = json.loads(request.data)['button']
+
+    # Compose the async response
+    async_response['externalId'] = str(generate_uid())
+    async_response['buttonId'] = str(button_id)
+    async_response['details'] = {}
+    async_response['details']['rgb'] = '66CCDD'
+    async_response['details']['t'] = '2'
+
+    # Invoke callback response
+    t = threading.Thread(target=invoke_ca)
+    t.start()
+    return Response(response='Create Received OK', status=200)
 
 
-@app.route('/async/requests', methods=['POST','GET'])
+def invoke_ca():
+    # Wait until request is finished
+    sleep(3)
+
+    # Send data to urlCallback
+    headers = {'Accept': 'application/json', 'content-type': 'application/json', 'fiware-service': service,
+               'fiware-servicepath': subservice}
+    r = requests.post(url_callback, data=json.dumps(async_response), headers=headers)
+    return r
+
+
+def generate_uid():
+    return str(random.randint(1, 9999999))
+
+
+@app.route('/async/requests', methods=['POST', 'GET'])
 def treat_async_request_all():
-    global asyncRequest
+    global async_request
 
-    return Response(response=str(asyncRequest), status=200)
+    return Response(response=str(async_request), status=200)
 
 
-@app.route('/async/request/<uid>', methods=['POST','GET'])
+@app.route('/async/request/<uid>', methods=['POST', 'GET'])
 def treat_async_request(uid):
-    global asyncRequest
+    global async_request
 
-    return Response(response=asyncRequest[uid], status=200, content_type='application/json')
+    return Response(response=async_request[uid], status=200, content_type='application/json')
 
 
 @app.route('/setResponseToError', methods=['GET'])
@@ -72,12 +127,19 @@ def treat_set_response_to_ok():
     return Response(response='Simulator set to OK', status=200)
 
 
+@app.route('/setDelayToSync', methods=['GET'])
+def treat_set_delay_to_sync():
+    global delay
+
+    delay = request.args.get('delay')
+    return Response(response='Delay to next sync request set to ' + delay, status=200)
+
+
 @app.route('/last', methods=['GET'])
 def treat_last():
-    global lastRequest
+    global last_request
 
-    resp_last = Response()
-    return Response(response=lastRequest, status=200, content_type='application/json', headers=resp_last.headers)
+    return Response(response=last_request, status=200)
 
 
 @app.route('/count', methods=['GET'])
@@ -88,19 +150,24 @@ def count():
 
 @app.route('/reset', methods=['GET'])
 def reset():
-    global lastRequest, asyncRequest, cont
-    lastRequest = ''
-    asyncRequest = {}
+    global last_request, async_request, cont
+    last_request = ''
+    async_request = {}
     cont = 0
     return Response(status=200)
 
 
 # Globals
-lastRequest = ''
+last_request = ''
 responseError = ''
-myResponse = '{"details": {"rgb":"66CC00","t":2}}'
+sync_response = {}
+async_response = {}
 cont = 0
-asyncRequest = {}
+async_request = {}
+service = ''
+subservice = ''
+url_callback = "http://localhost:9999"
+delay = ''
 
 if __name__ == '__main__':
-    app.run(host=host, port=port)
+    app.run(host=host, port=port, debug=True)
