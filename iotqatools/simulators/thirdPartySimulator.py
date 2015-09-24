@@ -24,17 +24,19 @@ if len(argv) > 1:
 
 @app.route('/sync/request', methods=['POST'])
 def treat_sync_request():
-    global last_request, sync_response, cont, delay
+    global last_request, cont, delay
 
-    print "Recived sync request"
+    app.logger.info("Received sync request")
     # Increase the number of requests
     cont += 1
 
     # Store the last request
     last_request = request.data
+    app.logger.info('Request data received: ' + last_request)
 
     # Set delay if needed
     if delay is not '':
+        app.logger.info("Delay stated")
         sleep(int(delay))
         delay = ''
 
@@ -46,22 +48,22 @@ def treat_sync_request():
                'fiware-servicepath': subservice}
 
     # Generate sync response
-    sync_response['externalId'] = generate_uid()
-    sync_response['buttonId'] = button_id
-    sync_response['details'] = {}
+    sync_response = {'externalId': generate_uid(), 'buttonId': button_id, 'details': {}}
     sync_response['details']['rgb'] = '66CCDD'
     sync_response['details']['t'] = '2'
+    app.logger.info('Response sent: ' + json.dumps(sync_response))
 
     return Response(response=json.dumps(sync_response), status=200, headers=headers)
 
 
 @app.route('/async/create', methods=['POST'])
 def treat_async_create():
-    global last_request, url_callback, service, subservice
+    global last_request
 
-    print "Recived async create"
+    app.logger.info("Recived async create")
     # Store the last request
     last_request = request.data
+    app.logger.info('Request data received: ' + last_request)
 
     # Retrieve callback url and buttonId from request
     service = request.headers['fiware-service']
@@ -75,27 +77,26 @@ def treat_async_create():
     async_response['details']['t'] = '2'
 
     # Invoke callback response
-    t = threading.Thread(target=invoke_ca, args=(async_response,))
+    t = threading.Thread(target=invoke_ca, args=(async_response, url_callback, service, subservice))
     t.start()
     return Response(response='Create Received OK', status=200)
 
 
-def invoke_ca(async_response):
+def invoke_ca(async_response, url_callback, service, subservice):
     # Wait until request is finished
-    print str(async_response['externalId'])
-    sleep(5)
+    sleep(3)
 
     # Send data to urlCallback
     headers = {'Accept': 'application/json', 'content-type': 'application/json', 'fiware-service': service,
                'fiware-servicepath': subservice}
-    print str(async_response['externalId'])
+    app.logger.info('Response sent to ' + url_callback + ' is: ' + json.dumps(async_response))
     r = requests.post(url_callback, data=json.dumps(async_response), headers=headers)
     return r
 
 
 def generate_uid():
     uid = str(random.randint(1, 9999999))
-    print uid
+    app.logger.info('Generated uid: ' + uid)
     return uid
 
 
@@ -147,11 +148,7 @@ def reset():
 # Globals
 last_request = ''
 responseError = ''
-sync_response = {}
 cont = 0
-service = ''
-subservice = ''
-url_callback = "http://localhost:9999"
 delay = ''
 
 if __name__ == '__main__':
