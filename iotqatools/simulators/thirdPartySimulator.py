@@ -57,7 +57,7 @@ def treat_sync_request():
 
 @app.route('/async/create', methods=['POST'])
 def treat_async_create():
-    global last_request, async_request, url_callback, async_response, service, subservice
+    global last_request, url_callback, service, subservice
 
     print "Recived async create"
     # Store the last request
@@ -70,45 +70,33 @@ def treat_async_create():
     button_id = json.loads(request.data)['button']
 
     # Compose the async response
-    async_response['externalId'] = str(generate_uid())
-    async_response['buttonId'] = str(button_id)
-    async_response['details'] = {}
+    async_response = {'externalId': str(generate_uid()), 'buttonId': str(button_id), 'details': {}}
     async_response['details']['rgb'] = '66CCDD'
     async_response['details']['t'] = '2'
 
     # Invoke callback response
-    t = threading.Thread(target=invoke_ca)
+    t = threading.Thread(target=invoke_ca, args=(async_response,))
     t.start()
     return Response(response='Create Received OK', status=200)
 
 
-def invoke_ca():
+def invoke_ca(async_response):
     # Wait until request is finished
-    sleep(3)
+    print str(async_response['externalId'])
+    sleep(5)
 
     # Send data to urlCallback
     headers = {'Accept': 'application/json', 'content-type': 'application/json', 'fiware-service': service,
                'fiware-servicepath': subservice}
+    print str(async_response['externalId'])
     r = requests.post(url_callback, data=json.dumps(async_response), headers=headers)
     return r
 
 
 def generate_uid():
-    return str(random.randint(1, 9999999))
-
-
-@app.route('/async/requests', methods=['POST', 'GET'])
-def treat_async_request_all():
-    global async_request
-
-    return Response(response=str(async_request), status=200)
-
-
-@app.route('/async/request/<uid>', methods=['POST', 'GET'])
-def treat_async_request(uid):
-    global async_request
-
-    return Response(response=async_request[uid], status=200, content_type='application/json')
+    uid = str(random.randint(1, 9999999))
+    print uid
+    return uid
 
 
 @app.route('/setResponseToError', methods=['GET'])
@@ -150,9 +138,8 @@ def count():
 
 @app.route('/reset', methods=['GET'])
 def reset():
-    global last_request, async_request, cont
+    global last_request, cont
     last_request = ''
-    async_request = {}
     cont = 0
     return Response(status=200)
 
@@ -161,9 +148,7 @@ def reset():
 last_request = ''
 responseError = ''
 sync_response = {}
-async_response = {}
 cont = 0
-async_request = {}
 service = ''
 subservice = ''
 url_callback = "http://localhost:9999"
