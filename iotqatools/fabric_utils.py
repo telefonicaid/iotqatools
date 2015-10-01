@@ -87,6 +87,8 @@ class FabricSupport:
             self.localhost = True
         else:
             self.localhost = False
+        __logger__.debug(" is it localhost? %s" % self.localhost)
+        __logger__.debug(" is it sudo used? %s" % str(self.sudo))
 
     def warn_only(self, value):
         """
@@ -103,8 +105,6 @@ class FabricSupport:
         :param sudo_run: with superuser privileges (True | False)
         """
         with cd(path):
-            __logger__.debug(" is it localhost? %s" % self.localhost)
-            __logger__.debug(" is it sudo used? %s" % str(sudo_run))
             if self.localhost:
                 if sudo_run:
                     return local("sudo %s" % command)

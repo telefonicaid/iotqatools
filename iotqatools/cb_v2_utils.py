@@ -47,12 +47,14 @@ GREATER_THAN_MAX_LENGTH_ALLOWED = u'greater than max length allowed'
 MAX_LENGTH_ALLOWED_AND_TEN_LEVELS = u'max length allowed and ten levels'
 GREATER_THAN_MAX_LENGTH_ALLOWED_AND_TEN_LEVELS = u'greater than max length allowed and ten levels'
 MAX_LENGTH_ALLOWED_AND_ELEVEN_LEVELS = u'max length allowed and eleven levels'
+THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST = u'the same value of the previous request'
 CHARS_ALLOWED = string.ascii_letters + string.digits + u'_'     # regular expression: [a-zA-Z0-9_]+
 SERVICE_MAX_CHARS_ALLOWED = 50
 SERVICE_PATH_LEVELS = 10
 FIWARE_SERVICE = u'Fiware-Service'
 FIWARE_SERVICE_PATH = u'Fiware-ServicePath'
-RANDOM_ENTITIES_LABEL = ["attributes_name", "attributes_value", "attributes_type", "metadatas_name", "metadatas_value", "metadatas_type"]
+RANDOM_ENTITIES_LABEL = ["attributes_name", "attributes_value", "attributes_type", "metadatas_name", "metadatas_value",
+                         "metadatas_type", "entities_id", "entities_type"]
 RANDOM_QUERIES_PARAMETERS_LABELS = ["op"]
 
 __logger__ = logging.getLogger("utils")
@@ -280,11 +282,7 @@ class CB:
             __logger__.debug("-------------------------------------------------------------------------")
         try:
             url = "%s/%s" % (self.cb_url, path)
-            resp = requests.request(method=method,
-                                url=url,
-                                headers=headers,
-                                data=payload,
-                                params=parameters)
+            resp = requests.request(method=method, url=url, headers=headers, data=payload, params=parameters)
         except Exception, e:
             assert False, "ERROR  - send request \n     - url: %s\n    - %s" % (url, str(e))
         if show:
@@ -331,20 +329,21 @@ class CB:
             attributes["type"] = self.entity_context["attributes_type"]
         if self.entity_context["attributes_value"] is not None and attributes != {}:
             attributes["value"] = self.entity_context["attributes_value"]
-        __logger__.debug("Attributes: %s" % str(attributes))
 
         # append N attributes with previous config or not
         if self.entity_context["attributes_name"] is not None:
             for i in range(int(self.entity_context["attributes_number"])):
                 # atribute name with consecutive or not
-                if self.entity_context["attributes_number"] == 1:
+                if int(self.entity_context["attributes_number"]) == 1:
                     name = self.entity_context["attributes_name"]
                 else:
                     name = "%s_%s" % (self.entity_context["attributes_name"], str(i))
+                __logger__.debug("attribute name: %s if attribute number is %s" % (name,self.entity_context["attributes_number"]))
                 if attributes == {}:
                     entities[name] = self.entity_context["attributes_value"]
                 else:
                     entities[name] = attributes
+        __logger__.debug("Attributes: %s" % str(entities))
         return entities
 
     def create_entities(self, context, entities_number, attributes_number):
@@ -446,7 +445,6 @@ class CB:
                 attribute_str = '%s: {%s}' % (entity_context["attributes_name"], attribute_str)
         __logger__.debug("Atribute: %s" % attribute_str)
         return attribute_str
-
 
     def create_entity_raw(self, context):
         """
@@ -561,26 +559,35 @@ class CB:
         Hint: if would like a wrong query parameter name, use `qp_` prefix
         :return http response
         """
-        self.entity_id_to_request = mapping_quotes(entity_id) # used to verify if the entity returned is the expected
+        dict_temp = {}
+        for item in self.entity_context:
+            dict_temp[item] = self.entity_context[item]
+        dict_temp["attributes_number"] = 1
         self.__init_entity_context_dict()
+        self.entity_context["entities_id"] = entity_id
+        self.entity_context["attributes_number"] = 1
+        self.entity_id_to_request = mapping_quotes(entity_id) # used to verify if the entity returned is the expected
+
         if context.table is not None:
             for row in context.table:
                 __logger__.debug("parameters:  %s = %s" % (row[PARAMETER], row[VALUE]))
                 if row[PARAMETER] in self.entity_context:
                     self.entity_context[row[PARAMETER]] = row[VALUE]
-                elif row[PARAMETER] == "op":
+                if row[PARAMETER] == "op":
                     self.entities_parameters[row[PARAMETER]] = row[VALUE]
                 elif row[PARAMETER].find("qp_") >= 0:
                     qp = str(row[PARAMETER]).split("qp_")[1]
                     self.entities_parameters[qp] = row[VALUE]
-
-            self.entity_context["entities_id"] = entity_id
-            if  self.entity_context["attributes_number"] == 0 and self.entity_context["attributes_name"] is not None:
-                self.entity_context["attributes_number"] = 1
             if  self.entity_context["metadatas_number"] == 0 and self.entity_context["metadatas_name"] is not None:
                 self.entity_context["metadatas_number"] = 1
 
+        # The same value from create request
+        for item in self.entity_context:
+            if self.entity_context[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
+                self.entity_context[item] = dict_temp[item]
+
         # Random values
+        dict_temp = self.__random_values(RANDOM_ENTITIES_LABEL, dict_temp)
         self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
         self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
 
@@ -599,14 +606,25 @@ class CB:
 
         payload = convert_dict_to_str(entities, "JSON")
         if entities != {}:
-            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, entity_id), headers=self.headers, payload=payload,
+            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context["entities_id"]), headers=self.headers, payload=payload,
                                    parameters=self.entities_parameters)
         else:
-            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, entity_id), headers=self.headers,
+            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context["entities_id"]), headers=self.headers,
                                    parameters=self.entities_parameters)
+
+        # update with last values
+        if (context.table is not None) and (dict_temp["attributes_name"] is not None):
+            if ((self.entity_context["attributes_name"].find(dict_temp["attributes_name"]) >=0)):
+                for row in context.table:
+                    if row[PARAMETER] in dict_temp:
+                        if (row[VALUE].find(RANDOM) >= 0) or (row[VALUE] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST):
+                            dict_temp[row[PARAMETER]] = self.entity_context[row[PARAMETER]]
+                        else:
+                            dict_temp[row[PARAMETER]] = row[VALUE]
+                self.entity_context = dict_temp
         return resp
 
-    def update_or_append_an_attribute_in_raw_by_id(self, context, entity_id):
+    def update_or_append_an_attribute_in_raw_by_id(self, method, context, entity_id):
         """
         update or append an entity with raw value per special cases (compound, vector, boolean, integer, etc):
             ex:
@@ -620,7 +638,13 @@ class CB:
                  "value": "2017-06-17T07:21:24.238Z"  -->  "type: "date"
         Some cases are not parsed correctly to dict in python
         """
+        dict_temp = {}
+        for item in self.entity_context:
+            dict_temp[item] = self.entity_context[item]
+        dict_temp["attributes_number"] = 1
         self.__init_entity_context_dict()
+        self.entity_context["entities_id"] = entity_id
+        self.entity_context["attributes_number"] = 1
         entity = EMPTY
         metadata = EMPTY
         attribute_str = EMPTY
@@ -642,9 +666,19 @@ class CB:
         # create attribute with/without attribute type and metadatas (with/without type)
         attribute_str = "{%s}" % self.__create_attribute_raw(self.entity_context)
 
-        resp = self.__send_request("POST", "%s/%s" % (V2_ENTITIES, entity_id),
-                                   headers=self.headers, payload=attribute_str,
-                                   parameters=self.entities_parameters)
+        resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context["entities_id"]),
+                                   headers=self.headers, payload=attribute_str, parameters=self.entities_parameters)
+
+        # update with last values
+        if (context.table is not None) and (dict_temp["attributes_name"] is not None):
+            if ((self.entity_context["attributes_name"].find(dict_temp["attributes_name"]) >=0)):
+                for row in context.table:
+                    if row[PARAMETER] in dict_temp:
+                        if (row[VALUE].find(RANDOM) >= 0) or (row[VALUE] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST):
+                            dict_temp[row[PARAMETER]] = self.entity_context[row[PARAMETER]]
+                        else:
+                            dict_temp[row[PARAMETER]] = row[VALUE]
+                self.entity_context = dict_temp
         return resp
 
     def get_entity_context(self):
@@ -687,4 +721,3 @@ class CB:
         :return string
         """
         return self.attribute_name_to_request
-    
