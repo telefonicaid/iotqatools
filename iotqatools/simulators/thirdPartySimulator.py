@@ -85,7 +85,7 @@ def treat_async_create():
 
 def invoke_ca(async_response, url_callback, service, subservice):
     # Wait until request is finished
-    sleep(10)
+    sleep(3)
 
     # Send data to urlCallback
     headers = {'Accept': 'application/json', 'content-type': 'application/json', 'fiware-service': service,
