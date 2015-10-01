@@ -70,6 +70,7 @@ def treat_async_create():
     subservice = request.headers['fiware-servicepath']
     url_callback = json.loads(request.data)['callback']
     button_id = json.loads(request.data)['button']
+    app.logger.info('Headers received: ' + str(request.headers))
 
     # Compose the async response
     async_response = {'externalId': str(generate_uid()), 'buttonId': str(button_id), 'details': {}}
@@ -90,6 +91,7 @@ def invoke_ca(async_response, url_callback, service, subservice):
     headers = {'Accept': 'application/json', 'content-type': 'application/json', 'fiware-service': service,
                'fiware-servicepath': subservice}
     app.logger.info('Response sent to ' + url_callback + ' is: ' + json.dumps(async_response))
+    app.logger.info('Headers sent: ' + str(headers))
     r = requests.post(url_callback, data=json.dumps(async_response), headers=headers)
     return r
 
