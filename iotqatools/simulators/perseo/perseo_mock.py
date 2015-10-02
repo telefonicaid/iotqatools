@@ -3,14 +3,14 @@
 #
 # Copyright 2014 Telefonica Investigación y Desarrollo, S.A.U
 #
-# This file is part of perseo
+# This file is part of perseo_mock
 #
-# perseo is free software: you can redistribute it and/or
+# perseo_mock is free software: you can redistribute it and/or
 # modify it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the License,
 # or (at your option) any later version.
 #
-# perseo is distributed in the hope that it will be useful,
+# perseo_mock is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU Affero General Public License for more details.
@@ -106,7 +106,6 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                    print "post counter: " + str(post_number)
        except Exception, e:
            print "WARN - "+ str(e)
-           #print mock_config.WARN + mock_config.CONTENT_LENGTH_WARN_MSG
 
     def do_GET(s):
         """
