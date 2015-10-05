@@ -16,7 +16,7 @@
 # See the GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public
-# License along with perseo.
+# License along with perseo_mock.
 # If not, seehttp://www.gnu.org/licenses/.
 #
 # For those usages not covered by the GNU Affero General Public License
