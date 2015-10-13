@@ -22,7 +22,7 @@ please contact with::[iot_support@tid.es]
  */
 
 //script version
-var version="0.0.2"
+var version="0.0.3"
 
 //verbosity flag
 var vm=false;
@@ -113,7 +113,7 @@ var srv =function(){
                 req.on('data', function(data) {
                         if(vm){
                                 console.log('# Notification Data: ' + data);
-                                console.log(data);
+                                //console.log(data);
                         }
                 });
                 req.on('end', function() {
