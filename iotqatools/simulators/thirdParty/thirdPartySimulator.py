@@ -36,7 +36,7 @@ app = Flask(__name__)
 
 # Default arguments
 port = 6500
-host = '127.0.0.1'
+host = '0.0.0.0'
 
 # Arguments from command line
 if len(argv) > 1:
