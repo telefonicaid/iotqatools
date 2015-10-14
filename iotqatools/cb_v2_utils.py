@@ -514,7 +514,7 @@ class CB:
         resp = self.__send_request("GET", V2_ENTITIES, headers=self.headers, parameters=self.entities_parameters)
         return resp
 
-    def list_an_entity_by_ID(self, context, entity_id):
+    def list_an_entity_by_id(self, context, entity_id):
         """
         get an entity by ID
           | parameter | value       |
@@ -536,7 +536,7 @@ class CB:
                                    parameters=self.entities_parameters)
         return resp
 
-    def list_an_attribute_by_ID(self, attribute_name, entity_id):
+    def list_an_attribute_by_id(self, attribute_name, entity_id):
         """
         get an attribute by ID
         """
@@ -680,6 +680,50 @@ class CB:
                             dict_temp[row[PARAMETER]] = row[VALUE]
                 self.entity_context = dict_temp
         return resp
+
+    def delete_entities_by_id(self, context, entity_id):
+        """
+        delete entities
+        :param context: new context to delete
+        :param entity_id: entity id used to delete
+        :return list
+        """
+        resp_list = []
+        dict_temp = {}
+        for item in self.entity_context:
+            dict_temp[item] = self.entity_context[item]
+        self.__init_entity_context_dict()
+        self.entity_context["entities_id"] = entity_id
+        self.entity_id_to_request = mapping_quotes(entity_id) # used to verify if the entity returned is the expected
+        if context.table is not None:
+            for row in context.table:
+                if row[PARAMETER] == "entities_number":
+                    self.entity_context[row[PARAMETER]] = row[VALUE]
+
+        # The same value from create request
+        for item in self.entity_context:
+            if self.entity_context[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
+                self.entity_context[item] = dict_temp[item]
+
+        # Random values
+        dict_temp = self.__random_values(RANDOM_ENTITIES_LABEL, dict_temp)
+        self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
+        self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
+
+        # log entities contexts
+        __logger__.debug("entity context to delete")
+        for item in self.entity_context:
+            __logger__.debug("%s: %s" % (item, self.entity_context[item]))
+
+        # requests
+        if int(self.entity_context["entities_number"]) > 1:
+            for i in range(int(self.entity_context["entities_number"])):
+                resp_list.append(self.__send_request("DELETE", "%s/%s_%s" % (V2_ENTITIES, self.entity_context["entities_id"], str(i)), headers=self.headers))
+        else:
+            resp_list.append(self.__send_request("DELETE", "%s/%s" % (V2_ENTITIES, self.entity_context["entities_id"]), headers=self.headers))
+        return resp_list
+
+    #   -- get CB values
 
     def get_entity_context(self):
         """
