@@ -74,6 +74,13 @@ class Mysql:
         self.retry_delay = int(kwargs.get('delay_to_retry', 10))
         self.conn = None
 
+    def get_version(cur):
+        cur.execute("SELECT @@version")
+        for row in cur.fetchall():
+            for it in row:
+                pass
+        return it
+
     def __error_assertion(self, value, error=False):
         """
         It Shows exception error or return for evaluation

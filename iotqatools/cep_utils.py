@@ -65,6 +65,18 @@ class CEP:
         self.path = path
         self.version = cep_version
 
+    def __create_headers(self, service, subservice=''):
+        """
+        create the header for different requests
+        :param service: name of the service
+        :param subservice: name of the subservice
+        :return: headers dictionary
+        """
+        headers = dict(self.default_headers)
+        headers.update({"Fiware-Service": service})
+        headers.update({"Fiware-ServicePath": '/' + subservice})
+        return headers
+
     # -------------------------- CARDS ------------------------------------------------------------
     def create_type_sensor_card(self, sc_id_card, parameter_value, operator, connected_to):
         """
