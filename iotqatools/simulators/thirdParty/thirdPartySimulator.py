@@ -70,8 +70,8 @@ def treat_sync_request():
 
     # Generate sync response
     sync_response = {'externalId': generate_uid(), 'buttonId': button_id, 'details': {}}
-    sync_response['details']['rgb'] = '66CCDD'
-    sync_response['details']['t'] = '2'
+    sync_response['details']['rrgb'] = '00FF00'
+    sync_response['details']['rt'] = '20'
     app.logger.info('Response sent: ' + json.dumps(sync_response))
 
     return Response(response=json.dumps(sync_response), status=200, headers=headers)
@@ -81,7 +81,7 @@ def treat_sync_request():
 def treat_async_create():
     global last_request
 
-    app.logger.info("Recived async create")
+    app.logger.info("Received async create")
     # Store the last request
     last_request = request.data
     app.logger.info('Request data received: ' + last_request)
@@ -95,8 +95,8 @@ def treat_async_create():
 
     # Compose the async response
     async_response = {'externalId': str(generate_uid()), 'buttonId': str(button_id), 'details': {}}
-    async_response['details']['rgb'] = '66CCDD'
-    async_response['details']['t'] = '2'
+    async_response['details']['rrgb'] = '00FF00'
+    async_response['details']['rt'] = '20'
 
     # Invoke callback response
     t = threading.Thread(target=invoke_ca, args=(async_response, url_callback, service, subservice))
@@ -127,7 +127,7 @@ def generate_uid():
 def treat_set_response_to_error():
     global responseError, myResponse
 
-    myResponse = '{"error": "GUH-1", "details": {"rgb": "CC0000", "t": 3}}'
+    myResponse = '{"error": "GUH-1", "details": {"rrgb": "FF0000", "rt": 30}}'
     return Response(response='Simulator set to Error', status=200)
 
 
@@ -135,7 +135,7 @@ def treat_set_response_to_error():
 def treat_set_response_to_ok():
     global responseError, myResponse
 
-    myResponse = '{"details": {"rgb":"66CC00","t":2}}'
+    myResponse = '{"details": {"rrgb":"00FF00","rt":2}}'
     return Response(response='Simulator set to OK', status=200)
 
 
