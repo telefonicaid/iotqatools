@@ -1,1 +1,1 @@
-node listen.js -s5 -p10030 -ds0
+npm install && node listen.js -s1 -p10030 -ds0
