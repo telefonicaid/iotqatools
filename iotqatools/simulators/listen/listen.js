@@ -21,35 +21,76 @@ For those usages not covered by the GNU Affero General Public License
 please contact with::[iot_support@tid.es]
  */
 
-//script version
-var version="0.0.3"
+
+// requirements
+var dateFormat = require('dateformat');
+var moment = require('moment');
+
 
 //verbosity flag
 var vm=false;
+
 //silence flag
 var silence=false;
+
+//timestamp flag
+// expected input to calculate the diff in format 2015-10-28T13:51:32+0100
+/* {
+    "subscriptionId": "56309dbebc0ae94ca4f7f8ea",
+    "originator": "localhost",
+    "contextResponses": [
+        {
+            "contextElement": {
+                "type": "xxx",
+                "isPattern": "false",
+                "id": "aaa",
+                "attributes": [
+                    {
+                        "name": "TimeInstant",
+                        "type": "ISO8601",
+                        "value": "2015-10-28T13:51:32+0100"
+                    }
+                ]
+            },
+            "statusCode": {
+                "code": "200",
+                "reasonPhrase": "OK"
+            }
+        }
+    ]
+} */
+var timestamp=false;
+
+
+//accumulator flag
+var accumulatorMode=false;
 
 // Simple server for Orion contexBroker notifications:
 var http = require('http');
 
 //amount of servers to launch
 var servers=3;
+
 //Ports to listen
 var port=[1028,1029,1030];
 
 //amount of servers with delay to launch
 var delayedServers=1;
+
 //forced delayed response port
 var delayedPort=[1031];
 
-//accumulator setup
+//accumulator per second setup
 var requests = 0;
+
+//accumulator per session setup
+var session_requests = 0;
+
 // show requests every X ms
 var samples = 1000;
+
 // delayed response
 var delayedtime=2000;
-
-
 
 //Standar CLI options
 process.argv.forEach(function (val, index, array) {
@@ -58,25 +99,36 @@ process.argv.forEach(function (val, index, array) {
                 console.log("# Accumulator server version: " + version );
                 process.exit(0);
         }
-        if (val=="-u"){
+        if (val=="-u" || val=="--help" ){
                 console.log("Usage info: \n " +
                                 "Accumulator server \n" +
                                 " Default configuration launch 3 servers on ports 1028,1029,1030 and 1 server on port 1031 with delayed response of 2 seconds. \n \n" +
                                 "for modify the configuration use: > noode nodeAccumulator.js [-u -v --version --silence -s -p -ds -dp] \n" +
                                 " \n - Params \n" +
                                 " '-u' : Shows this usage info \n" +
+                                " '--help' : Shows this usage info \n" +
                                 " '-sX' : amount of servers to run (without delay). '-d5' will launch 5 servers \n"+
                                 " '-pX' : Port Server, X is the first port number to setup the server, the rest of listener servers will be added in the next port numbers \n"+
                                 " '-dsY' : amount of delayed servers tu run with delay. '-ds3' will launch 3 servers  \n"+
                                 " '-dpY' : Port Delayed Server, Y is the first port number to setup the Delayed server, the rest of listener servers will be added in the next port numbers \n"+
                                 " '--silence' : no info showed in log \n" +
-                                " '--version' : shows the version of this script \n"+
-                                " '-v' : verbose mode, by default OFF \n");
+                                " '--version' : shows the version of this script \n" +
+                                " '-v' : verbose mode, by default OFF \n" +
+                                " '-t' : timestamp diff mode, by default OFF \n" +
+                                " '-a' : accumulator mode, by default OFF \n");
                 process.exit(0);
         }
         if (val=="-v"){
-                console.log("# Verbosity activated");
+                console.log("# Verbosity Activated");
                 vm=true;
+        }
+        if (val=="-t"){
+                console.log("# Timestamp Activated");
+                timestamp=true;
+        }
+        if (val=="-a"){
+                console.log("# AccumulatorMode Activated");
+                accumulatorMode=true;
         }
         if (val=="--silence"){
                 silence=true;
@@ -111,9 +163,28 @@ var srv =function(){
                 requests++;
 
                 req.on('data', function(data) {
-                        if(vm){
+                        if(timestamp){
+                                //console.log('# Notification Data: ' + data);
+                                // get current time
+                                var now = new Date();
+                                var current = dateFormat(now, "isoDateTime");
+                                
+                                // get Data from update
+                                var context = JSON.parse(data);
+                                var received = context.contextResponses[0].contextElement.attributes[0].value;
+                                var time = dateFormat(received, "isoDateTime");
+                                console.log("# TimeInstant  NOW: "+ current + " RECEIVED: " + time); 
+                                
+                                //calculate DIFF
+                                var startDate = moment(time);
+                                var endDate = moment(current);
+                                var secondsDiff = endDate.diff(startDate, 'seconds');
+                                console.log("# Diff: "+ secondsDiff);
+                        }
+                        if (vm){
                                 console.log('# Notification Data: ' + data);
                         }
+
                 });
                 req.on('end', function() {
                         setTimeout(function() {
@@ -160,9 +231,18 @@ for (var i=0; i<delayedServers; i++){
 
 setInterval(function () {
         if(!silence){
-                console.log('Req: ' + requests);
+                if (accumulatorMode){
+                        console.log('Req: ' + requests + ' [' + session_requests + ']');
+                }
+                else{
+                        console.log('Req: ' + requests);
+                }
         }
         if (requests != 0) {
+                if (accumulatorMode){
+                        session_requests += requests;
+                }
                 requests = 0;
         }
+        
 }, samples);
