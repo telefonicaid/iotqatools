@@ -74,12 +74,6 @@ class Mysql:
         self.retry_delay = int(kwargs.get('delay_to_retry', 10))
         self.conn = None
 
-    def get_version(cur):
-        cur.execute("SELECT @@version")
-        for row in cur.fetchall():
-            for it in row:
-                pass
-        return it
 
     def __error_assertion(self, value, error=False):
         """
@@ -128,7 +122,6 @@ class Mysql:
         """
         self.database = database
 
-
     def disconnect(self):
         """
         Close a mysql connection and drop the database before
@@ -136,6 +129,18 @@ class Mysql:
         self.__drop_database()
         self.conn.close()  # close mysql connection
         gc.collect()  # invoking the Python garbage collector
+
+    def get_version(self):
+        """
+        :return: returns mysql version
+        """
+        try:
+            self.conn = MySQLdb.connect(self.host, self.user, self.password, self.database)
+        except Exception, e:
+            return self.__error_assertion('DB exception: %s' % (e))
+        cur = self.__query(SELECT_VERSION)
+        row = cur.fetchone()
+        return str(row[0])
 
     def verify_version(self):
         """
