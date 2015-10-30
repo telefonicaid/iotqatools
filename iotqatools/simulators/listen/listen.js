@@ -169,17 +169,34 @@ var srv =function(){
                                 var now = new Date();
                                 var current = dateFormat(now, "isoDateTime");
                                 
-                                // get Data from update
-                                var context = JSON.parse(data);
-                                var received = context.contextResponses[0].contextElement.attributes[0].value;
-                                var time = dateFormat(received, "isoDateTime");
-                                console.log("# TimeInstant  NOW: "+ current + " RECEIVED: " + time); 
+                                try {
+                                    var context = JSON.parse(data);
+
+                                    // get Data from update
+                                    var atts = context.contextResponses[0].contextElement.attributes;
+                                    var received = 0;
+                                    for (var att in atts){
+                                            if (atts[att].name == "TimeInstant"){
+                                                var received = atts[att].value;
+                                                var time = dateFormat(received, "isoDateTime");
+                                                console.log("# TimeInstant  NOW: "+ current + " RECEIVED: " + time); 
+
+                                                //calculate DIFF
+                                                var startDate = moment(time);
+                                                var endDate = moment(current);
+                                                var secondsDiff = endDate.diff(startDate, 'seconds');
+                                                console.log("# Diff: "+ secondsDiff);
+                                            }
+                                    
+                                }
+
+
+                                  } 
+                                  catch (e) {
+                                    return console.error(e);
+                                  }
+
                                 
-                                //calculate DIFF
-                                var startDate = moment(time);
-                                var endDate = moment(current);
-                                var secondsDiff = endDate.diff(startDate, 'seconds');
-                                console.log("# Diff: "+ secondsDiff);
                         }
                         if (vm){
                                 console.log('# Notification Data: ' + data);
