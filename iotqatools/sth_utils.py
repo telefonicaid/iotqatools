@@ -21,20 +21,18 @@ If not, seehttp://www.gnu.org/licenses/.
 For those usages not covered by the GNU Affero General Public License
 please contact with::[iot_support@tid.es]
 """
-
 __author__ = 'macs'
-
-from iotqautils.pqaTools import PqaTools
 
 import json
 import requests
 from requests.exceptions import RequestException
 from iotqatools.iot_logger import get_logger
+from iotqatools.iot_tools import PqaTools
 
 
 class SthUtils(object):
     """
-    Basic functionality for ContextBroker
+    Basic functionality for STH
     """
 
     def __init__(self, instance, service=None, subservice=None,
