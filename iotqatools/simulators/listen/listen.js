@@ -167,7 +167,8 @@ var srv =function(){
                                 //console.log('# Notification Data: ' + data);
                                 // get current time
                                 var now = new Date();
-                                var current = dateFormat(now, "isoDateTime");
+                                //var current = dateFormat(now, "isoDateTime");
+                                var current = dateFormat(now, "yyyy-mm-dd'T'HH:MM:ssl");
                                 
                                 try {
                                     var context = JSON.parse(data);
@@ -178,13 +179,17 @@ var srv =function(){
                                     for (var att in atts){
                                             if (atts[att].name == "TimeInstant"){
                                                 var received = atts[att].value;
-                                                var time = dateFormat(received, "isoDateTime");
+                                                //var time = dateFormat(received, "isoDateTime");
+                                                var time = dateFormat(received, "yyyy-mm-dd'T'HH:MM:ssl");
                                                 console.log("# TimeInstant  NOW: "+ current + " RECEIVED: " + time); 
 
                                                 //calculate DIFF
-                                                var startDate = moment(time);
-                                                var endDate = moment(current);
-                                                var secondsDiff = endDate.diff(startDate, 'seconds');
+                                                //var startDate = moment(time);
+                                                //var endDate = moment(current);
+                                                var startDate = moment(received);
+                                                var endDate = moment(now);
+                                                //var secondsDiff = endDate.diff(startDate, 'seconds');
+                                                var secondsDiff = endDate.diff(startDate);
                                                 console.log("# Diff: "+ secondsDiff);
                                             }
                                     
