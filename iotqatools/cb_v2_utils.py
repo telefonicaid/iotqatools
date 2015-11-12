@@ -436,7 +436,7 @@ class CB:
             else:
                 attribute_str = metadata
 
-        #append attribute value in string format
+        # append attribute value in string format
         if attribute_str == EMPTY:
             attribute_str = '%s: %s' % (entity_context["attributes_name"], entity_context["attributes_value"])
         else:
@@ -553,7 +553,7 @@ class CB:
         :payload --> No
         :query parameters --> No
         :param entity_id: entity id used to get
-        :param attributes_name: attribute to get
+        :param attribute_name: attribute to get
         :return http response
         """
         dict_temp = {}
@@ -737,14 +737,14 @@ class CB:
         """
         attribute = {}
         # append attribute type, attribute metadatas and attribute value if the first two exist for one attribute
-        if self.entity_context["metadatas_number"] is not None:
-            attribute = self.__create_metadata(self.entity_context["metadatas_number"], self.entity_context["metadatas_name"],
-                                               self.entity_context["metadatas_type"], self.entity_context["metadatas_value"])
+        if entity_context["metadatas_number"] is not None:
+            attribute = self.__create_metadata(entity_context["metadatas_number"], entity_context["metadatas_name"],
+                                               entity_context["metadatas_type"], entity_context["metadatas_value"])
         __logger__.debug("Metadatas: %s" % str(attribute))
-        if self.entity_context["attributes_type"] is not None:
-            attribute["type"] = self.entity_context["attributes_type"]
-        if self.entity_context["attributes_value"] is not None:
-            attribute["value"] = self.entity_context["attributes_value"]
+        if entity_context["attributes_type"] is not None:
+            attribute["type"] = entity_context["attributes_type"]
+        if entity_context["attributes_value"] is not None:
+            attribute["value"] = entity_context["attributes_value"]
         __logger__.debug("Attribute: %s" % str(attribute))
         return attribute
 
