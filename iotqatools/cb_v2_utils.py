@@ -926,23 +926,29 @@ class CB:
                 self.entity_context = dict_temp
         return resp
 
-    def delete_entities_by_id(self, context, entity_id):
+    def delete_entities_by_id(self, context, entity_id, attribute_name=None):
         """
         delete entities
         :request -> DELETE  /v2/entities/<entity_id>
+                attribute_name == None:  DELETE  /v2/entities/<entity_id>
+                attribute_name != None:  DELETE  /v2/entities/<entity_id>/attrs/<attr_name>
         :payload --> No
         :query parameters --> No
         :param context: new context to delete
         :param entity_id: entity id used to delete
+        :param attribute_name: attribute_name used to delete only one attribute, if it is None is not used.
         :return list
         """
         resp_list = []
         dict_temp = {}
+        attribute_url = EMPTY
         for item in self.entity_context:
             dict_temp[item] = self.entity_context[item]
         self.__init_entity_context_dict()
         self.entity_context["entities_id"] = entity_id
-        self.entity_id_to_request = mapping_quotes(entity_id)  # used to verify if the entity returned is the expected
+        self.entity_id_to_request = mapping_quotes(entity_id)  # used to verify if the entity deleted is the expected
+        if attribute_name is not None:
+            self.entity_context["attributes_name"] = attribute_name
         if context.table is not None:
             for row in context.table:
                 if row[PARAMETER] == "entities_number":
@@ -963,15 +969,20 @@ class CB:
         for item in self.entity_context:
             __logger__.debug("%s: %s" % (item, self.entity_context[item]))
 
+        if attribute_name is not None:
+            attribute_url = "/attrs/%s" % self.entity_context["attributes_name"]
+            self.attribute_name_to_request = mapping_quotes(self.entity_context["attributes_name"])  # used to verify if the attribute deleted is the expected
+
         # requests
-        if int(self.entity_context["entities_number"]) > 1:
-            for i in range(int(self.entity_context["entities_number"])):
-                resp_list.append(self.__send_request("DELETE", "%s/%s_%s" % (V2_ENTITIES, self.entity_context["entities_id"], str(i)), headers=self.headers))
-        else:
-            resp_list.append(self.__send_request("DELETE", "%s/%s" % (V2_ENTITIES, self.entity_context["entities_id"]), headers=self.headers))
+        suffix = EMPTY  # It suffix is used to several entities, ex: _1
+        for i in range(int(self.entity_context["entities_number"])):
+            if int(self.entity_context["entities_number"]) > 1:
+                suffix = "_%s" % str(i)
+            resp_list.append(self.__send_request("DELETE", "%s/%s%s%s" % (V2_ENTITIES, self.entity_context["entities_id"],
+                                                                          suffix, attribute_url), headers=self.headers))
         return resp_list
 
-    #   -- get CB values
+     #   -- get CB values
 
     def get_entity_context(self):
         """
