@@ -40,7 +40,7 @@ class CkanUtils(object):
             context.config['components'][comp]['response'] = context.o[comp].create_organization(service, verify_ssl=verify_ssl)
         except requests.exceptions.RequestException, e:
             context.config[comp]['response'] = 'ERROR'
-            print('[ERROR] ', e)
+            __logger__.info('[ERROR] '+ e)
             assert_true(False, msg='[NETWORK ERROR]')
 
             # Show info in logs
@@ -58,7 +58,7 @@ class CkanUtils(object):
             context.config['components'][comp]['response'] = context.o[comp].create_package(package, service, verify_ssl=verify_ssl)
         except requests.exceptions.RequestException, e:
             context.config['components'][comp]['response'] = 'ERROR'
-            print('[ERROR] ', e)
+            __logger__.info("Network error: " + e)
             assert_true(False, msg='[NETWORK ERROR]')
 
             # Show info in logs
@@ -80,7 +80,7 @@ class CkanUtils(object):
                                                                       verify_ssl=verify_ssl)
         except requests.exceptions.RequestException, e:
             context.config['components'][comp]['response'] = 'ERROR'
-            print('[ERROR] ', e)
+            __logger__.info("Network error: " + e)
             assert_true(False, msg='[NETWORK ERROR]')
 
             # Show info in logs
@@ -99,7 +99,7 @@ class CkanUtils(object):
             context.config['components'][comp]['response'] = context.o[comp].get_package(package_name, verify_ssl=verify_ssl)
         except requests.exceptions.RequestException, e:
             context.config['components'][comp]['response'] = 'ERROR'
-            print('[ERROR] ', e)
+            __logger__.info("Network error: " + e)
             assert_true(False, msg='[NETWORK ERROR]')
 
         # Show info in logs
@@ -123,7 +123,7 @@ class CkanUtils(object):
             context.config['components'][comp]['response'] = context.o[comp].get_package(package_name, verify_ssl=verify_ssl)
         except requests.exceptions.RequestException, e:
             context.config['components'][comp]['response'] = 'ERROR'
-            print('[ERROR] ', e)
+            __logger__.info("Network error: " + e)
             assert_true(False, msg='[NETWORK ERROR]')
 
             # Show info in logs
@@ -144,7 +144,7 @@ class CkanUtils(object):
                                                                        fields, verify_ssl=verify_ssl)
         except requests.exceptions.RequestException, e:
             context.config['components'][comp]['response'] = 'ERROR'
-            print('[ERROR] ', e)
+            __logger__.info("Network error: " + e)
             assert_true(False, msg='[NETWORK ERROR]')
 
             # Show info in logs
@@ -164,7 +164,7 @@ class CkanUtils(object):
                                                                        fields, verify_ssl=verify_ssl)
         except requests.exceptions.RequestException, e:
             context.config['components'][comp]['response'] = 'ERROR'
-            print('[ERROR] ', e)
+            __logger__.info("Network error: " + e)
             assert_true(False, msg='[NETWORK ERROR]')
 
 
@@ -179,6 +179,6 @@ class CkanUtils(object):
             context.config['components'][comp]['response'] = context.o['CKAN'].delete_organization(service, verify_ssl=verify_ssl)
         except requests.exceptions.RequestException, e:
             context.config['components'][comp]['response'] = 'ERROR'
-            print('[ERROR] ', e)
+            __logger__.info("Network error: " + e)
             assert_true(False, msg='[NETWORK ERROR]')
                                     
