@@ -12,9 +12,10 @@ been supplied.
 
 import requests
 import json
+
+from iotqatools.iot_logger import get_logger
 from requests.exceptions import RequestException
-from iotqautils.pqaTools import PqaTools
-from iotqautils.iotqaLogger import get_logger
+from iotqatools.iot_tools import PqaTools
 
 DEFAULT_ENDPOINT = 'localhost'
 DEFAULT_APIKEY = '7b321ca7-2193-4adf-8039-d550428620fe'
