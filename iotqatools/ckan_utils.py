@@ -399,15 +399,3 @@ class CKANUtils:
         response = self.__send_request('get', url, headers=headers, verify=verify_ssl, query=params)
         return response
 
-    def get_package(self, package_name, verify_ssl=False):
-        """
-        Function that returns the package, given the package name
-        :param package_name: name of the package
-        :param verify_ssl: Function that returns the resource given the resource name and the package
-        :return: returns object
-        """
-        url = self.compose_url(self.protocol, self.instance, self.port, self.path, '/package_show')
-        headers = {'Authorization': self.apikey, 'Content-Type': 'application/json'}
-        params = {"id": package_name}
-        response = self.__send_request('get', url, headers=headers, verify=verify_ssl, query=params)
-        return response
