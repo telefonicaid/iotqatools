@@ -509,10 +509,27 @@ class CB:
         | options   | canonical             | The response payload uses the "canonical form"
         :return: http response list
         """
+        dict_temp = {}
+        for item in self.entity_context:
+            dict_temp[item] = self.entity_context[item]
+        self.__init_entity_context_dict()
         __logger__.info("List all entities, filtered by the queries parameters")
         if context.table is not None:
             for row in context.table:
                 self.entities_parameters[row[PARAMETER]] = row[VALUE]
+
+        # The same value from create request
+        for item in self.entities_parameters:
+            if self.entities_parameters[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
+                if item == "id":
+                    self.entities_parameters[item] = dict_temp["entities_id"]
+                elif item == "type":
+                    self.entities_parameters[item] = dict_temp["entities_type"]
+
+        # Random values in queries parameters
+        dict_temp = self.__random_values(RANDOM_ENTITIES_LABEL, dict_temp)
+        self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
+        self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
 
         # log queries parameters
         for item in self.entities_parameters:
