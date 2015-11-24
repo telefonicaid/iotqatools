@@ -282,7 +282,7 @@ class CKANUtils:
         :param package_name: name of the package the resource belongs
         :return: id of the resource (string)
         """
-        url = self.compose_url(self.protocol, self.instance, self.port, self.path, '/package_show')
+        url = self.compose_url(self.protocol, self.instance, self.port, self.path, '/resource_show')
         headers = {'Authorization': self.apikey, 'Content-Type': 'application/json'}
         params = {"id": package_name}
         try:
