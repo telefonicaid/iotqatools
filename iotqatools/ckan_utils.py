@@ -397,6 +397,6 @@ class CKANUtils:
         url = self.compose_url(self.protocol, self.instance, self.port, self.path, '/package_list')
         headers = {'Authorization': self.apikey, 'Content-Type': 'application/json'}
         params = {"id": package_name}
+        print(params)
         response = self.__send_request('get', url, headers=headers, verify=verify_ssl, query=params)
         return response
-
