@@ -508,3 +508,45 @@ class Rest_Utils_IoTA(object):
             headers["X-Auth-Token"] = keystone_token
         req = self.delete_device(device_name,headers, params)
         return req
+
+
+    def get_protocols(self, headers={}, params={}):
+        headers = self.compose_headers(headers)
+        res = self.api_get( "protocols", headers=headers)
+        return res
+
+    def get_identifier(self, headers={}, params={}):
+        headers = self.compose_headers(headers)
+        res = self.api_get('about', headers=headers)
+        if res.status_code == 200:
+            ind1 = res.content.find("identifier:")
+            if (ind1 > 0):
+                ind2 = res.content.find(" ", ind1)
+                return res._content[ind1+11:ind2]
+
+        return ""
+
+
+    def reinit_iotagent_with_ip(self, ip="", identifier="", headers={}, params={}):
+        '''
+        simulate to reinti iotagent
+        send register to iot manager
+
+        :param ip:  ip for the iotagent
+        :param identifier:  for iotagent
+        :return:  True if ok
+        '''
+
+        json = { "protocol" : "PDI-IoTA-UltraLight", "description" : "UL2"}
+        json["iotagent"] = ip
+        json["identifier"] = identifier
+        json["resource"] = "/iot/d"
+
+        headers = self.compose_headers(headers)
+        res = self.api_post( "protocols", headers=headers, data=json)
+
+        if (res.status_code == 201):
+            return ""
+        else:
+            return res.contetn
+
