@@ -28,6 +28,7 @@ import pystache
 import requests
 import json
 
+from copy import deepcopy
 from iotqatools.templates.cb_templates import *
 from iotqatools.iot_logger import get_logger
 from requests.exceptions import RequestException
@@ -1321,7 +1322,7 @@ class CbNgsi10Utils(object):
                         updateaction=payload['updateSction']))
         return self.__send_request('post', self.path_update_context, self.headers, payload)
 
-    def convenience_entity_delete_url_method(self, entity_id, entity_type=None):
+    def convenience_entity_delete_url_method(self, entity_id, entity_type=None, service='', service_path=''):
         """
         Delete an entity in Context Broker with the convenience entity deletion.
         There are two ways to create:
@@ -1337,7 +1338,14 @@ class CbNgsi10Utils(object):
         else:
             url = self.path_context_entities + '/type/{entity_type}/id/{entity_id}'.format(entity_type=entity_type,
                                                                                            entity_id=entity_id)
-        return self.__send_request('delete', url, self.headers)
+
+        myheaders = copy.deepcopy(self.headers)
+        if service:
+            myheaders["Fiware-Service"]= service
+        if service_path:
+            myheaders["Fiware-ServicePath"]= service_path
+
+        return self.__send_request('delete', url, myheaders)
 
     # **
 
