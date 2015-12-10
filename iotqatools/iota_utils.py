@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
+Copyright 2015 Telefonica Investigaci�n y Desarrollo, S.A.U
 
 This file is part of telefonica-iot-qa-tools
 
@@ -46,6 +46,7 @@ CBROKER_URL='http://127.0.0.1:1026'
 URLTypes = {
     "IoTUL2": "/iot/d",
     "IoTRepsol": "/iot/repsol",
+    "IoTModbus": "/iot/tgrepsol",
     "IoTEvadts": "/iot/evadts",
     "IoTTT": "/iot/tt",
     "IoTMqtt": "/iot/mqtt"
@@ -70,6 +71,7 @@ class Rest_Utils_IoTA(object):
         self.devices = kwargs.get('devices', DEVICES_DETAIL)
         self.def_entity_type = kwargs.get('def_entity_type', DEF_ENTITY_TYPE)
         self.cbroker = kwargs.get('cbroker', CBROKER_URL)
+        self.token = {}
 
     """General Methods"""
 
@@ -86,6 +88,8 @@ class Rest_Utils_IoTA(object):
 
     def compose_headers(self, headers):
         headers["Content-Type"] = "application/json"
+        if self.token:
+            headers["X-Auth-Token"] = self.token
         return headers
 
     """
@@ -209,11 +213,11 @@ class Rest_Utils_IoTA(object):
             if not service_path == 'void':
                 headers[self.srv_path_header] = str(service_path)
         else:
-            headers[self.srv_path_header] = '/path_' + str(service_name)
+            headers[self.srv_path_header] = '/'
         if resource:
             params['resource']= resource
         if keystone_token:
-            headers["X-Auth-Token"] = keystone_token
+            self.token = keystone_token
         service =  self.get_service('', headers, params)
         if service.status_code == 200:
             serv = service.json()
@@ -224,12 +228,12 @@ class Rest_Utils_IoTA(object):
         else:
             return False
 
-    def create_service(self, service_name, protocol, attributes={}, static_attributes={}):
+    def create_service(self, service_name, protocol, attributes={}, static_attributes={}, cbroker={}):
         headers = {}
         headers[self.srv_header] = service_name
-        headers[self.srv_path_header] = '/path_' + str(service_name)
+        headers[self.srv_path_header] = '/'
         resource = URLTypes.get(protocol)
-        if (protocol == 'IotTT') | (protocol == 'IoTRepsol'):
+        if (protocol == 'IotTT') | (protocol == 'IoTRepsol') | (protocol == 'IoTModbus'):
             apikey=''
         else:
             apikey='apikey_' + str(service_name)
@@ -237,12 +241,14 @@ class Rest_Utils_IoTA(object):
             "services":[
                 {
                     "apikey": apikey,
-                    "entity_type": self.def_entity_type,
-                    "cbroker": self.cbroker,
                     "resource": resource
                 }
                 ]
                 }
+        if cbroker:
+            service['services'][0]['cbroker'] = cbroker
+        else:
+            service['services'][0]['cbroker'] = self.cbroker
         if attributes:
             service['services'][0]['attributes'] = attributes
         if static_attributes:
@@ -298,7 +304,7 @@ class Rest_Utils_IoTA(object):
                 resource = protocol
                 service['services'][0]['protocol'] = []
         if keystone_token:
-            headers["X-Auth-Token"] = keystone_token
+            self.token = keystone_token
         req = self.post_service(service, headers)
         return req
 
@@ -341,7 +347,7 @@ class Rest_Utils_IoTA(object):
             else:
                 headers[self.srv_path_header] = '/'
         else:
-            headers[self.srv_path_header] = '/path_' + str(service_name)
+            headers[self.srv_path_header] = '/'
         print params
         req = self.put_service('', json, headers, params)
         return req
@@ -358,14 +364,14 @@ class Rest_Utils_IoTA(object):
         if device:
             params['device']= device
         if keystone_token:
-            headers["X-Auth-Token"] = keystone_token
+            self.token = keystone_token
         if service_path:
             if not service_path == 'void':
                 headers[self.srv_path_header] = str(service_path)
             else:
                 headers[self.srv_path_header] = '/'
         else:
-            headers[self.srv_path_header] = '/path_' + str(service_name)
+            headers[self.srv_path_header] = '/'
         req = self.delete_service('', headers, params)
         return req
 
@@ -378,9 +384,9 @@ class Rest_Utils_IoTA(object):
             if not service_path=='void':
                 headers[self.srv_path_header] = str(service_path)
         else:
-            headers[self.srv_path_header] = '/path_' + str(service_name)
+            headers[self.srv_path_header] = '/'
         if keystone_token:
-            headers["X-Auth-Token"] = keystone_token
+            self.token = keystone_token
         device = self.get_device(device_name, headers)
         if device.status_code == 200:
             return True
@@ -395,7 +401,7 @@ class Rest_Utils_IoTA(object):
             if not service_path=='void':
                 headers[self.srv_path_header] = str(service_path)
         else:
-            headers[self.srv_path_header] = '/path_' + str(service_name)
+            headers[self.srv_path_header] = '/'
         device={
             "devices":[
                 {
@@ -423,7 +429,7 @@ class Rest_Utils_IoTA(object):
                 protocol=""
             device['devices'][0]['protocol'] = protocol
         if keystone_token:
-            headers["X-Auth-Token"] = keystone_token
+            self.token = keystone_token
         req = self.post_device(device,headers)
         return req
 
@@ -498,17 +504,16 @@ class Rest_Utils_IoTA(object):
             if not service_path=='void':
                 headers[self.srv_path_header] = str(service_path)
         else:
-            headers[self.srv_path_header] = '/path_' + str(service_name)
+            headers[self.srv_path_header] = '/'
         if protocol:
             prot = ProtocolTypes.get(protocol)
             if not prot:
                 prot = protocol
             params['protocol']= prot
         if keystone_token:
-            headers["X-Auth-Token"] = keystone_token
+            self.token = keystone_token
         req = self.delete_device(device_name,headers, params)
         return req
-
 
     def get_protocols(self, headers={}, params={}):
         headers = self.compose_headers(headers)
@@ -525,7 +530,6 @@ class Rest_Utils_IoTA(object):
                 return res._content[ind1+11:ind2]
 
         return ""
-
 
     def reinit_iotagent_with_ip(self, ip="", identifier="", headers={}, params={}):
         '''
@@ -548,5 +552,7 @@ class Rest_Utils_IoTA(object):
         if (res.status_code == 201):
             return ""
         else:
-            return res.contetn
+            return res.content
 
+    def set_token(self, token):
+        self.token=token
