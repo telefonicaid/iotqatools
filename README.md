@@ -1,5 +1,5 @@
-# iot-qa-tools [![Build Status](https://travis-ci.org/telefonicaid/iot-qa-tools.svg?branch=master)](https://travis-ci.org/telefonicaid/iot-qa-tools)
-
+# iot-qa-tools [![Build Status](https://travis-ci.org/telefonicaid/iot-qa-tools.svg?branch=develop)](https://travis-ci.org/telefonicaid/iot-qa-tools) [![Coverage Status](https://coveralls.io/repos/telefonicaid/iot-qa-tools/badge.svg?branch=develop&service=github)](https://coveralls.io/github/telefonicaid/iot-qa-tools?branch=develop) [![StackOverflow](http://b.repl.ca/v1/help-stackoverflow-orange.png)]  (https://stackoverflow.com/questions/tagged/iot-qa-tools) 
+    
 Common IoT tools and libs used by QA
 
 
