@@ -518,7 +518,7 @@ class Rest_Utils_IoTA(object):
         req = self.put_device(device_name, json, headers, params)
         return req
 
-    def delete_device_with_params(self, device_name, service_name, service_path={}, protocol={}, keystone_token={}):
+    def delete_device_with_params(self, device_name, service_name, service_path={}, protocol={}, keystone_token={}, resource={}):
         params={}
         headers = {}
         if not service_name == 'void':
@@ -533,6 +533,8 @@ class Rest_Utils_IoTA(object):
             if not prot:
                 prot = protocol
             params['protocol']= prot
+        if resource:
+            params['resource']= resource
         if keystone_token:
             self.token = keystone_token
         req = self.delete_device(device_name,headers, params)
