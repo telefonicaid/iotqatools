@@ -159,6 +159,16 @@ class Rest_Utils_IoTA(object):
         PqaTools.log_requestAndResponse(url=path, headers=headers, data='', comp='IOTA', response=res, method='delete')
         return res
 
+    """Version Methods"""
+    def version(self, headers={}):
+        """
+        Get IOTA version
+        """
+        headers = self.compose_headers(headers)
+        res = self.api_get("iot/about", headers=headers)
+        return res
+
+
     """Services Methods"""
 
     def get_listServices(self, headers={}, params={}):
@@ -587,3 +597,4 @@ class Rest_Utils_IoTA(object):
 
     def set_token(self, token):
         self.token=token
+
