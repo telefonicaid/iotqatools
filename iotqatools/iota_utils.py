@@ -346,7 +346,7 @@ class Rest_Utils_IoTA(object):
         req = self.put_service('', json, headers, params)
         return req
 
-    def delete_service_with_params(self, service_name, service_path={}, resource={}, apikey={}, device={}, keystone_token={}):
+    def delete_service_with_params(self, service_name, service_path={}, resource={}, apikey={}, protocol={}, device={}, keystone_token={}):
         params={}
         headers = {}
         if not service_name == 'void':
@@ -355,6 +355,8 @@ class Rest_Utils_IoTA(object):
             params['resource']= resource
         if apikey:
             params['apikey']= apikey
+        if protocol:
+            params['protocol']= protocol
         if device:
             params['device']= device
         if keystone_token:
@@ -383,7 +385,11 @@ class Rest_Utils_IoTA(object):
             headers["X-Auth-Token"] = keystone_token
         device = self.get_device(device_name, headers)
         if device.status_code == 200:
-            return True
+            data = json.loads(device.text)
+            if "count" in data:
+               return data["count"] > 0
+            else:
+                return True
         else:
             return False
 
