@@ -55,10 +55,7 @@ def treat_client_ul20_cmd():
     cmd_name = command_fields[0].split("@");
     app.logger.info(cmd_name[0])
     app.logger.info(cmd_name[1])
-    if cmd_name[1] == "ping":
-        cmdresp = command_fields[0] + "|ping OK"
-    else:
-        cmdresp = mydata
+    cmdresp = command_fields[0] + "|" + cmd_name[1] + " OK"
 
     return Response(response=cmdresp, status=200, content_type='text/plain;charset=UTF-8')
 
