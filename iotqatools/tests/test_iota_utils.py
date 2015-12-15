@@ -74,26 +74,26 @@ def mocked_requests_post(*args, **kwargs):
 
     nodata = """{"reason": "Malformed header","details": "Fiware-Service not accepted - a service string must not be longer than 50 characters and may only contain underscores and alphanumeric characters and lowercase"}"""
 
-    return MockResponse(nodata, 201)
+    return MockResponse(nodata, 400)
 
 
 class IOTAUtilsTest(unittest.TestCase):
 
    def setUp(self):
-      #self.iota = Rest_Utils_IoTA(server_root="http://mock.iota.com:1026", server_root_secure="http://mock.iota.com:1026")
-      self.iota = Rest_Utils_IoTA(server_root="http://10.95.213.36:8080/iot", server_root_secure="http://10.95.213.36:8080/iot")
+      self.iota = Rest_Utils_IoTA(server_root="http://mock.iota.com:1026/iot", server_root_secure="http://mock.iota.com:1026/iot")
+      #self.iota = Rest_Utils_IoTA(server_root="http://10.95.213.36:8080/iot", server_root_secure="http://10.95.213.36:8080/iot")
 
 
-   #@mock.patch('requests.get', side_effect=mocked_requests_get)
-   def test_version(self):#, mock_requests):
+   @mock.patch('requests.get', side_effect=mocked_requests_get)
+   def test_version(self, mock_requests):
        version = self.iota.version()
        print "### Test ---> Version: " + version.content
        eq_(200, version.status_code, msg="version to CB does not return 200")
        assert_in("Welcome to IoTAgents", version.content, msg="bad data returned to query version to IOTA")
        assert_in("identifier:IoTPlatform:8080", version.content, msg="bad data returned to query version to CB")
 
-   #@mock.patch('requests.post', side_effect=mocked_requests_post)
-   def tes_bad_create_service(self):#, mock_requests):
+   @mock.patch('requests.post', side_effect=mocked_requests_post)
+   def tes_bad_create_service(self, mock_requests):
        res = self.iota.create_service(service_name="kk<xx>", protocol="bad<protoxol>" )
        print "### Test ---> Bade service name: " + res.content
        eq_(400, res.status_code, msg="version to CB does not return 200")

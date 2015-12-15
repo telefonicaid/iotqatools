@@ -165,7 +165,7 @@ class Rest_Utils_IoTA(object):
         Get IOTA version
         """
         headers = self.compose_headers(headers)
-        res = self.api_get("iot/about", headers=headers)
+        res = self.api_get("about", headers=headers)
         return res
 
 
