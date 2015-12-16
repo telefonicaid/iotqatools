@@ -4,18 +4,18 @@ Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
 This file is part of telefonica-iot-qa-tools
 
-iot-qa-tools is free software: you can redistribute it and/or
+orchestrator is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-iot-qa-tools is distributed in the hope that it will be useful,
+orchestrator is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
-License along with iot-qa-tools.
+License along with orchestrator.
 If not, seehttp://www.gnu.org/licenses/.
 
 For those usages not covered by the GNU Affero General Public License
@@ -33,6 +33,7 @@ import hashlib
 import logging
 import math
 from decimal import Decimal
+import operator
 
 
 # general constants
@@ -234,3 +235,53 @@ def read_file_to_json(file_name):
             return json.load(config_file)
     except Exception, e:
         raise Exception("\n-- ERROR -- parsing %s file\n     msg= %s" % (file_name, str(e)))
+
+def get_operator_fn(op):
+    """
+    return an operation from string
+    https://docs.python.org/2/library/operator.html#
+    :param op: operator in string
+    :return: operator
+    """
+    return {
+        '+': operator.add,
+        '-': operator.sub,
+        '*': operator.mul,
+        '/': operator.div,
+        '%': operator.mod,
+        '^': operator.xor,
+        '==':operator.eq,
+        '!=':operator.ne,
+        '>=':operator.ge,
+        '<=':operator.le,
+        '>':operator.gt,
+        '<':operator.lt
+        }[op]
+
+def eval_binary_expr(op1, operator, op2):
+    """
+    evaluate a binary expression
+    :param op1: value 1
+    :param operator: operator
+    :param op2: value 2
+    :return: value or boolean
+    """
+    if operator not in ['==', '!=']:
+        try:
+            op1, op2 = int(float(op1)), int(float(op2))
+        except Exception, e:
+            __logger__.warn("Some value is not a numeric format. (%s)" % str(e))
+            return False
+    return get_operator_fn(operator)(op1, op2)
+
+
+def find_list_in_string (chars_list, text):
+    """
+    find a chars list into a text. Ex: [".", "$"]
+    return int
+    """
+    for item in chars_list:
+        temp = text.find(item)
+        if temp >= 0:
+            return temp
+    return -1
