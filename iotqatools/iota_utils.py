@@ -456,7 +456,7 @@ class Rest_Utils_IoTA(object):
         req = self.post_device(device,headers)
         return req
 
-    def get_device_with_params(self, service_name, device_name, service_path={}, protocol={}):
+    def get_device_with_params(self, service_name, device_name, service_path={}, protocol={}, keystone_token={}):
         headers = {}
         params={}
         if not service_name == 'void':
@@ -471,10 +471,12 @@ class Rest_Utils_IoTA(object):
             if not prot:
                 prot = protocol
             params['protocol']= prot
+        if keystone_token:
+            self.token = keystone_token
         req = self.get_device(device_name, headers, params)
         return req
 
-    def get_devices_with_params(self, service_name, service_path={}, protocol={}, entity={}, detailed={}, limit={}, offset={}):
+    def get_devices_with_params(self, service_name, service_path={}, protocol={}, entity={}, detailed={}, limit={}, offset={}, keystone_token={}):
         headers = {}
         params={}
         if not service_name == 'void':
@@ -497,10 +499,12 @@ class Rest_Utils_IoTA(object):
             params['limit']= limit
         if offset:
             params['offset']= offset
+        if keystone_token:
+            self.token = keystone_token
         req = self.get_listDevices(headers, params)
         return req
 
-    def update_device_with_params(self, json, device_name, service_name, service_path={}, protocol={}):
+    def update_device_with_params(self, json, device_name, service_name, service_path={}, protocol={}, keystone_token={}):
         params={}
         headers = {}
         if not service_name == 'void':
@@ -515,6 +519,8 @@ class Rest_Utils_IoTA(object):
             if not prot:
                 prot = protocol
             params['protocol']= prot
+        if keystone_token:
+            self.token = keystone_token
         req = self.put_device(device_name, json, headers, params)
         return req
 
