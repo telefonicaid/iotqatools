@@ -41,6 +41,7 @@ SERVICE_HEADER='Fiware-Service'
 SERVICE_PATH_HEADER='Fiware-ServicePath'
 DEF_ENTITY_TYPE='thing'
 CBROKER_URL='http://127.0.0.1:1026'
+TOKEN=''
 
 
 URLTypes = {
@@ -71,7 +72,7 @@ class Rest_Utils_IoTA(object):
         self.devices = kwargs.get('devices', DEVICES_DETAIL)
         self.def_entity_type = kwargs.get('def_entity_type', DEF_ENTITY_TYPE)
         self.cbroker = kwargs.get('cbroker', CBROKER_URL)
-        self.token = {}
+        self.token = kwargs.get('token', TOKEN)
 
     """General Methods"""
 
