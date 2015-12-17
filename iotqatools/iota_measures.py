@@ -96,6 +96,10 @@ class Gw_Measures_Utils(object):
         url = self.getUrl(measure_type, apikey, idDevice)
         if field == 'getCmd':
             url += '&getCmd=1'
+        if "ip" in field:
+            url += '&ip='
+            url += field["ip"]
+
         print 'url: ' + url
         data = self.getMeasure(measure_type, measures, field)
         res = requests.post(url, data=data)
@@ -192,8 +196,10 @@ class Gw_Measures_Utils(object):
     idDevice(string): id Device registed in SBC
     """
 
-    def getCommand(self, measure_type, apikey, idDevice):
+    def getCommand(self, measure_type, apikey, idDevice, ip={}):
         url = self.getUrl(measure_type, apikey, idDevice)
+        if ip:
+            url += "&ip=" + ip
         print 'url: ' + url
         res = requests.get(url)
         return res
