@@ -126,6 +126,20 @@ class CB:
         __logger__.info(" -- status code is 200 OK in statistics request")
         return resp
 
+    def get_cache_statistics_request(self):
+        """
+        get context broker cache statistics
+        :return: response to an HTTP request
+        """
+        header = {"Accept": "application/json"}
+        resp = self.__send_request("GET", "cache/statistics", headers=header)
+
+        assert resp.status_code == 200, " ERROR - status code in context broker cache statistics request. \n " \
+                                        " status code: %s \n " \
+                                        " body: %s" % (resp.status_code, resp.text)
+        __logger__.info(" -- status code is 200 OK in cache statistics request")
+        return resp
+
     def get_base_request(self):
         """
         get a API entry point request
@@ -376,6 +390,7 @@ class CB:
         """
         resp_list = []
         entities = {}
+        self.__init_entity_context_dict()
         self.entity_context["entities_number"] = int(entities_number)
         self.entity_context["attributes_number"] = int(attributes_number)
 
@@ -467,6 +482,7 @@ class CB:
         entity = EMPTY
         metadata = EMPTY
         attribute_str = EMPTY
+        self.__init_entity_context_dict()
         if context.table is not None:
             for row in context.table:
                 if row[PARAMETER] in self.entity_context:
@@ -484,7 +500,10 @@ class CB:
         attribute_str = self.__create_attribute_raw(self.entity_context)
 
         # create entity with attribute value in raw
-        entity = u'{"type": %s, "id": %s, %s}' % (self.entity_context["entities_type"], self.entity_context["entities_id"], attribute_str)
+        if self.entity_context["entities_type"] is not None:
+            entity = u'{"type": %s, "id": %s, %s}' % (self.entity_context["entities_type"], self.entity_context["entities_id"], attribute_str)
+        else:
+            entity = u'{"id": %s, %s}' % (self.entity_context["entities_id"], attribute_str)
 
         resp = self.__send_request("POST", V2_ENTITIES, headers=self.headers, payload=entity)
         return resp
@@ -509,10 +528,27 @@ class CB:
         | options   | canonical             | The response payload uses the "canonical form"
         :return: http response list
         """
+        dict_temp = {}
+        for item in self.entity_context:
+            dict_temp[item] = self.entity_context[item]
+        self.__init_entity_context_dict()
         __logger__.info("List all entities, filtered by the queries parameters")
         if context.table is not None:
             for row in context.table:
                 self.entities_parameters[row[PARAMETER]] = row[VALUE]
+
+        # The same value from create request
+        for item in self.entities_parameters:
+            if self.entities_parameters[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
+                if item == "id":
+                    self.entities_parameters[item] = dict_temp["entities_id"]
+                elif item == "type":
+                    self.entities_parameters[item] = dict_temp["entities_type"]
+
+        # Random values in queries parameters
+        dict_temp = self.__random_values(RANDOM_ENTITIES_LABEL, dict_temp)
+        self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
+        self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
 
         # log queries parameters
         for item in self.entities_parameters:
