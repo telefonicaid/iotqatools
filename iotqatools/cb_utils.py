@@ -28,7 +28,7 @@ import pystache
 import requests
 import json
 
-from copy import deepcopy
+import  copy
 from iotqatools.templates.cb_templates import *
 from iotqatools.iot_logger import get_logger
 from requests.exceptions import RequestException
@@ -948,7 +948,7 @@ class CbNgsi10Utils(object):
         try:
             response = requests.request(**parameters)
         except RequestException, e:
-            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB')
+            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 
         # Log data
@@ -1687,7 +1687,7 @@ class CbNgsi9Utils():
         try:
             response = requests.request(**parameters)
         except RequestException, e:
-            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB')
+            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
         print response
 
@@ -2137,7 +2137,7 @@ class CBUtils(object):
         try:
             response = requests.request(**parameters)
         except RequestException, e:
-            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB')
+            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 
         # Log data

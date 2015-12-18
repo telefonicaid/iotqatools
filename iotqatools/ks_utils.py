@@ -25,6 +25,7 @@ please contact with::[iot_support@tid.es]
 import json
 import re
 import requests
+from iotqatools.iot_tools import PqaTools
 
 from iotqatools.iot_logger import get_logger
 
@@ -78,13 +79,8 @@ class RequestUtils(object):
             log.debug('\tQuery:\n %s' % query)
         log.debug('End Sending\n**************************************************************************************')
         response = requests.request(**parameters)
-        log.debug('**************************************************************************************\nResponse:')
-        try:
-            log.debug('\t*Payload:\n %s' % json.dumps(response.json(), sort_keys=True, indent=4, separators=(',', ': ')))
-        except ValueError:
-            log.debug('\t*Payload:\n %s' % response.text)
-        log.debug('\t*Headers:\n %s' % response.headers)
-        log.debug('End Response\n **************************************************************************************')
+        PqaTools.log_fullRequest(comp='ORC', response=response, params=parameters)
+
         return response
 
     @staticmethod

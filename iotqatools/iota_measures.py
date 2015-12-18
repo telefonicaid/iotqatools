@@ -27,6 +27,7 @@ __author__ = 'gtsa07'
 
 # imports 3rd party libs
 import requests
+from iotqatools.iot_tools import PqaTools
 
 
 # Params GW
@@ -96,9 +97,16 @@ class Gw_Measures_Utils(object):
         url = self.getUrl(measure_type, apikey, idDevice)
         if field == 'getCmd':
             url += '&getCmd=1'
+        if "ip" in field:
+            url += '&ip='
+            url += field["ip"]
+
         print 'url: ' + url
         data = self.getMeasure(measure_type, measures, field)
         res = requests.post(url, data=data)
+
+        #log request
+        PqaTools.log_requestAndResponse(url=url, headers={}, data=data, comp='IOTA', response=res, method='post')
         return res
 
     """
@@ -182,6 +190,10 @@ class Gw_Measures_Utils(object):
         result += "</rs>"
         print result
         res = requests.post(url, data=result)
+
+        #log request
+        PqaTools.log_requestAndResponse(url=url, headers={}, data=result, comp='IOTA', response=res, method='post')
+
         return res
 
     """
@@ -192,10 +204,15 @@ class Gw_Measures_Utils(object):
     idDevice(string): id Device registed in SBC
     """
 
-    def getCommand(self, measure_type, apikey, idDevice):
+    def getCommand(self, measure_type, apikey, idDevice, ip={}):
         url = self.getUrl(measure_type, apikey, idDevice)
+        if ip:
+            url += "&ip=" + ip
         print 'url: ' + url
         res = requests.get(url)
+
+        #log request
+        PqaTools.log_requestAndResponse(url=url, headers={}, data='', comp='IOTA', response=res, method='get')
         return res
 
     """
@@ -211,4 +228,7 @@ class Gw_Measures_Utils(object):
         print 'url: ' + url
         data = str(command) + "|" + str(response)
         res = requests.post(url, data=data)
+
+        #log request
+        PqaTools.log_requestAndResponse(url=url, headers={}, data=data, comp='IOTA', response=res, method='post')
         return res
