@@ -99,7 +99,7 @@ class SthUtils(object):
         try:
             response = requests.request(**parameters)
         except RequestException, e:
-            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='STH')
+            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='STH', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 
         # Log data
