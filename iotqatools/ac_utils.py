@@ -27,6 +27,7 @@ import pystache
 
 from iotqatools.templates.ac_templates import *
 from iotqatools.iot_logger import get_logger
+from iotqatools.iot_tools import PqaTools
 
 
 def generate_url(host, tenant, subject):
@@ -78,10 +79,8 @@ class AC(object):
         if query is not None:
             request_parms.update({'params': query})
         response = requests.request(method, url, **request_parms)
-        self.log.debug('Response: -->')
-        self.log.debug('Return code: %s' % response.status_code)
-        self.log.debug('Resturn headers: %s' % response.headers)
-        self.log.debug('Return data: %s' % response.text)
+        PqaTools.log_fullRequest(comp='ORC', response=response, params=request_parms)
+
         return response
 
     def create_policy(self, tenant, role, policy_name, entity, action):

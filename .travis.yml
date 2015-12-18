@@ -10,7 +10,7 @@ install:
 # command to run tests
 script:
 #python setup.py test
-  - python iotqatools/tests/cb_utils_tests.py
+  nosetests --with-coverage --cover-package=./ --exe
 
 after_success:
   coveralls

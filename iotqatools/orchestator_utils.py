@@ -28,6 +28,7 @@ import json
 import requests
 
 from iotqatools.iot_tools import get_logger
+from iotqatools.iot_tools import PqaTools
 
 
 class Orchestrator(object):
@@ -51,13 +52,7 @@ class Orchestrator(object):
         :param query:
         :return: response object
         """
-        self.log.debug('Request: -->')
-        self.log.debug('Method: %s' % method)
-        self.log.debug('Url: %s' % url)
-        self.log.debug('headers: %s' % headers)
-        self.log.debug('query: %s' % query)
-        self.log.debug('payload: %s' % payload)
-        self.log.debug('--------------')
+
         request_parms = {}
         if headers is not None:
             request_parms.update({'headers': headers})
@@ -66,10 +61,8 @@ class Orchestrator(object):
         if query is not None:
             request_parms.update({'params': query})
         response = requests.request(method, url, **request_parms)
-        self.log.debug('Response: -->')
-        self.log.debug('Return code: %s' % response.status_code)
-        self.log.debug('Resturn headers: %s' % response.headers)
-        self.log.debug('Return data: %s' % response.text)
+        PqaTools.log_fullRequest(comp='ORC', response=response, params=request_parms)
+
         return response
 
     def _get_service_id(self,
@@ -90,6 +83,7 @@ class Orchestrator(object):
         url_to_send = self.url + self.BASE_PATH_MANAGE + 'service'
         response = self.send('get', url_to_send, headers=headers,
                              payload=json_payload)
+
         # TODO: get service_name id
         json_response = json.loads(response.content)
         for domain in json_response['domains']:
@@ -198,6 +192,7 @@ class Orchestrator(object):
         url_to_send = self.url + self.BASE_PATH_MANAGE + 'service/%s/subservice/' % service_id
         response = self.send('post', url_to_send, headers=headers,
                              payload=json_payload)
+
         return response
 
     def remove_subservice(self,

@@ -30,6 +30,7 @@ import json
 
 # 3rd party libraries
 import requests
+from iotqatools.iot_tools import PqaTools
 
 
 # Params APIREST
@@ -51,6 +52,15 @@ URLTypes = {
     "IoTEvadts": "/iot/evadts",
     "IoTTT": "/iot/tt",
     "IoTMqtt": "/iot/mqtt"
+}
+
+URLProtocolTypes = {
+    "PDI-IoTA-UltraLight": "/iot/d",
+    "PDI-SMS-REPSOL": "/iot/repsol",
+    "PDI-MODBUS-REPSOL": "/iot/tgrepsol",
+    "PDI-EVADTS": "/iot/evadts",
+    "PDI-IoTA-ThinkingThings": "/iot/tt",
+    "PDI-IoTA-MQTT-UltraLightt": "/iot/mqtt"
 }
 
 ProtocolTypes = {
@@ -121,24 +131,32 @@ class Rest_Utils_IoTA(object):
     @decoratorApi
     def api_get(self, path, headers={}, params={}):
         res = requests.get(path, headers=headers, params=params)
+        #log request
+        PqaTools.log_requestAndResponse(url=path, headers=headers, data='', comp='IOTA', response=res, method='get')
         return res
 
     # See decoratorAPI comments
     @decoratorApi
     def api_post(self, path, headers={}, params={}, data={}):
         res = requests.post(path, data=data, headers=headers, params=params)
+        #log request
+        PqaTools.log_requestAndResponse(url=path, headers=headers, data=data, comp='IOTA', response=res, method='post')
         return res
 
     # See decoratorAPI comments
     @decoratorApi
     def api_put(self, path, headers={}, params={}, data={}):
         res = requests.put(path, data=data, headers=headers, params=params)
+        #log request
+        PqaTools.log_requestAndResponse(url=path, headers=headers, data=data, comp='IOTA', response=res, method='put')
         return res
 
     # See decoratorAPI comments
     @decoratorApi
     def api_delete(self, path, headers={}, params={}):
         res = requests.delete(path, headers=headers, params=params)
+        #log request
+        PqaTools.log_requestAndResponse(url=path, headers=headers, data='', comp='IOTA', response=res, method='delete')
         return res
 
     """Services Methods"""
@@ -353,7 +371,7 @@ class Rest_Utils_IoTA(object):
         req = self.put_service('', json, headers, params)
         return req
 
-    def delete_service_with_params(self, service_name, service_path={}, resource={}, apikey={}, protocol={}, device={}, keystone_token={}):
+    def delete_service_with_params(self, service_name, service_path={}, resource={}, apikey={}, device={}, keystone_token={}):
         params={}
         headers = {}
         if not service_name == 'void':
@@ -362,8 +380,6 @@ class Rest_Utils_IoTA(object):
             params['resource']= resource
         if apikey:
             params['apikey']= apikey
-        if protocol:
-            params['protocol']= protocol
         if device:
             params['device']= device
         if keystone_token:
