@@ -165,7 +165,7 @@ class SthUtils(object):
         self.set_subservice(subservice)
         self.set_token(token)
         self.log.debug("Path: {}. Params: {}".format(path, query))
-        return self.__send_request(method='get', url=path, headers=self.headers, query=query)
+        return self.__send_request(method='get', url=path, headers=self.headers, query=query, verify=False)
 
     def request_aggregated_data(self, ent_type, ent_id, attribute, aggrMethod, aggrPeriod, date_from, date_to,
                                 service='', subservice='', token=None):
@@ -175,4 +175,4 @@ class SthUtils(object):
         self.set_subservice(subservice)
         self.set_token(token)
         self.log.debug("Path: {}. Params: {}".format(path, query))
-        return self.__send_request(method='get', url=path, headers=self.headers, query=query)
+        return self.__send_request(method='get', url=path, headers=self.headers, query=query, verify=False)
