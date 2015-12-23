@@ -1154,11 +1154,11 @@ class CbNgsi10Utils(object):
         if entity_id is not None:
             url = self.path_context_entities
             if entity_type is not None:
-                url += '/type/{entity_type}/id/{entity_id}'.format(entity_type=entity_type, entity_id=entity_id)
+                url += u'/type/{entity_type}/id/{entity_id}'.format(entity_type=entity_type, entity_id=entity_id)
             else:
-                url += '/{entity_id}'.format(entity_type=entity_type, entity_id=entity_id)
+                url += u'/{entity_id}'.format(entity_type=entity_type, entity_id=entity_id)
             if attribute is not None:
-                url += '/attributes/{attribute}'.format(attribute=attribute)
+                url += u'/attributes/{attribute}'.format(attribute=attribute)
         else:
             if entity_type is not None:
                 url = self.path_context_entity_types
