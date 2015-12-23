@@ -41,6 +41,7 @@ RANDOM = u'random'
 VERSION = u'version'
 ORION = u'orion'
 V2_ENTITIES = u'v2/entities'
+V2_TYPES = u'v2/types'
 
 MAX_LENGTH_ALLOWED = u'max length allowed'
 GREATER_THAN_MAX_LENGTH_ALLOWED = u'greater than max length allowed'
@@ -582,14 +583,16 @@ class CB:
                                    parameters=self.entities_parameters)
         return resp
 
-    def list_an_attribute_by_id(self, attribute_name, entity_id):
+    def list_an_attribute_by_id(self, attribute_name, entity_id, value=EMPTY):
         """
-        get an attribute by ID
-        :request -> GET v2/entities/<entity_id>/attrs/<attribute_name>
+        get an attribute or an attribute value by ID
+        :request --> GET v2/entities/<entity_id>/attrs/<attribute_name>/
+                 --> GET v2/entities/<entity_id>/attrs/<attribute_name>/value
         :payload --> No
         :query parameters --> No
         :param entity_id: entity id used to get
         :param attribute_name: attribute to get
+        :value: if you would like get full attribute use default value, but if get attribute value, the value is "value"
         :return http response
         """
         dict_temp = {}
@@ -616,13 +619,35 @@ class CB:
         __logger__.debug("entity_id: %s" % self.entity_id_to_request)
         __logger__.debug("attribute_name: %s" % self.attribute_name_to_request)
 
-        resp = self.__send_request("GET", "%s/%s/attrs/%s" % (V2_ENTITIES, self.entity_id_to_request, self.attribute_name_to_request),
+        resp = self.__send_request("GET", "%s/%s/attrs/%s/%s" % (V2_ENTITIES, self.entity_id_to_request, self.attribute_name_to_request, value),
                                    headers=self.headers, parameters=self.entities_parameters)
 
         # update with last values
         dict_temp["entities_id"] = self.entity_context["entities_id"]
         dict_temp["attributes_name"] = self.entity_context["attributes_name"]
         self.entity_context = dict_temp
+        return resp
+
+    def get_entity_types(self, context):
+        """
+        get entity types
+        :request -> /v2/types
+        :payload --> No
+        :query parameters --> Yes
+            parameters:
+                limit: Limit the number of types to be retrieved
+                offset: Skip a number of records
+                options: Possible values: count, values .
+        """
+        if context.table is not None:
+            for row in context.table:
+                self.entities_parameters[row[PARAMETER]] = row[VALUE]
+
+        # log queries parameters
+        for item in self.entities_parameters:
+            __logger__.debug("Queries parameters: %s=%s" % (item, self.entities_parameters[item]))
+
+        resp = self.__send_request("GET", V2_TYPES, headers=self.headers, parameters=self.entities_parameters)
         return resp
 
     def update_or_append_an_attribute_by_id(self, method, context, entity_id):
