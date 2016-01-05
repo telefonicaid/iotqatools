@@ -71,7 +71,7 @@ class PqaTools(object):
             log_msg += "\t> SENT REQUEST DATA SEEMS TO BE EMPTY \n"
         log.debug(log_msg)
 
-        if response:
+        if isinstance(response, object) and hasattr(response, "status_code"):
             log_msg = '<<<<<<<<<<<<<<\t Data responded:\t<<<<<<<<<<<<<<\n'
             if isinstance(response, object) and hasattr(response, "status_code"):
                 log_msg += '\t< Response code: {}\n'.format(str(response.status_code))
