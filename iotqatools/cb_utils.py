@@ -979,6 +979,18 @@ class CbNgsi10Utils(object):
     def set_auth_token(self, auth_token):
         self.headers['x-auth-token'] = auth_token
 
+    def remove_content_type_header(self):
+        """
+        This method is used when sending get or delete actions through pep
+        Yes, I know this is not the more suitable way to do that, but probably is the less disruptive way
+        :return: True if header has been removed | False if header has not been removed
+        """
+        if 'content-type' in self.headers:
+            del self.headers['content-type']
+            return True
+        else:
+            return False
+
     def version(self):
         """
         Get CB version
