@@ -230,13 +230,13 @@ class Orchestrator(object):
 
     def create_new_service_user(self,
                                 service_name,
-                                service_id,
                                 service_admin_user,
                                 service_admin_password,
                                 new_service_user_name,
                                 new_service_user_password,
                                 new_service_user_email,
-                                new_service_user_description):
+                                new_service_user_description,
+                                service_id=None):
         """
         Create a new subservice using orchestrator
         :param service_name
@@ -368,11 +368,11 @@ class Orchestrator(object):
 
     def assign_role_service_user(self,
                                  service_name,
-                                 service_id,
                                  service_admin_user,
                                  service_admin_password,
                                  role_name,
-                                 service_user_name):
+                                 service_user_name,
+                                 service_id=None):
         """
         Assign a role to a user in a service
         :param service_name
@@ -403,12 +403,12 @@ class Orchestrator(object):
 
     def assign_role_subservice_user(self,
                                     service_name,
-                                    service_id,
                                     subservice_name,
                                     service_admin_user,
                                     service_admin_password,
                                     role_name,
                                     service_user_name,
+                                    service_id=None,
                                     inherit=False):
         """
         Assign a role to a user in a subservice
