@@ -282,7 +282,7 @@ class CKANUtils:
         :param package_name: name of the package the resource belongs
         :return: id of the resource (string)
         """
-        url = self.compose_url(self.protocol, self.instance, self.port, self.path, '/resource_show')
+        url = self.compose_url(self.protocol, self.instance, self.port, self.path, '/package_show')
         headers = {'Authorization': self.apikey, 'Content-Type': 'application/json'}
         params = {"id": package_name}
         try:
@@ -394,7 +394,7 @@ class CKANUtils:
         :param verify_ssl: Function that returns the resource given the resource name and the package
         :return: returns object
         """
-        url = self.compose_url(self.protocol, self.instance, self.port, self.path, '/package_list')
+        url = self.compose_url(self.protocol, self.instance, self.port, self.path, '/package_show')
         headers = {'Authorization': self.apikey, 'Content-Type': 'application/json'}
         params = {"id": package_name}
         response = self.__send_request('get', url, headers=headers, verify=verify_ssl, query=params)
