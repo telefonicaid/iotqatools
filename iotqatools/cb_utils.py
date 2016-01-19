@@ -2362,6 +2362,9 @@ class CBUtils(object):
         except KeyError:
             return resp
 
+    def set_auth_token(self, auth_token):
+        self.default_headers['x-auth-token'] = auth_token
+
 
 if __name__ == '__main__':
     cb = CbNgsi10Utils('localhost', 'orion')
