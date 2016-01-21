@@ -157,12 +157,15 @@ class SthUtils(object):
         response = self.__send_request('get', url, self.headers)
         return response
 
-    def request_raw_data(self, ent_type, ent_id, attribute, hLimit, offset, date_from, date_to, service='',
-                         subservice='', token=None):
+    def request_raw_data(self, ent_type, ent_id, attribute, hLimit=None, offset=None, date_from=None,
+                         date_to=None, service=None, subservice=None, lastN=None, filetype=None, token=None):
         path = self.set_path(ent_type, ent_id, attribute)
-        query = {'hLimit': hLimit, 'hOffset': offset, 'dateFrom': date_from, 'dateTo': date_to}
-        self.set_service(service)
-        self.set_subservice(subservice)
+        query = {'lastN': lastN, 'hLimit': hLimit, 'hOffset': offset,
+                 'dateFrom': date_from, 'dateTo': date_to, 'filetype': filetype}
+        if service is not None:
+            self.set_service(service)
+        if subservice is not None:
+            self.set_subservice(subservice)
         self.set_token(token)
         self.log.debug("Path: {}. Params: {}".format(path, query))
         return self.__send_request(method='get', url=path, headers=self.headers, query=query, verify=False)
