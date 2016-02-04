@@ -65,7 +65,7 @@ class CEP:
         self.path = path
         self.version = cep_version
 
-    def __create_headers(self, service, subservice=''):
+    def __create_headers(self, service, subservice='', token=''):
         """
         create the header for different requests
         :param service: name of the service
@@ -75,7 +75,24 @@ class CEP:
         headers = dict(self.default_headers)
         headers.update({"Fiware-Service": service})
         headers.update({"Fiware-ServicePath": '/' + subservice})
+        headers.update({"x-auth-token": token})
         return headers
+
+    def set_auth_token(self, auth_token):
+        self.headers['x-auth-token'] = auth_token
+
+    def remove_content_type_header(self):
+        """
+        This method is used when sending get or delete actions through pep
+        Yes, I know this is not the more suitable way to do that, but probably is the less disruptive way
+        :return: True if header has been removed | False if header has not been removed
+        """
+        if 'content-type' in self.headers:
+            del self.headers['content-type']
+            return True
+        else:
+            return False
+
 
     # -------------------------- CARDS ------------------------------------------------------------
     def create_type_sensor_card(self, sc_id_card, parameter_value, operator, connected_to):
@@ -172,7 +189,7 @@ class CEP:
         action_card = action_card.replace("'", '"')
         return yaml.load(action_card)
 
-    def create_visual_rule(self, rule_name, service, sensor_card_list, action_card_list, subservice='', active=1):
+    def create_visual_rule(self, rule_name, service, sensor_card_list, action_card_list, subservice='', active=1, token=''):
         """
         create a new card rule
         :param service: name of the service
@@ -197,7 +214,7 @@ class CEP:
                                       {'rule_name': rule_name,
                                        'active': active,
                                        'cards': cards})
-        headers = self.__create_headers(service, str(subservice))
+        headers = self.__create_headers(service, str(subservice), token)
 
         cep_payload = cep_payload.replace("'", '"')
         url = self.default_endpoint + self.path
@@ -209,7 +226,7 @@ class CEP:
                                                                                                  response.text)
         return response
 
-    def delete_visual_rule(self, rule_name, service, subservice=''):
+    def delete_visual_rule(self, rule_name, service, subservice='', token=''):
         """
         Delete a visual rule given the name, the service and the subservice
         :param rule_name: name of the rule
@@ -217,7 +234,8 @@ class CEP:
         :param subservice: name of the subservice
         :return: response object
         """
-        headers = self.__create_headers(service, str(subservice))
+        headers = self.__create_headers(service, str(subservice), token)
+
         url = self.default_endpoint + self.path + '/' + rule_name
         response = requests.delete(url, headers=headers, verify=False)
         assert response.status_code == 204, 'ERROR {}, the rule {}, cannot be deleted. {}'.format(response.status_code,
