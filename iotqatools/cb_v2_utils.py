@@ -199,6 +199,7 @@ class CB:
         try:
             url = "%s/%s" % (self.cb_url, "version")
             resp = requests.get(url=url)
+            __logger__.debug("CB code returned with version request is: %s " % str(resp.status_code))
             return resp.status_code == 200
         except Exception, e:
             return False
@@ -302,11 +303,16 @@ class CB:
         # The same value from create request (used in update request)
         for item in self.entity_context:
             if self.entity_context[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
-                self.entity_context[item] = dict_temp[item]
+                self.entity_context[item] = self.dict_temp[item]
 
         # Random values
         self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
         self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
+
+        if self.entity_context[ATTRIBUTES_NAME] is not None and self.entity_context[ATTRIBUTES_NUMBER] == 0:
+            self.entity_context[ATTRIBUTES_NUMBER] = 1
+        if self.entity_context[METADATAS_NAME] is not None and self.entity_context[METADATAS_NUMBER] == 0:
+            self.entity_context[METADATAS_NUMBER] = 1
 
         # log entities contexts
         __logger__.debug("entity context properties:")
@@ -386,9 +392,14 @@ class CB:
         :return (string) random
         """
         for random_label in dictionary:
+            quote_exist = False
             if random_label in random_labels:
                 if (dictionary[random_label] is not None) and (dictionary[random_label].find(RANDOM) >= 0):
-                    dictionary[random_label] = string_generator(self.__get_random_number(dictionary[random_label]))
+                    if dictionary[random_label].find("\"") >= 0:
+                        quote_exist = True
+                    dictionary[random_label] = string_generator(self.__get_random_number(remove_quote(dictionary[random_label])))
+                    if quote_exist:
+                         dictionary[random_label] = '"%s"' %  dictionary[random_label]
         return dictionary
 
     # create entity/ies dinamically or manually
@@ -403,9 +414,11 @@ class CB:
         """
         meta_dict = {}
         if metadata_name is not None:
-            if metadata_number == 0: metadata_number = 1
             for i in range(int(metadata_number)):
-                name = "%s_%s" % (metadata_name, str(i))
+                if int(metadata_number) > 1:
+                    name = "%s_%s" % (metadata_name, str(i))
+                else:
+                   name = metadata_name
                 meta_dict[name] = {}
                 if metadata_value is not None:
                     meta_dict[name][VALUE] = metadata_value
@@ -420,9 +433,11 @@ class CB:
         """
         attr = {}
         attributes = {}
+        metadata = {}
 
         # create metadatas if they exist
-        metadata = self.__create_metadata(entity_context[METADATAS_NUMBER], entity_context[METADATAS_NAME],
+        if int(entity_context[METADATAS_NUMBER])> 0:
+            metadata = self.__create_metadata(entity_context[METADATAS_NUMBER], entity_context[METADATAS_NAME],
                                           entity_context[METADATAS_TYPE], entity_context[METADATAS_VALUE])
         __logger__.debug("Metadatas: %s" % str(metadata))
 
@@ -439,7 +454,6 @@ class CB:
                 attr = entity_context[ATTRIBUTES_VALUE]
 
         if entity_context[ATTRIBUTES_NAME] is not None:
-            if entity_context[ATTRIBUTES_NUMBER] == 0: entity_context[ATTRIBUTES_NUMBER] = 1
             for i in range(int(entity_context[ATTRIBUTES_NUMBER])):
                 if int(entity_context[ATTRIBUTES_NUMBER]) > 1:
                     name = "%s_%s" % (entity_context[ATTRIBUTES_NAME], str(i))
@@ -652,7 +666,7 @@ class CB:
         dict_temp = {}
         for item in self.entity_context:
             dict_temp[item] = self.entity_context[item]
-        self.__init_entity_context_dict()
+        self.entities_parameters = {}
         __logger__.info("List all entities, filtered by the queries parameters")
         if context.table is not None:
             for row in context.table:
@@ -662,9 +676,9 @@ class CB:
         for item in self.entities_parameters:
             if self.entities_parameters[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
                 if item == "id":
-                    self.entities_parameters[item] = dict_temp[ENTITY_ID]
+                    self.entities_parameters[item] = remove_quote(dict_temp[ENTITIES_ID])
                 elif item == "type":
-                    self.entities_parameters[item] = dict_temp[ENTITY_TYPE]
+                    self.entities_parameters[item] = remove_quote(dict_temp[ENTITIES_TYPE])
 
         # Random values in queries parameters
         dict_temp = self.__random_values(RANDOM_ENTITIES_LABEL, dict_temp)
@@ -719,7 +733,7 @@ class CB:
         for item in self.entity_context:
             dict_temp[item] = self.entity_context[item]
         self.__init_entity_context_dict()
-        self.entity_context[ENTITY_ID] = entity_id
+        self.entity_context[ENTITIES_ID] = entity_id
         self.entity_context[ATTRIBUTES_NAME] = attribute_name
 
         # The same value from create request
@@ -733,7 +747,7 @@ class CB:
         self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
 
         self.entity_id_to_request = mapping_quotes(
-            self.entity_context[ENTITY_ID])  # used to verify if the entity returned is the expected
+            self.entity_context[ENTITIES_ID])  # used to verify if the entity returned is the expected
         self.attribute_name_to_request = mapping_quotes(
             self.entity_context[ATTRIBUTES_NAME])  # used to verify if the attribute returned is the expected
 
@@ -746,7 +760,7 @@ class CB:
                                    headers=self.headers, parameters=self.entities_parameters)
 
         # update with last values
-        dict_temp[ENTITY_ID] = self.entity_context[ENTITY_ID]
+        dict_temp[ENTITIES_ID] = self.entity_context[ENTITIES_ID]
         dict_temp[ATTRIBUTES_NAME] = self.entity_context[ATTRIBUTES_NAME]
         self.entity_context = dict_temp
         return resp
@@ -792,7 +806,7 @@ class CB:
             dict_temp[item] = self.entity_context[item]
         dict_temp[ATTRIBUTES_NUMBER] = 1
         self.__init_entity_context_dict()
-        self.entity_context[ENTITY_ID] = entity_id
+        self.entity_context[ENTITIES_ID] = entity_id
         self.entity_context[ATTRIBUTES_NUMBER] = 1
         self.entity_id_to_request = mapping_quotes(entity_id)  # used to verify if the entity returned is the expected
 
@@ -834,10 +848,10 @@ class CB:
 
         payload = convert_dict_to_str(entities, "JSON")
         if entities != {}:
-            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context[ENTITY_ID]),
+            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID]),
                                        headers=self.headers, payload=payload, parameters=self.entities_parameters)
         else:
-            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context[ENTITY_ID]),
+            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID]),
                                        headers=self.headers, parameters=self.entities_parameters)
 
         # update with last values
@@ -877,7 +891,7 @@ class CB:
             dict_temp[item] = self.entity_context[item]
         dict_temp[ATTRIBUTES_NUMBER] = 1
         self.__init_entity_context_dict()
-        self.entity_context[ENTITY_ID] = entity_id
+        self.entity_context[ENTITIES_ID] = entity_id
         self.entity_context[ATTRIBUTES_NUMBER] = 1
         entity = EMPTY
         metadata = EMPTY
@@ -900,7 +914,7 @@ class CB:
         # create attribute with/without attribute type and metadatas (with/without type)
         attribute_str = "{%s}" % self.__create_attribute_raw(self.entity_context)
 
-        resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context[ENTITY_ID]),
+        resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID]),
                                    headers=self.headers, payload=attribute_str, parameters=self.entities_parameters)
 
         # update with last values
@@ -956,7 +970,7 @@ class CB:
         for item in self.entity_context:
             dict_temp[item] = self.entity_context[item]
         self.__init_entity_context_dict()
-        self.entity_context[ENTITY_ID] = entity_id
+        self.entity_context[ENTITIES_ID] = entity_id
         self.entity_context[ATTRIBUTES_NUMBER] = 1
         self.entity_context[ATTRIBUTES_NAME] = attribute_name
         self.entity_id_to_request = mapping_quotes(entity_id)  # used to verify if the entity returned is the expected
@@ -990,12 +1004,12 @@ class CB:
         payload = convert_dict_to_str(attribute, "JSON")
         if attribute != {}:
             resp = self.__send_request("PUT", "%s/%s/attrs/%s%s" %
-                                       (V2_ENTITIES, self.entity_context[ENTITY_ID],
+                                       (V2_ENTITIES, self.entity_context[ENTITIES_ID],
                                         self.entity_context[ATTRIBUTES_NAME], value_str),
                                        headers=self.headers, payload=payload)
         else:
             resp = self.__send_request("PUT", "%s/%s/attrs/%s%s" %
-                                       (V2_ENTITIES, self.entity_context[ENTITY_ID],
+                                       (V2_ENTITIES, self.entity_context[ENTITIES_ID],
                                         self.entity_context[ATTRIBUTES_NAME], value_str),
                                        headers=self.headers)
         # update with last values
@@ -1007,7 +1021,7 @@ class CB:
                     else:
                         dict_temp[row[PARAMETER]] = row[VALUE]
                 dict_temp[ATTRIBUTES_NAME] = self.entity_context[ATTRIBUTES_NAME]
-                dict_temp[ENTITY_ID] = self.entity_context[ENTITY_ID]
+                dict_temp[ENTITIES_ID] = self.entity_context[ENTITIES_ID]
                 dict_temp[ATTRIBUTES_NUMBER] = self.entity_context[ATTRIBUTES_NUMBER]
                 self.entity_context = dict_temp
         return resp
@@ -1066,7 +1080,7 @@ class CB:
         for item in self.entity_context:
             dict_temp[item] = self.entity_context[item]
         self.__init_entity_context_dict()
-        self.entity_context[ENTITY_ID] = entity_id
+        self.entity_context[ENTITIES_ID] = entity_id
         self.entity_context[ATTRIBUTES_NUMBER] = 1
         self.entity_context[ATTRIBUTES_NAME] = attribute_name
         self.entity_id_to_request = mapping_quotes(entity_id)  # used to verify if the entity returned is the expected
@@ -1097,7 +1111,7 @@ class CB:
         attribute_str = self.__create_attribute_by_id_attr_name_raw(self.entity_context)
 
         resp = self.__send_request("PUT", "%s/%s/attrs/%s%s" %
-                                   (V2_ENTITIES, self.entity_context[ENTITY_ID],
+                                   (V2_ENTITIES, self.entity_context[ENTITIES_ID],
                                     self.entity_context[ATTRIBUTES_NAME], value_str),
                                    headers=self.headers, payload=attribute_str)
 
@@ -1110,7 +1124,7 @@ class CB:
                     else:
                         dict_temp[row[PARAMETER]] = row[VALUE]
                 dict_temp[ATTRIBUTES_NAME] = self.entity_context[ATTRIBUTES_NAME]
-                dict_temp[ENTITY_ID] = self.entity_context[ENTITY_ID]
+                dict_temp[ENTITIES_ID] = self.entity_context[ENTITIES_ID]
                 dict_temp[ATTRIBUTES_NUMBER] = self.entity_context[ATTRIBUTES_NUMBER]
                 self.entity_context = dict_temp
         return resp
@@ -1135,7 +1149,7 @@ class CB:
         for item in self.entity_context:
             dict_temp[item] = self.entity_context[item]
         self.__init_entity_context_dict()
-        self.entity_context[ENTITY_ID] = entity_id
+        self.entity_context[ENTITIES_ID] = entity_id
         self.entity_id_to_request = mapping_quotes(entity_id)  # used to verify if the entity deleted is the expected
         if attribute_name is not None:
             self.entity_context[ATTRIBUTES_NAME] = attribute_name
@@ -1170,13 +1184,13 @@ class CB:
             if int(self.entity_context[ENTITIES_NUMBER]) > 1:
                 suffix = "_%s" % str(i)
             resp_list.append(
-                self.__send_request("DELETE", "%s/%s%s%s" % (V2_ENTITIES, self.entity_context[ENTITY_ID],
+                self.__send_request("DELETE", "%s/%s%s%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID],
                                                              suffix, attribute_url), headers=self.headers))
         return resp_list
 
         #   -- get CB values
 
-    # fucrions that get values from library
+    # fuctions that returns values from library
     def get_entity_context(self):
         """
         get entities contexts
@@ -1195,14 +1209,12 @@ class CB:
         """
         return self.headers
 
-
     def get_entities_parameters(self):
         """
         return queries parameters used in list entities
         :return: dict
         """
         return self.entities_parameters
-
 
     def get_entities_prefix(self):
         """

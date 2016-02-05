@@ -101,7 +101,7 @@ def convert_dict_to_str(body, content):
         if content == XML:
             return xmltodict.unparse(body)
         else:
-            return json.dumps(body)
+            return str(json.dumps(body, ensure_ascii=False).encode('utf-8'))
     except Exception, e:
         assert False,  " ERROR - converting %s dictionary to string: \n" \
                        "  %s \n" \
@@ -224,6 +224,18 @@ def mapping_quotes(attr_value):
         return temp
 
 
+def remove_quote(text):
+    """
+    remove first and last characters if they are quote
+    :param text:
+    :return: text type
+    """
+    if isinstance(text, basestring):
+        text = text.lstrip('"')
+        text = text.rstrip('"')
+    return text
+
+
 def read_file_to_json(file_name):
     """
     read a file and return a dictionary
@@ -234,7 +246,7 @@ def read_file_to_json(file_name):
         with open(file_name) as config_file:
             return json.load(config_file)
     except Exception, e:
-        raise Exception("\n-- ERROR -- parsing %s file\n     msg= %s" % (file_name, str(e)))
+        raise Exception("\n ERROR - parsing the %s file\n     msg= %s" % (file_name, str(e)))
 
 def get_operator_fn(op):
     """
