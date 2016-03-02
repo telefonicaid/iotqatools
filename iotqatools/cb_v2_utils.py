@@ -33,7 +33,7 @@ EMPTY = u''
 TRUE = u'true'
 FALSE = u'false'
 JSON = u'JSON'
-NONE = u'none'  # used as default value in type, attr_type and metadata_type
+NONE = u'none'   # used as default value in type, attr_type and metadata_type
 PARAMETER = u'parameter'
 VALUE = u'value'
 TYPE = u'type'
@@ -430,7 +430,7 @@ class CB:
                 meta_dict[name] = {}
                 if metadata_value is not None:
                     meta_dict[name][VALUE] = metadata_value
-                if metadata_type is not None:
+                if metadata_type != NONE:
                     meta_dict[name][TYPE] = metadata_type
         return meta_dict
 
@@ -948,14 +948,12 @@ class CB:
 
         if attribute != {}:
             resp = self.__send_request(PUT, "%s/%s/attrs/%s%s" %
-                                       (V2_ENTITIES, self.entity_context[ENTITIES_ID],
-                                        self.entity_context[ATTRIBUTES_NAME], value),
-                                       headers=self.headers, payload=payload)
+                        (V2_ENTITIES, self.entity_context[ENTITIES_ID], self.entity_context[ATTRIBUTES_NAME], value),
+                        headers=self.headers, payload=payload, parameters=self.entities_parameters)
         else:
             resp = self.__send_request(PUT, "%s/%s/attrs/%s%s" %
-                                       (V2_ENTITIES, self.entity_context[ENTITIES_ID],
-                                        self.entity_context[ATTRIBUTES_NAME], value),
-                                       headers=self.headers)
+                        (V2_ENTITIES, self.entity_context[ENTITIES_ID], self.entity_context[ATTRIBUTES_NAME], value),
+                        headers=self.headers, parameters=self.entities_parameters)
 
         # update self.entity_context with last values (ex: create request)
         for item in self.entity_context:
