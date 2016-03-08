@@ -229,3 +229,4 @@ class SthUtils(object):
         self.set_token(token)
         path = self.set_path(ent_type, ent_id, attribute)
         return self.__send_request(method='delete', url=path, headers=self.headers, verify=False)
+
