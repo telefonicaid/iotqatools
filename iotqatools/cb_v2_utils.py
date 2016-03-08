@@ -50,6 +50,7 @@ V2_ENTITIES = u'v2/entities'
 V2_TYPES = u'v2/types'
 POST = u'POST'
 PUT = u'PUT'
+DELETE = u'DELETE'
 NORMALIZED = u'normalized'
 KEY_VALUES = u'keyValues'
 
@@ -839,11 +840,10 @@ class CB:
         else:
             resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID]),
                                        headers=self.headers, parameters=self.entities_parameters)
-
         # update self.entity_context with last values (ex: create request)
         for item in self.entity_context:
-            if (self.entity_context[item] is None):
-                if not (item in (ATTRIBUTES_TYPE, METADATAS_TYPE) and self.entity_context[item] is None):
+            if (self.entity_context[item] is None) or (self.entity_context[item] == "none"):
+                if item not in (ATTRIBUTES_TYPE, METADATAS_TYPE):
                     self.entity_context[item] = self.dict_temp[item]
         # if options=keyValues is used, the type and metadatas are not used
         if OPTIONS in self.entities_parameters and self.entities_parameters[OPTIONS] == KEY_VALUES:
@@ -957,8 +957,8 @@ class CB:
 
         # update self.entity_context with last values (ex: create request)
         for item in self.entity_context:
-            if (self.entity_context[item] is None):
-                if not (item in (ATTRIBUTES_TYPE, METADATAS_TYPE) and self.entity_context[item] is None):
+            if (self.entity_context[item] is None) or (self.entity_context[item] == "none"):
+                if item not in (ATTRIBUTES_TYPE, METADATAS_TYPE):
                     self.entity_context[item] = self.dict_temp[item]
         return resp
 
@@ -1041,7 +1041,7 @@ class CB:
         return resp
 
     # delete entity
-    def delete_entities_by_id(self, entity_id, attribute_name=None):
+    def delete_entities_by_id(self, context, entity_id, attribute_name=None):
         """
         delete entities
         :request -> DELETE  /v2/entities/<entity_id>
@@ -1054,29 +1054,39 @@ class CB:
         :return list
         """
         attribute_url = EMPTY
+
+         # The same value from create request
         if entity_id != THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
-            self.entity_context[ENTITIES_ID] = mapping_quotes(entity_id)
-        if attribute_name is not None and attribute_name != THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
-            self.entity_context[ATTRIBUTES_NAME] = mapping_quotes(attribute_name)
+            self.entity_context[ENTITIES_ID] = entity_id
+        if attribute_name != THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
+            self.entity_context[ATTRIBUTES_NAME] = attribute_name
 
         # Random values
         self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
-        self.entity_id_to_request = self.entity_context[
-            ENTITIES_ID]  # used to verify if the entity deleted is the expected
 
-        # log entities contexts
-        __logger__.debug("entity context to delete request")
-        for item in self.entity_context:
-            __logger__.debug("%s: %s" % (item, self.entity_context[item]))
+        self.entities_parameters.clear()
+        if context.table is not None:
+            for row in context.table:
+                self.entities_parameters[row[PARAMETER]] = row[VALUE]
+
+        # contexts and query parameter
+        __logger__.debug("entity_id: %s" % self.entity_context[ENTITIES_ID])
+        __logger__.debug("attribute_ name: %s" % self.entity_context[ATTRIBUTES_NAME])
+        for item in self.entities_parameters:
+            __logger__.debug("Queries parameters: %s=%s" % (item, self.entities_parameters[item]))
+
+        if "type" in self.entities_parameters:
+            self.entity_type_to_request = self.entities_parameters["type"]
 
         if attribute_name is not None:
             attribute_url = "/attrs/%s" % self.entity_context[ATTRIBUTES_NAME]
-            self.attribute_name_to_request = mapping_quotes(
-                self.entity_context[ATTRIBUTES_NAME])  # used to verify if the attribute deleted is the expected
+            # used to verify if the attribute deleted is the expected
+            self.attribute_name_to_request = mapping_quotes(self.entity_context[ATTRIBUTES_NAME])
+
 
         # requests
-        return self.__send_request("DELETE", "%s/%s%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID],
-                                                          attribute_url), headers=self.headers)
+        return self.__send_request(DELETE, "%s/%s%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID], attribute_url),
+                                   headers=self.headers, parameters=self.entities_parameters)
 
         # ------- get CB values ------
 
@@ -1127,6 +1137,14 @@ class CB:
         :return string
         """
         return self.entity_id_to_request
+
+    def get_entity_type_to_request(self):
+        """
+        return entity type used in request to get/delete an entity
+        used to verify if the entity returned is the expected
+        :return string
+        """
+        return self.entity_type_to_request
 
     def get_attribute_name_to_request(self):
         """
