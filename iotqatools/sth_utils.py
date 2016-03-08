@@ -43,7 +43,8 @@ class SthUtils(object):
                  log_instance=None,
                  log_verbosity='DEBUG',
                  default_headers={"Accept": "application/json", 'content-type': 'application/json'},
-                 check_json=True):
+                 check_json=True,
+                 path_notify="/notify"):
         """
         STH Utils constructor
         :param instance:
@@ -57,6 +58,7 @@ class SthUtils(object):
         :param log_verbosity:
         :param default_headers:
         :param check_json:
+        :param path_notify:
         """
         # initialize logger
         if log_instance is not None:
@@ -70,6 +72,7 @@ class SthUtils(object):
         self.path_raw_data = self.default_endpoint + path_raw_data
         self.path_version = path_version
         self.check_json = check_json
+        self.path_notify = path_notify
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
@@ -131,10 +134,27 @@ class SthUtils(object):
         self.headers['x-auth-token'] = token
 
     def set_path(self, ent_type, ent_id, attribute):
-        path = self.path_raw_data + '/type/{entity_type}/id/{entity_id}/attributes/{attrib}'.format(
+        """
+        Build the path. It can be a path for the whole service/servicepath, the entity or certain attribute
+        :param ent_type: (optional)
+        :param ent_id:   (optional except if attribute is passed as param)
+        :param attribute: (optional)
+        :return:
+        """
+        path_template = ''
+
+        if ent_id is not None:
+            path_template = '/type/{entity_type}/id/{entity_id}'
+            if attribute is not None:
+                path_template += '/attributes/{attrib}'
+        elif attribute is not None:
+            raise Exception("missing parameter ent_id")
+
+        path = self.path_raw_data + path_template.format(
             entity_type=ent_type,
             entity_id=ent_id,
             attrib=attribute)
+
         return path
 
     def version(self):
@@ -179,3 +199,33 @@ class SthUtils(object):
         self.set_token(token)
         self.log.debug("Path: {}. Params: {}".format(path, query))
         return self.__send_request(method='get', url=path, headers=self.headers, query=query, verify=False)
+
+    def send_notification(self, payload, service=None, subservice=None, token=None):
+        """
+        notify STH new values
+        """
+        url = self.default_endpoint + self.path_notify
+        if service is not None:
+            self.set_service(service)
+        if subservice is not None:
+            self.set_subservice(subservice)
+        self.set_token(token)
+        self.log.debug("Path: {}. Headers: {}".format(url, self.headers))
+        return self.__send_request(method='post', url=url, headers=self.headers, payload=payload, verify=False)
+
+    def delete(self, ent_type=None, ent_id=None, attribute=None, service=None, subservice=None, token=None):
+        """
+        Deletes all the data stored in STH related to the query formed by params
+        Queries:
+        * Delete all the data associated to certain attribute of certain entity of certain service and servicepath
+        * Delete all the data associated to certain entity of certain service and servicepath
+        * Delete all the data associated to certain service and servicepath
+        """
+
+        if service is not None:
+            self.set_service(service)
+        if subservice is not None:
+            self.set_subservice(subservice)
+        self.set_token(token)
+        path = self.set_path(ent_type, ent_id, attribute)
+        return self.__send_request(method='delete', url=path, headers=self.headers, verify=False)
