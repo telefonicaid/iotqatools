@@ -258,6 +258,22 @@ class CB:
                                                                                  SERVICE_PATH_LEVELS + 1)
         __logger__.debug("Headers: %s" % str(self.headers))
 
+    def modification_headers(self, context, prev):
+        """
+        modification or append of headers
+           | parameter          | value            |
+           | Fiware-Service     | happy_path       |
+           | Fiware-ServicePath | /test            |
+           | Content-Type       | application/json |
+           | Accept             | application/json |
+        :param context: context variable with headers
+        :param prev:determine if the previous headers are kept or not ( true | false )
+        """
+        if prev.lower() != TRUE:
+            self.entities_parameters.clear()
+        for row in context.table:
+            self.headers[row[PARAMETER]] = row[VALUE]
+
     # properties to entities
     def properties_to_entities(self, context):
         """
@@ -843,8 +859,9 @@ class CB:
         # update self.entity_context with last values (ex: create request)
         for item in self.entity_context:
             if (self.entity_context[item] is None) or (self.entity_context[item] == "none"):
-                if item not in (ATTRIBUTES_TYPE, METADATAS_TYPE):
+                if item not in (ATTRIBUTES_TYPE, METADATAS_TYPE, ATTRIBUTES_VALUE):
                     self.entity_context[item] = self.dict_temp[item]
+
         # if options=keyValues is used, the type and metadatas are not used
         if OPTIONS in self.entities_parameters and self.entities_parameters[OPTIONS] == KEY_VALUES:
             self.entity_context[ATTRIBUTES_TYPE] = NONE
