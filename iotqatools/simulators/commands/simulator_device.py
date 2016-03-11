@@ -44,13 +44,6 @@ def treat_client_ul20_cmd():
     if (request.data is not None) and (len(request.data) != 0):
         mydata = request.data
 
-    app.logger.info(str(mydata))
-    for h in request.args.keys():
-        if h == 'delay':
-            saux = request.args[h]
-            t = float(saux)
-            time.sleep(t)
-
     command_fields = mydata.split("|");
     cmd_name = command_fields[0].split("@");
     app.logger.info(cmd_name[0])
@@ -58,6 +51,39 @@ def treat_client_ul20_cmd():
     cmdresp = command_fields[0] + "|" + cmd_name[1] + " OK"
 
     return Response(response=cmdresp, status=200, content_type='text/plain;charset=UTF-8')
+
+@app.route('/simulaClient/ul20CommandPending', methods=['GET', 'POST'])
+def treat_client_ul20_cmd():
+    mydata = ''
+
+    if (request.data is not None) and (len(request.data) != 0):
+        mydata = request.data
+        
+    time.sleep(8)
+    command_fields = mydata.split("|");
+    cmd_name = command_fields[0].split("@");
+    app.logger.info(cmd_name[0])
+    app.logger.info(cmd_name[1])
+    cmdresp = command_fields[0] + "|" + cmd_name[1] + " OK"
+
+    return Response(response=cmdresp, status=200, content_type='text/plain;charset=UTF-8')
+
+@app.route('/simulaClient/ul20CommandExpired', methods=['GET', 'POST'])
+def treat_client_ul20_cmd():
+    mydata = ''
+
+    if (request.data is not None) and (len(request.data) != 0):
+        mydata = request.data
+
+    time.sleep(10)
+    command_fields = mydata.split("|");
+    cmd_name = command_fields[0].split("@");
+    app.logger.info(cmd_name[0])
+    app.logger.info(cmd_name[1])
+    cmdresp = command_fields[0] + "|" + cmd_name[1] + " OK"
+
+    return Response(response=cmdresp, status=200, content_type='text/plain;charset=UTF-8')
+
 
 
 if __name__ == '__main__':
