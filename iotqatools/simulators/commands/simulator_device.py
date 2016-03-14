@@ -53,7 +53,7 @@ def treat_client_ul20_cmd():
     return Response(response=cmdresp, status=200, content_type='text/plain;charset=UTF-8')
 
 @app.route('/simulaClient/ul20CommandPending', methods=['GET', 'POST'])
-def treat_client_ul20_cmd():
+def treat_client_ul20_cmd_pending():
     mydata = ''
 
     if (request.data is not None) and (len(request.data) != 0):
@@ -69,7 +69,7 @@ def treat_client_ul20_cmd():
     return Response(response=cmdresp, status=200, content_type='text/plain;charset=UTF-8')
 
 @app.route('/simulaClient/ul20CommandExpired', methods=['GET', 'POST'])
-def treat_client_ul20_cmd():
+def treat_client_ul20_cmd_expired():
     mydata = ''
 
     if (request.data is not None) and (len(request.data) != 0):
