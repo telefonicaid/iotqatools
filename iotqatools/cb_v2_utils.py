@@ -945,7 +945,7 @@ class CB:
         :param value: is used to modify only attribute value
         :return http response
         """
-        attribute = {}
+        payload = EMPTY
         self.entity_context[ENTITIES_ID] = entity_id
         self.entity_context[ATTRIBUTES_NAME] = attribute_name
         # The same value from create request
@@ -959,16 +959,21 @@ class CB:
         self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
 
         # create attributes with entity context
-        attribute = self.__create_attributes_values(self.entity_context)
+        if value == EMPTY:
+            attribute = {}
+            attribute = self.__create_attributes_values(self.entity_context)
+            payload = convert_dict_to_str(attribute, JSON)
+            if payload == "{}": payload = EMPTY
+        else:
+            if self.entity_context[ATTRIBUTES_VALUE]is not None:
+                payload = '"%s"' % self.entity_context[ATTRIBUTES_VALUE]
 
-        payload = convert_dict_to_str(attribute, JSON)
-
-        if attribute != {}:
-            resp = self.__send_request(PUT, "%s/%s/attrs/%s%s" %
+        if payload != EMPTY:
+            resp = self.__send_request(PUT, "%s/%s/attrs/%s/%s" %
                         (V2_ENTITIES, self.entity_context[ENTITIES_ID], self.entity_context[ATTRIBUTES_NAME], value),
                         headers=self.headers, payload=payload, parameters=self.entities_parameters)
         else:
-            resp = self.__send_request(PUT, "%s/%s/attrs/%s%s" %
+            resp = self.__send_request(PUT, "%s/%s/attrs/%s/%s" %
                         (V2_ENTITIES, self.entity_context[ENTITIES_ID], self.entity_context[ATTRIBUTES_NAME], value),
                         headers=self.headers, parameters=self.entities_parameters)
 
@@ -1043,16 +1048,19 @@ class CB:
         for item in self.entity_context:
             __logger__.debug("%s: %s" % (item, self.entity_context[item]))
 
-        attribute_str = self.__create_attribute_by_id_attr_name_raw(self.entity_context)
+        # create attributes with entity context
+        if value == EMPTY:
+            attribute_str = self.__create_attribute_by_id_attr_name_raw(self.entity_context)
+        else:
+            attribute_str = self.entity_context[ATTRIBUTES_VALUE]
 
-        resp = self.__send_request(PUT, "%s/%s/attrs/%s%s" %
-                                   (V2_ENTITIES, self.entity_context[ENTITIES_ID],
-                                    self.entity_context[ATTRIBUTES_NAME], value),
-                                   headers=self.headers, payload=attribute_str)
+        resp = self.__send_request(PUT, "%s/%s/attrs/%s/%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID],
+                                                               self.entity_context[ATTRIBUTES_NAME], value),
+                                   headers=self.headers, payload=attribute_str, parameters=self.entities_parameters)
 
         # update self.entity_context with last values (ex: create request)
         for item in self.entity_context:
-            if (self.entity_context[item] is None):
+            if (self.entity_context[item] is None)  or (self.entity_context[item] == "none"):
                 if not (item in (ATTRIBUTES_TYPE, METADATAS_TYPE) and self.entity_context[item] is None):
                     self.entity_context[item] = self.dict_temp[item]
         return resp
