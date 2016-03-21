@@ -100,6 +100,7 @@ setup(
         'iotqatools.mongo_utils',
         'iotqatools.orchestator_utils',
         'iotqatools.pep_utils',
+        'iotqatools.remote_log_utils.py'
         'iotqatools.sth_utils'  
     ],
     packages=[
