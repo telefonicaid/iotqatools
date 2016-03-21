@@ -176,14 +176,17 @@ class FabricSupport:
         :param file: file name to read
         :param sudo_run: with superuser privileges (True | False)
         """
-        if self.localhost:
-            with open(file) as config_file:
-                return config_file.readlines()
-        else:
-            fd = StringIO()
-            get(file, use_sudo=sudo_run)
-            get(file, fd)
-            return fd.getvalue()
+        try:
+            if self.localhost:
+                with open(file) as config_file:
+                    return config_file.readlines()
+            else:
+                fd = StringIO()
+                get(file, fd, use_sudo=sudo_run)
+                return fd.getvalue()
+        except Exception, e:
+            __logger__.error("ERROR - reading %s file\n %s" % (file, e))
+
 
     def read_file(self, file, **kwargs):
         """

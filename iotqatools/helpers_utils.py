@@ -63,6 +63,7 @@ def number_generator(size=5, decimals="%0.1f"):
     """
     return float(decimals % (random.random() * (10**size)))
 
+
 def convert_str_to_bool(value):
     """
     convert string to boolean
@@ -71,6 +72,7 @@ def convert_str_to_bool(value):
     if type(value) == str or type(value) == unicode:
         return value.lower() in ("yes", "true", "t", "1", "y")
     return value
+
 
 def convert_str_to_dict(body, content):
     """
@@ -248,6 +250,7 @@ def read_file_to_json(file_name):
     except Exception, e:
         raise Exception("\n ERROR - parsing the %s file\n     msg= %s" % (file_name, str(e)))
 
+
 def get_operator_fn(op):
     """
     return an operation from string
@@ -269,6 +272,7 @@ def get_operator_fn(op):
         '>':operator.gt,
         '<':operator.lt
         }[op]
+
 
 def eval_binary_expr(op1, operator, op2):
     """

@@ -69,7 +69,7 @@ req_dev = get_requirements('requirements.txt')
 
 setup(
     name='iotqatools',
-   version='0.1.23',
+   version='0.2.0',
     description='Iot QA Tools',
     url='https://github.com/telefonicaid/iot-qa-tools',
     author='Telefonica I+D',
@@ -100,6 +100,7 @@ setup(
         'iotqatools.mongo_utils',
         'iotqatools.orchestator_utils',
         'iotqatools.pep_utils',
+        'iotqatools.remote_log_utils',
         'iotqatools.sth_utils'  
     ],
     packages=[
