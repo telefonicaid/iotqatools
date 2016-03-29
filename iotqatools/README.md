@@ -37,13 +37,15 @@
 ```
 mode: define in that format will be created the entity (normalized | keyValues | values), it is not the query parameter (options), else the mode to generate the request.
 
- normalized:
+normalized:
+>>>>>>> develop
  ```
    "attr": {
         "value": "45",
         ...
    }
 ```
+
 keyValues:
 ```
    "attr": "45"
