@@ -38,12 +38,14 @@
 mode: define in that format will be created the entity (normalized | keyValues | values), it is not the query parameter (options), else the mode to generate the request.
 
 normalized:
+>>>>>>> develop
  ```
    "attr": {
         "value": "45",
         ...
    }
 ```
+
 keyValues:
 ```
    "attr": "45"
@@ -90,8 +92,14 @@ Hint: if would like a query parameter name, use `qp_` prefix
    - DELETE  /v2/entities/<entity_id>/attrs/<attr_name>
 ```   
 
+##### Subscriptions:
+- **properties_to_subscriptions**: definition of properties to subscriptions
+- **create_subscriptions**: create a subscription (POST /v2/subscriptions/). 
+
+
 ##### Get used values per the library
 - **get_entity_context**: return entities contexts (dict)
+- **get_subscription_context**: return subscription contexts (dict)
 - **get_headers**: return headers (dict)
 - **get_entities_parameters**: return queries parameters (dict)
 - **get_entities_prefix**: return if entity id or entity type are used as prefix (dict)
