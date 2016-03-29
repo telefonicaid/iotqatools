@@ -42,11 +42,13 @@ RANDOM = u'random'
 ENTITY = u'entity'
 PREFIX = u'prefix'
 ID = u'id'
+IDPATTERN = u'idPattern'
 
 # requests constants
 VERSION = u'version'
 ORION = u'orion'
 V2_ENTITIES = u'v2/entities'
+V2_SUBSCRIPTIONS = u'v2/subscriptions'
 V2_TYPES = u'v2/types'
 POST = u'POST'
 PUT = u'PUT'
@@ -70,6 +72,26 @@ METADATAS_NAME = u'metadatas_name'
 METADATAS_TYPE = u'metadatas_type'
 METADATAS_VALUE = u'metadatas_value'
 
+# description context dict
+DESCRIPTION = u'description'
+SUBJECT_TYPE= u'subject_type'
+SUBJECT_ID= u'subject_id'
+SUBJECT_IDPATTERN= u'subject_idPattern'
+SUBJECT_ENTITIES_NUMBER= u'subject_entities_number'
+SUBJECT_ENTITIES_PREFIX= u'subject_entities_prefix'
+CONDITION_ATTRIBUTES = u'condition_attributes'
+CONDITION_ATTRIBUTES_NUMBER = u'condition_attributes_number'
+CONDITION_EXPRESSION = u'condition_expression'
+NOTIFICATION_CALLBACK = u'notification_callback'
+NOTIFICATION_ATTRIBUTES = u'notification_attributes'
+NOTIFICATION_ATTRIBUTES_NUMBER = u'notification_attributes_number'
+NOTIFICATION_THROTTLING = u'notification_throttling'
+NOTIFICATION_HEADERS = u'notification_headers'
+NOTIFICATION_QUERY = u'notification_query'
+NOTIFICATION_ATTRSFORMAT = u'notification_attrsFormat'
+EXPIRES = u'expires'
+STATUS = u'status'
+
 MAX_LENGTH_ALLOWED = u'max length allowed'
 GREATER_THAN_MAX_LENGTH_ALLOWED = u'greater than max length allowed'
 MAX_LENGTH_ALLOWED_AND_TEN_LEVELS = u'max length allowed and ten levels'
@@ -83,6 +105,7 @@ FIWARE_SERVICE = u'Fiware-Service'
 FIWARE_SERVICE_PATH = u'Fiware-ServicePath'
 RANDOM_ENTITIES_LABEL = [ATTRIBUTES_NAME, ATTRIBUTES_VALUE, ATTRIBUTES_TYPE, METADATAS_NAME, METADATAS_VALUE,
                          METADATAS_TYPE, ENTITIES_ID, ENTITIES_TYPE]
+RANDOM_SUBSCRIPTION_LABEL = [SUBJECT_TYPE, SUBJECT_ID, CONDITION_ATTRIBUTES, NOTIFICATION_ATTRIBUTES, DESCRIPTION]
 RANDOM_QUERIES_PARAMETERS_LABELS = ["options"]
 
 __logger__ = logging.getLogger("utils")
@@ -91,6 +114,47 @@ __logger__ = logging.getLogger("utils")
 class CB:
     """
     manage Context broker operations
+           - **constructor**: define protocol, host, and port used in requests. Initialize all context dict (headers, entity, parameters, subscription)
+
+    operations:
+
+         #### Generals:
+           - **get_version_request**: return the Context Broker version installed
+           - **get_statistics_request**: return the Context Broker statistics
+           - **get_cache_statistics_request**: return the Context Broker cache statistics
+           - **get_base_request**: offers the initial API affordances in the form of the links in the JSON body
+           - **harakiri**: Orion context broker exits in an ordered manner
+           - **is_cb_started**: determine whether cb is started or not
+           - **definition_headers**: definition of headers using a table of data.
+           - **modification_headers**: modification or append of headers and determine if the previous headers are kept or not ( true | false )
+
+         #### Entity:
+           - **properties_to_entities**: definition of properties to entities
+           - **create_entities**: create N entities in modes diferents (POST /v2/entities/). the prefixes use a table of data.
+           - **create_entity_raw**: create an entity with an attribute and raw values (compound, vector, boolean, integer, etc) in differents modes. It is similar to "create_entities" operation.
+           - **list_all_entities**: list all entities (GET /v2/entities/). Queries parameters use a tabla of data.
+           - **list_an_entity_by_id**: get an entity by ID (GET v2/entities/<entity_id>). Queries parameters use a tabla of data.
+           - **list_an_attribute_by_id**: get an attribute or an attribute value by ID. Queries parameters use a tabla of data.
+           - **get_entity_types**: get entity types (GET /v2/types). Queries parameters use a tabla of data.
+           - **update_or_append_an_attribute_by_id**: update or append an attribute by id (POST, PATCH, PUT /v2/entities/<entity_id>). Queries parameters use a tabla of data.
+           - **update_or_append_an_attribute_in_raw_by_id**: update or append an entity with raw value per special cases (compound, vector, boolean, integer, etc). It is similar to "update_or_append_an_attribute_by_id" operation.
+           - **update_an_attribute_by_id_and_by_name**: update an attribute or an attribute value by ID and attribute name if it exists. Queries parameters use a tabla of data.
+           - **update_an_attribute_by_id_and_by_name_in_raw_mode**: update an attribute by ID and attribute name if it exists in raw mode. It is similar to "update_an_attribute_by_id_and_by_name" operation.
+           - **delete_entities_by_id**: delete entities or attribute
+
+        ### Subscription:
+           - **properties_to_subcription**: definition of properties to subscription
+           - **create_subscription**: create a subscription (POST /v2/subscriptions/)
+
+        #### Get used values per the library:
+           - **get_entity_context**: return entities contexts (dict)
+           - **get_headers**: return headers (dict)
+           - **get_entities_parameters**: return queries parameters (dict)
+           - **get_entities_prefix**: return if entity id or entity type are used as prefix (dict)
+           - **get_entity_id_to_request**: return entity id used in request to get an entity, used to verify if the entity returned is the expected (string)
+           - **get_entity_type_to_request**: return entity type used in request to get/delete an entity, used to verify if the entity returned is the expected (string)
+           - **get_attribute_name_to_request**: return attribute name used in request to get an attribute, used to verify if the attribute returned is the expected (string)
+           - **get_subscription_context**: return queries parameters (dict)
     """
 
     def __init_entity_context_dict(self):
@@ -109,6 +173,29 @@ class CB:
                                METADATAS_TYPE: NONE,
                                METADATAS_VALUE: None}
 
+    def __init_subscription_context_dict(self):
+        """
+        initialize subscription_context dict (used in create or update subcription)
+        """
+        self.subscription_context = {DESCRIPTION: None,
+                                     SUBJECT_TYPE: None,
+                                     SUBJECT_ID: None,
+                                     SUBJECT_IDPATTERN: None,
+                                     SUBJECT_ENTITIES_NUMBER: 1,
+                                     SUBJECT_ENTITIES_PREFIX: EMPTY, # allowed values(id | type)
+                                     CONDITION_ATTRIBUTES: None,
+                                     CONDITION_ATTRIBUTES_NUMBER: 0,
+                                     CONDITION_EXPRESSION: None,
+                                     NOTIFICATION_CALLBACK: None,
+                                     NOTIFICATION_ATTRIBUTES: None,
+                                     NOTIFICATION_ATTRIBUTES_NUMBER: 0,
+                                     NOTIFICATION_THROTTLING: 0,
+                                     NOTIFICATION_HEADERS: None,
+                                     NOTIFICATION_QUERY: None,
+                                     NOTIFICATION_ATTRSFORMAT: None,
+                                     EXPIRES: None,
+                                     STATUS: None}
+
     def __init__(self, **kwargs):
         """
         constructor
@@ -119,13 +206,15 @@ class CB:
         self.cb_protocol = kwargs.get("protocol", "http")
         self.cb_host = kwargs.get("host", "localhost")
         self.cb_port = kwargs.get("port", "1026")
-
         self.cb_url = "%s://%s:%s" % (self.cb_protocol, self.cb_host, self.cb_port)
+
+        # initialice all dictionaries
         self.headers = {}
         self.__init_entity_context_dict()
+        self.__init_subscription_context_dict()
         self.entities_parameters = {}
 
-    # ------------------------------------ requests --------------------------------------------
+    # ------------------------------------Generals --------------------------------------------
     # start, stop and verifications of CB
     def get_version_request(self):
         """
@@ -207,20 +296,6 @@ class CB:
         except Exception, e:
             return False
 
-    # headers
-    @staticmethod
-    def __generate_service_path(length, levels=1):
-        """
-        generate random service path header with several levels
-        :param levels: maximum scope levels in a path
-        :param length: maximum characters in each level
-        :return: service path (string)
-        """
-        temp = EMPTY
-        for i in range(levels):
-            temp = "%s/%s" % (temp, string_generator(length, CHARS_ALLOWED))
-        return temp
-
     def definition_headers(self, context):
         """
         definition of headers
@@ -274,81 +349,23 @@ class CB:
         for row in context.table:
             self.headers[row[PARAMETER]] = row[VALUE]
 
-    # properties to entities
-    def properties_to_entities(self, context):
+    #  -----------------  Private methods ---------------------------
+
+    # headers
+    @staticmethod
+    def __generate_service_path(length, levels=1):
         """
-        definition of properties to entities
-          | parameter         | value                   |
-          | entities_type     | room                    |
-          | entities_id       | room2                   |
-          | attributes_number | 2                       |
-          | attributes_name   | random=5                |
-          | attributes_value  | 017-06-17T07:21:24.238Z |
-          | attributes_type   | date                    |
-          | metadatas_number  | 2                       |
-          | metadatas_name    | very_hot                |
-          | metadatas_type    | alarm                   |
-          | metadatas_value   | hot                     |
-          #  query parameter
-          | qp_options        | keyvalue                |
-        Hint: - If attributes number is equal "1", the attribute name has not suffix, ex: `attributes_name=temperature`
-                else attributes number is major than "1" the attributes name are value plus a suffix (consecutive), ex:
-                  `attributes_name=temperature_0, attributes_name=temperature_1, ..., temperature_N`
-              - If would like a query parameter name, use `qp_` prefix into `properties to entities` step
-              - It is possible to use the same value of the previous request in another request using this string:
-                  `the same value of the previous request`.
-              - "attr_name", "attr_value", "attr_type", "meta_name", "meta_type" and "meta_value" could be random values.
-                 The number after "=" is the number of chars
-                     ex: | attributes_name | random=10 |
-              - if we wanted an empty payload in a second request, use:
-                      | parameter          |
-                      | without_properties |
-        :param context: context variable with properties to entities
+        generate random service path header with several levels
+        :param levels: maximum scope levels in a path
+        :param length: maximum characters in each level
+        :return: service path (string)
         """
-        # store previous entities context dict temporally (used in update request)
-        self.dict_temp = {}
-        for item in self.entity_context:
-            self.dict_temp[item] = self.entity_context[item]
+        temp = EMPTY
+        for i in range(levels):
+            temp = "%s/%s" % (temp, string_generator(length, CHARS_ALLOWED))
+        return temp
 
-        # store parameters in entities contexts
-        self.__init_entity_context_dict()  # reinit context dict (used in update request)
-        if context.table is not None:
-            for row in context.table:
-                if row[PARAMETER] in self.entity_context:
-                    self.entity_context[row[PARAMETER]] = row[VALUE]
-                elif row[PARAMETER] == u'without_properties':
-                    break
-                elif row[PARAMETER].find("qp_") >= 0:
-                    qp = str(row[PARAMETER]).split("qp_")[1]
-                    self.entities_parameters[qp] = row[VALUE]
-                else:
-                    __logger__.warn("Wrong parameter: %s" % row[PARAMETER])
-
-        # The same value from create request (used in update request)
-        for item in self.entity_context:
-            if self.entity_context[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
-                self.entity_context[item] = self.dict_temp[item]
-
-        # Random values
-        self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
-        self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
-
-        if self.entity_context[ATTRIBUTES_NAME] is not None and self.entity_context[ATTRIBUTES_NUMBER] == 0:
-            self.entity_context[ATTRIBUTES_NUMBER] = 1
-        if self.entity_context[METADATAS_NAME] is not None and self.entity_context[METADATAS_NUMBER] == 0:
-            self.entity_context[METADATAS_NUMBER] = 1
-
-        # log entities contexts
-        __logger__.debug("entity context properties:")
-        for item in self.entity_context:
-            __logger__.debug("   - %s: %s" % (item, self.entity_context[item]))
-
-        # log entities_parameters
-        __logger__.debug("queries parameters:")
-        for item in self.entities_parameters:
-            __logger__.debug("   - %s: %s" % (item, self.entities_parameters[item]))
-
-    # internal funtions
+   # internal funtions
     @staticmethod
     def __get_random_number(label):
         """
@@ -421,8 +438,7 @@ class CB:
                 if (dictionary[random_label] is not None) and (dictionary[random_label].find(RANDOM) >= 0):
                     if dictionary[random_label].find("\"") >= 0:
                         quote_exist = True
-                    dictionary[random_label] = string_generator(
-                        self.__get_random_number(remove_quote(dictionary[random_label])))
+                    dictionary[random_label] = string_generator(self.__get_random_number(remove_quote(dictionary[random_label])))
                     if quote_exist:
                         dictionary[random_label] = '"%s"' % dictionary[random_label]
         return dictionary
@@ -531,6 +547,222 @@ class CB:
         __logger__.debug("Atribute with raw values: %s" % attribute_str)
         return attribute_str
 
+    def __create_attributes_values(self, entity_context):
+        """
+        create attribute values to update by id and name
+        :param entity_context: new context to update
+        :return dict
+        """
+        attribute = {}
+        # append attribute type, attribute metadatas and attribute value if the first two exist for one attribute
+        if entity_context[METADATAS_NUMBER] is not None:
+            metadata = self.__create_metadata(entity_context[METADATAS_NUMBER], entity_context[METADATAS_NAME],
+                                               entity_context[METADATAS_TYPE], entity_context[METADATAS_VALUE])
+            if metadata != {}: attribute[METADATA] = metadata
+        __logger__.debug("Metadatas: %s" % str(attribute))
+        if entity_context[ATTRIBUTES_TYPE] != NONE:
+            attribute["type"] = entity_context[ATTRIBUTES_TYPE]
+        if entity_context[ATTRIBUTES_VALUE] is not None:
+            attribute["value"] = entity_context[ATTRIBUTES_VALUE]
+        __logger__.debug("Attribute: %s" % str(attribute))
+        return attribute
+
+    def __create_attribute_by_id_attr_name_raw(self, entity_context):
+        """
+        create attribute context (value, type and/or metadata) to update attributes by id and attribute name
+        with entity context in raw mode
+        :return (string)
+        """
+        attribute_str = "{"
+        attr_context = []  # attr_context constains attribute value, attribute type and attribute metadatas
+
+        # create attribute context with/without attribute value, attribute type and metadatas (with/without type)
+        if entity_context[ATTRIBUTES_VALUE] is not None:
+            attr_context.append('"value": %s' % self.entity_context[ATTRIBUTES_VALUE])
+
+        if entity_context[ATTRIBUTES_TYPE] != NONE:
+            attr_context.append('"type": %s' % self.entity_context[ATTRIBUTES_TYPE])
+
+        if entity_context[METADATAS_NAME] is not None:
+            if entity_context[METADATAS_TYPE] != NONE:
+                attr_context.append('"metadata": {%s: {"type": %s, "value": %s}}' % (entity_context[METADATAS_NAME],
+                                                                                     entity_context[METADATAS_TYPE],
+                                                                                     entity_context[METADATAS_VALUE]))
+            else:
+                attr_context.append('"metadata": {%s: {"value": %s}}' % (entity_context[METADATAS_NAME], entity_context[METADATAS_VALUE]))
+
+        for item in attr_context:
+            attribute_str = "%s %s," % (attribute_str, item)
+
+        attribute_str = "%s }" % attribute_str[:-1]
+        __logger__.debug("Atribute: %s" % attribute_str)
+        return attribute_str
+
+    def __create_subsc_entities(self, subscription_context):
+        """
+        create N entities to subscription request
+        :param subscription_context: subscription_context dict
+        :return list
+        """
+        entities= []
+        for e in range(int(subscription_context[SUBJECT_ENTITIES_NUMBER])):
+            entity = {}
+            if subscription_context[SUBJECT_IDPATTERN] is not None:
+                entity[IDPATTERN] = subscription_context[SUBJECT_IDPATTERN]
+            if subscription_context[SUBJECT_ID] is not None:
+                if subscription_context[SUBJECT_ENTITIES_PREFIX] == ID and subscription_context[SUBJECT_ENTITIES_NUMBER] > 1:
+                    entity[ID] = "%s_%s" % (subscription_context[SUBJECT_ID], str(e))
+                else:
+                    entity[ID] = subscription_context[SUBJECT_ID]
+            if subscription_context[SUBJECT_TYPE] is not None:
+                if subscription_context[SUBJECT_ENTITIES_PREFIX] == TYPE and subscription_context[SUBJECT_ENTITIES_NUMBER] > 1:
+                    entity[TYPE] = "%s_%s" % (subscription_context[SUBJECT_TYPE], str(e))
+                else:
+                    entity[TYPE] = subscription_context[SUBJECT_TYPE]
+            entities.append(entity)
+        return entities
+
+    def __create_subsc_condition(self, subscription_context):
+        """
+        append attributes and expression conditions
+        :param subscription_context: subscription_context dict
+        :return dict
+        """
+        condition = {}
+        # attributes field
+        if subscription_context[CONDITION_ATTRIBUTES] == u'array is empty':
+            condition["attributes"] = []
+        elif subscription_context[CONDITION_ATTRIBUTES] is not None:
+            attrs = []
+            for a in range(int(subscription_context[CONDITION_ATTRIBUTES_NUMBER])):
+                if int(subscription_context[CONDITION_ATTRIBUTES_NUMBER]) > 0:
+                    attrs.append("%s_%s" % (subscription_context[CONDITION_ATTRIBUTES], str(a)))
+                else:
+                   attrs.append(subscription_context[CONDITION_ATTRIBUTES])
+            condition["attributes"] = attrs
+        # expression field
+        if subscription_context[CONDITION_EXPRESSION] == u'object is empty':
+            condition["expression"] = {}
+        elif subscription_context[CONDITION_EXPRESSION] is not None:
+            condition["expression"] = {}
+            exp_op = subscription_context[CONDITION_EXPRESSION].split("&")
+            for op in exp_op:
+                exp_split = op.split(">>>")
+                condition["expression"][exp_split[0]] = exp_split[1]
+        return condition
+
+    def __create_subsc_notification(self, subscription_context):
+        """
+        append notification fields (callback, attributes, throttling, headers, formarAttrs, query)
+        :param subscription_context: subscription_context dict
+        :return dict
+        """
+        notification = {}
+        # callback field
+        if subscription_context[NOTIFICATION_CALLBACK] is not None:
+            notification["callback"] = subscription_context[NOTIFICATION_CALLBACK]
+        # attributes field
+        if subscription_context[NOTIFICATION_ATTRIBUTES] == u'array is empty':
+            notification["attributes"] = []
+        elif subscription_context[NOTIFICATION_ATTRIBUTES] is not None:
+            attrs = []
+            for a in range(int(subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER])):
+                if int(subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER]) > 0:
+                    attrs.append("%s_%s" % (subscription_context[NOTIFICATION_ATTRIBUTES], str(a)))
+                else:
+                   attrs.append(subscription_context[NOTIFICATION_ATTRIBUTES])
+            notification["attributes"] = attrs
+        # throttling field
+        if subscription_context[NOTIFICATION_THROTTLING] != 0:
+            notification["throttling"] = int(subscription_context[NOTIFICATION_THROTTLING])
+
+        # peding to develop (attrsFormat, headers and query)
+        if subscription_context[NOTIFICATION_ATTRSFORMAT] is not None:
+            notification["attrsFormat"] = subscription_context[NOTIFICATION_ATTRSFORMAT]
+        if subscription_context[NOTIFICATION_HEADERS] is not None:
+            notification["headers"] = subscription_context[NOTIFICATION_HEADERS]
+        if subscription_context[NOTIFICATION_QUERY] is not None:
+            notification["query"] = subscription_context[NOTIFICATION_QUERY]
+
+        return notification
+
+    # -------------------- Entities -------------------------------------------------
+
+    # properties to entities
+    def properties_to_entities(self, context):
+        """
+        definition of properties to entities
+          | parameter         | value                   |
+          | entities_type     | room                    |
+          | entities_id       | room2                   |
+          | attributes_number | 2                       |
+          | attributes_name   | random=5                |
+          | attributes_value  | 017-06-17T07:21:24.238Z |
+          | attributes_type   | date                    |
+          | metadatas_number  | 2                       |
+          | metadatas_name    | very_hot                |
+          | metadatas_type    | alarm                   |
+          | metadatas_value   | hot                     |
+          #  query parameter
+          | qp_options        | keyvalue                |
+        Hint: - If attributes number is equal "1", the attribute name has not suffix, ex: `attributes_name=temperature`
+                else attributes number is major than "1" the attributes name are value plus a suffix (consecutive), ex:
+                  `attributes_name=temperature_0, attributes_name=temperature_1, ..., temperature_N`
+              - If would like a query parameter name, use `qp_` prefix into `properties to entities` step
+              - It is possible to use the same value of the previous request in another request using this string:
+                  `the same value of the previous request`.
+              - "attr_name", "attr_value", "attr_type", "meta_name", "meta_type" and "meta_value" could be random values.
+                 The number after "=" is the number of chars
+                     ex: | attributes_name | random=10 |
+              - if we wanted an empty payload in a second request, use:
+                      | parameter          |
+                      | without_properties |
+        :param context: context variable with properties to entities
+        """
+        # store previous entities context dict temporally (used in update request)
+        self.dict_temp = {}
+        for item in self.entity_context:
+            self.dict_temp[item] = self.entity_context[item]
+
+        # store parameters in entities contexts
+        self.__init_entity_context_dict()  # reinit context dict (used in update request)
+        if context.table is not None:
+            for row in context.table:
+                if row[PARAMETER] in self.entity_context:
+                    self.entity_context[row[PARAMETER]] = row[VALUE]
+                elif row[PARAMETER] == u'without_properties':
+                    break
+                elif row[PARAMETER].find("qp_") >= 0:
+                    qp = str(row[PARAMETER]).split("qp_")[1]
+                    self.entities_parameters[qp] = row[VALUE]
+                else:
+                    __logger__.warn("Wrong parameter: %s" % row[PARAMETER])
+
+        # The same value from create request (used in update request)
+        for item in self.entity_context:
+            if self.entity_context[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
+                self.entity_context[item] = self.dict_temp[item]
+
+        # Random values
+        self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
+        self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
+
+        if self.entity_context[ATTRIBUTES_NAME] is not None and self.entity_context[ATTRIBUTES_NUMBER] == 0:
+            self.entity_context[ATTRIBUTES_NUMBER] = 1
+        if self.entity_context[METADATAS_NAME] is not None and self.entity_context[METADATAS_NUMBER] == 0:
+            self.entity_context[METADATAS_NUMBER] = 1
+
+        # log entities contexts
+        __logger__.debug("entity context properties:")
+        for item in self.entity_context:
+            __logger__.debug("   - %s: %s" % (item, self.entity_context[item]))
+
+        # log entities_parameters
+        __logger__.debug("queries parameters:")
+        for item in self.entities_parameters:
+            __logger__.debug("   - %s: %s" % (item, self.entities_parameters[item]))
+
+    # create entity/entities
     def create_entities(self, context, entities_number, mode):
         """
         create N entities in modes diferents
@@ -802,7 +1034,7 @@ class CB:
     def get_entity_types(self, context):
         """
         get entity types
-        :request -> /v2/types
+        :request -> GET /v2/types
         :payload --> No
         :query parameters --> Yes
             parameters:
@@ -831,7 +1063,7 @@ class CB:
         :param method: method used in request (POST, PATCH, PUT)
         :param context: new values to update or append
         :param entity_id: entity used to update or append
-        :param mode: mode in that will be created attributes in request ( normalized |behave keyValues)
+        :param mode: mode in that will be created attributes in request ( normalized | keyValues | values)
         Hint: if would like a query parameter name, use `qp_` prefix
         :return http response
         """
@@ -910,26 +1142,6 @@ class CB:
                 self.entity_context[item] = self.dict_temp[item]
         return resp
 
-    def __create_attributes_values(self, entity_context):
-        """
-        create attribute values to update by id and name
-        :param entity_context: new context to update
-        :return dict
-        """
-        attribute = {}
-        # append attribute type, attribute metadatas and attribute value if the first two exist for one attribute
-        if entity_context[METADATAS_NUMBER] is not None:
-            metadata = self.__create_metadata(entity_context[METADATAS_NUMBER], entity_context[METADATAS_NAME],
-                                               entity_context[METADATAS_TYPE], entity_context[METADATAS_VALUE])
-            if metadata != {}: attribute[METADATA] = metadata
-        __logger__.debug("Metadatas: %s" % str(attribute))
-        if entity_context[ATTRIBUTES_TYPE] != NONE:
-            attribute["type"] = entity_context[ATTRIBUTES_TYPE]
-        if entity_context[ATTRIBUTES_VALUE] is not None:
-            attribute["value"] = entity_context[ATTRIBUTES_VALUE]
-        __logger__.debug("Attribute: %s" % str(attribute))
-        return attribute
-
     def update_an_attribute_by_id_and_by_name(self, context, entity_id, attribute_name, value=EMPTY):
         """
         update an attribute or an attribute value by ID and attribute name if it exists
@@ -984,37 +1196,6 @@ class CB:
                     self.entity_context[item] = self.dict_temp[item]
         return resp
 
-    def __create_attribute_by_id_attr_name_raw(self, entity_context):
-        """
-        create attribute context (value, type and/or metadata) to update attributes by id and attribute name
-        with entity context in raw mode
-        :return (string)
-        """
-        attribute_str = "{"
-        attr_context = []  # attr_context constains attribute value, attribute type and attribute metadatas
-
-        # create attribute context with/without attribute value, attribute type and metadatas (with/without type)
-        if entity_context[ATTRIBUTES_VALUE] is not None:
-            attr_context.append('"value": %s' % self.entity_context[ATTRIBUTES_VALUE])
-
-        if entity_context[ATTRIBUTES_TYPE] != NONE:
-            attr_context.append('"type": %s' % self.entity_context[ATTRIBUTES_TYPE])
-
-        if entity_context[METADATAS_NAME] is not None:
-            if entity_context[METADATAS_TYPE] != NONE:
-                attr_context.append('"metadata": {%s: {"type": %s, "value": %s}}' % (entity_context[METADATAS_NAME],
-                                                                                     entity_context[METADATAS_TYPE],
-                                                                                     entity_context[METADATAS_VALUE]))
-            else:
-                attr_context.append('"metadata": {%s: {"value": %s}}' % (entity_context[METADATAS_NAME], entity_context[METADATAS_VALUE]))
-
-        for item in attr_context:
-            attribute_str = "%s %s," % (attribute_str, item)
-
-        attribute_str = "%s }" % attribute_str[:-1]
-        __logger__.debug("Atribute: %s" % attribute_str)
-        return attribute_str
-
     def update_an_attribute_by_id_and_by_name_in_raw_mode(self, context, entity_id, attribute_name, value=EMPTY):
         """
         update an attribute by ID and attribute name if it exists in raw mode
@@ -1068,7 +1249,7 @@ class CB:
     # delete entity
     def delete_entities_by_id(self, context, entity_id, attribute_name=None):
         """
-        delete entities
+        delete entities or attribute
         :request -> DELETE  /v2/entities/<entity_id>
                 attribute_name == None:  DELETE  /v2/entities/<entity_id>
                 attribute_name != None:  DELETE  /v2/entities/<entity_id>/attrs/<attr_name>
@@ -1115,13 +1296,141 @@ class CB:
 
         # ------- get CB values ------
 
-    # fuctions that returns values from library
-    def get_entity_context(self):
+    #  -----------  subscriptions -------------------
+
+    def properties_to_subcription(self, context):
         """
-        get entities contexts
-        :return dict (see "constructor" method by dict fields)
+        definition of properties to entities
+          | parameter                      | value                   |
+          | description                    | my first subscription   |
+          | subject_type                   | room                    |
+          | subject_id                     | room2                   |
+          | subject_idPattern              | .*                      |
+          | subject_entities_number        | 2                       |
+          | subject_entities_suffix        | type                    |
+          | condition_attributes           | temperature             |
+          | condition_attributes_number    | 3                       |
+          | condition_expression           | q>>>temperature>40      |
+          | notification_callback          | http://localhost:1234   |
+          | notification_attributes        | temperature             |
+          | notification_attributes_number | 3                       |
+          | notification_throttling        | 5                       |
+          | notification_header            | My-Header: activated    |
+          | notification_query             | options=myValues        |
+          | notification_attrsFormat       | options=keyValues       |
+          | expires                        | 2016-04-05T14:00:00.00Z |
+          | status                         | active                  |
+        Hint: - If `subject_entities_number` is major than "1" will have N entities object using `subject_entities_prefix` to differentiate.
+              - If `condition_attributes_number` is equal "1", the attribute name has not suffix, ex: `"attributes": ["temperature"]`
+                else `condition_attributes_number` is major than "1" the attributes name are value plus a suffix (consecutive), ex:
+                `"attributes": ["temperature", "temperature_0", "temperature_1", ..., "temperature_N"]`
+              - If `notification_attributes_number` is equal "1", the attribute name has not suffix, ex: `"attributes": ["temperature"]`
+                else `notification_attributes_number` is major than "1" the attributes name are value plus a suffix (consecutive), ex:
+                `"attributes": ["temperature", "temperature_0", "temperature_1", ..., "temperature_N"]`
+              - It is possible to use the same value of the previous request in another request using this string:
+                  `the same value of the previous request`.
+              - "type", "id", "attributes" could be random values.
+                 The number after "=" is the number of chars
+                     ex: | attributes_name | random=10 |
+              - if we wanted an empty payload in a second request, use:
+                      | parameter          |
+                      | without_properties |
+              - If would you like that `subject` field is missing, use `subject_type` equals to `without subject field`
+              - If would you like that `entities` field is missing, use `subject_type` equals to `without entities field`
+              - If would you like that `conditions` field is missing, use `condition_attributes` equals to `without condition field`
+              - If would you like that `conditions attributes` field is empty, use `condition_attributes` equals to `array is empty`
+              - If would you like that `conditions expression` field is empty, use `condition_expression` equals to `object is empty`
+              - If would you like that `notification` field is missing, use `notification_callback` equals to `without notification field`
+              - If would you like that `notification attributes` field is empty, use `notification_attributes` equals to `array is empty`
+              - In expression value have multiples expressions uses `&` as separator, and in each operation use `>>>` as separator between the key and the value,
+                 ex:
+                     `| condition_expression | q>>>temperature>40&georel>>>near&geometry>>>point&coords>>>40.6391 |`
+        :param context: context variable with properties to entities
         """
-        return self.entity_context
+        # store previous subsciption context dict temporally (used in update request)
+        self.subsc_dict_temp = {}
+        for item in self.subscription_context:
+            self.subsc_dict_temp[item] = self.subscription_context[item]
+
+        # store parameters in entities contexts
+        self.__init_subscription_context_dict()  # reinit context dict (used in update request)
+        if context.table is not None:
+            for row in context.table:
+                if row[PARAMETER] in self.subscription_context:
+                    self.subscription_context[row[PARAMETER]] = row[VALUE]
+                elif row[PARAMETER] == u'without_properties':
+                    break
+                else:
+                    __logger__.warn("Wrong parameter: %s" % row[PARAMETER])
+
+        # The same value from create request (used in update request)
+        for item in self.subscription_context:
+            if self.subscription_context[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
+                self.subscription_context[item] = self.subsc_dict_temp[item]
+
+        # Random values
+        self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
+
+        if self.subscription_context[CONDITION_ATTRIBUTES] is not None and self.subscription_context[CONDITION_ATTRIBUTES] != "array is empty" \
+           and self.subscription_context[CONDITION_ATTRIBUTES_NUMBER] == 0:
+            self.subscription_context[CONDITION_ATTRIBUTES_NUMBER] = 1
+        if self.subscription_context[NOTIFICATION_ATTRIBUTES] is not None and self.subscription_context[NOTIFICATION_ATTRIBUTES] != "array is empty" \
+           and self.subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER] == 0:
+            self.subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER] = 1
+
+        # log entities contexts
+        __logger__.debug("subscription context properties:")
+        for item in self.subscription_context:
+            __logger__.debug("   - %s: %s" % (item, self.subscription_context[item]))
+
+    def create_subscription(self):
+        """
+        create a subscription
+        :request -> POST /v2/subscriptions/
+        :payload --> Yes
+        :query parameters --> No
+        :return responses
+        """
+        csub = {}
+        if self.subscription_context[DESCRIPTION] != u'without payload':
+            # create description field
+            if self.subscription_context[DESCRIPTION] is not None:
+                csub[DESCRIPTION] = self.subscription_context[DESCRIPTION]
+            # create subject field and sub-fields
+            if self.subscription_context[SUBJECT_TYPE] !=  u'without subject field':
+                csub["subject"] = {}
+            if self.subscription_context[SUBJECT_TYPE] != u'without entitities field':
+                entities = self.__create_subsc_entities(self.subscription_context)
+                csub["subject"]["entities"] = entities
+            if self.subscription_context[CONDITION_ATTRIBUTES] != u'without condition field':
+                condition = self.__create_subsc_condition(self.subscription_context)
+                csub["subject"]["condition"] = condition
+
+            # create notification field and sub-fields
+            if self.subscription_context[NOTIFICATION_CALLBACK] != u'without notification field':
+                notification = self.__create_subsc_notification(self.subscription_context)
+                csub["notification"] = notification
+
+            # create expires field
+            if self.subscription_context[EXPIRES] is not None:
+                csub["expires"] = self.subscription_context[EXPIRES]
+
+            # create status field
+            if self.subscription_context[STATUS] is not None:
+                csub["status"] = self.subscription_context[STATUS]
+
+        # request
+        __logger__.debug("subscription: %s" % str(csub))
+        payload = convert_dict_to_str(csub, JSON)
+        if csub != {}:
+            resp = self.__send_request(POST, V2_SUBSCRIPTIONS, headers=self.headers, payload=payload,
+                                       parameters=self.entities_parameters)
+        else:
+            resp = self.__send_request(POST, V2_SUBSCRIPTIONS, parameters=self.entities_parameters,
+                                       headers=self.headers)
+        return  resp
+
+    #  --------- Fuctions that return values from library ---------
 
     def get_headers(self):
         """
@@ -1141,19 +1450,19 @@ class CB:
         """
         return self.entities_parameters
 
+    def get_entity_context(self):
+        """
+        get entities contexts
+        :return dict (see "constructor" method by dict fields)
+        """
+        return self.entity_context
+
     def get_entities_prefix(self):
         """
         get dict with if entity id or entity type are used as prefix
         :return: dict
         """
         return self.prefixes
-
-    def get_entities_parameters(self):
-        """
-        return queries parameters used in list entities
-        :return: dict
-        """
-        return self.entities_parameters
 
     def get_entity_id_to_request(self):
         """
@@ -1178,3 +1487,10 @@ class CB:
         :return string
         """
         return self.attribute_name_to_request
+
+    def get_subscription_context(self):
+        """
+        get subscription contexts
+        :return dict (see "constructor" method by dict fields)
+        """
+        return self.subscription_context

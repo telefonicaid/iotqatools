@@ -36,6 +36,7 @@ from decimal import Decimal
 import operator
 
 
+
 # general constants
 EMPTY = u''
 XML = u'xml'
@@ -149,15 +150,27 @@ def show_times(init_value):
     print "**************************************************************"
 
 
-def generate_timestamp(date=EMPTY, format="%Y-%m-%dT%H:%M:%S.%fZ"):
+def generate_timestamp(**kwargs):
     """
     generate timestamp or convert from a date with a given format
     ex: 1425373697
+    :param date: date to convert to timestamp, if it does not exist, returns current time
+    :param format: date format
+    :param utc: determine whether the timestamp is in utc time or not
     :return  timestamp
     """
+    date = kwargs.get("date", EMPTY)
+    format = kwargs.get("format", "%Y-%m-%dT%H:%M:%S.%fZ")
+    utc = kwargs.get("utc", False)
+
+    UTC_OFFSET_TIMEDELTA = ((datetime.datetime.utcnow() - datetime.datetime.now()).total_seconds())
     if date == EMPTY:
-        return time.time()
-    return time.mktime(datetime.datetime.strptime(date, format).timetuple())
+        local_time = time.time()
+    else:
+        local_time = time.mktime(datetime.datetime.strptime(date, format).timetuple())
+    if utc:
+        return local_time - UTC_OFFSET_TIMEDELTA
+    return local_time
 
 
 def generate_date_zulu(timestamp=0):
