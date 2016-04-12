@@ -1,4 +1,4 @@
-# iot-qa-tools [![Build Status](https://travis-ci.org/telefonicaid/iot-qa-tools.svg?branch=develop)](https://travis-ci.org/telefonicaid/iot-qa-tools) [![Coverage Status](https://coveralls.io/repos/telefonicaid/iot-qa-tools/badge.svg?branch=develop&service=github)](https://coveralls.io/github/telefonicaid/iot-qa-tools?branch=develop) [![StackOverflow](http://b.repl.ca/v1/help-stackoverflow-orange.png)]  (https://stackoverflow.com/questions/tagged/iot-qa-tools) 
+# iotqatools [![Build Status](https://travis-ci.org/telefonicaid/iotqatools.svg?branch=develop)](https://travis-ci.org/telefonicaid/iotqatools) [![Coverage Status](https://coveralls.io/repos/telefonicaid/iotqatools/badge.svg?branch=develop&service=github)](https://coveralls.io/github/telefonicaid/iotqatools?branch=develop) [![StackOverflow](http://b.repl.ca/v1/help-stackoverflow-orange.png)]  (https://stackoverflow.com/questions/tagged/iotqatools) 
     
 Common IoT tools and libs used by QA
 
@@ -19,19 +19,19 @@ following command (we strongly recommend you to use virtual environments):
 *Stable version*
 
 ```
-$ pip install git+https://github.com:telefonicaid/iot-qa-tools@@master
+$ pip install git+https://github.com:telefonicaid/iotqatools@master
 ```
 
 *Last version*
 
 ```
-$ pip install git+https://github.com:telefonicaid/iot-qa-tools@develop
+$ pip install git+https://github.com:telefonicaid/iotqatools@develop
 ```
 
 *Specific version*
 
 ```
-$ pip install git+https://github.com:telefonicaid/iot-qa-tools@picked_tag
+$ pip install git+https://github.com:telefonicaid/iotqatools@picked_tag
 ```
 
 NOTES:
@@ -44,7 +44,7 @@ NOTES:
 After cloning this repository:
 
 ```
-$ git clone git@github.com:telefonicaid/iot-qa-tools.git
+$ git clone git@github.com:telefonicaid/iotqatools.git
 ```
 
 You can install the basic dependencies using the setup.py:
