@@ -98,7 +98,7 @@ setup(
         'iotqatools.iot_tools',
         'iotqatools.iota_utils',
         'iotqatools.ks_utils',
-        'iotqatools.measures_utils'
+        'iotqatools.iota_measures',
         'iotqatools.mongo_utils',
         'iotqatools.mysql_utils',
         'iotqatools.orchestator_utils',
