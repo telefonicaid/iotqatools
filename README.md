@@ -19,19 +19,19 @@ following command (we strongly recommend you to use virtual environments):
 *Stable version*
 
 ```
-$ pip install git+https://github.com:telefonicaid/iotqatools@master
+$ pip install git+https://github.com/telefonicaid/iotqatools@master
 ```
 
 *Last version*
 
 ```
-$ pip install git+https://github.com:telefonicaid/iotqatools@develop
+$ pip install git+https://github.com/telefonicaid/iotqatools@develop
 ```
 
 *Specific version*
 
 ```
-$ pip install git+https://github.com:telefonicaid/iotqatools@picked_tag
+$ pip install git+https://github.com/telefonicaid/iotqatools@picked_tag
 ```
 
 NOTES:
