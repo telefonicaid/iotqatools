@@ -50,6 +50,7 @@ ORION = u'orion'
 V2_ENTITIES = u'v2/entities'
 V2_SUBSCRIPTIONS = u'v2/subscriptions'
 V2_TYPES = u'v2/types'
+GET = u'GET'
 POST = u'POST'
 PUT = u'PUT'
 DELETE = u'DELETE'
@@ -63,9 +64,10 @@ OPTIONS = u'options'
 ENTITIES_NUMBER = u'entities_number'
 ENTITIES_TYPE = u'entities_type'
 ENTITIES_ID = u'entities_id'
+ENTITIES_PREFIX = u'entities_prefix'
 ATTRIBUTES_NUMBER = u'attributes_number'
 ATTRIBUTES_NAME = u'attributes_name'
-ATTRIBUTES_VALUE = 'attributes_value'
+ATTRIBUTES_VALUE = u'attributes_value'
 ATTRIBUTES_TYPE = u'attributes_type'
 METADATAS_NUMBER = u'metadatas_number'
 METADATAS_NAME = u'metadatas_name'
@@ -105,7 +107,7 @@ FIWARE_SERVICE = u'Fiware-Service'
 FIWARE_SERVICE_PATH = u'Fiware-ServicePath'
 RANDOM_ENTITIES_LABEL = [ATTRIBUTES_NAME, ATTRIBUTES_VALUE, ATTRIBUTES_TYPE, METADATAS_NAME, METADATAS_VALUE,
                          METADATAS_TYPE, ENTITIES_ID, ENTITIES_TYPE]
-RANDOM_SUBSCRIPTION_LABEL = [SUBJECT_TYPE, SUBJECT_ID, CONDITION_ATTRIBUTES, NOTIFICATION_ATTRIBUTES, DESCRIPTION]
+RANDOM_SUBSCRIPTION_LABEL = [SUBJECT_TYPE, SUBJECT_ID, SUBJECT_IDPATTERN, CONDITION_ATTRIBUTES, NOTIFICATION_ATTRIBUTES, DESCRIPTION]
 RANDOM_QUERIES_PARAMETERS_LABELS = ["options"]
 
 __logger__ = logging.getLogger("utils")
@@ -145,6 +147,7 @@ class CB:
         ### Subscription:
            - **properties_to_subcription**: definition of properties to subscription
            - **create_subscription**: create a subscription (POST /v2/subscriptions/)
+           - **create_subscription_in_raw_mode**: create a subscription in raw mode (POST /v2/subscriptions/)
 
         #### Get used values per the library:
            - **get_entity_context**: return entities contexts (dict)
@@ -162,8 +165,9 @@ class CB:
         initialize entity_context dict (used in create, update or append entity)
         """
         self.entity_context = {ENTITIES_NUMBER: 1,
-                               ENTITIES_TYPE: NONE,  # entity type prefix.
-                               ENTITIES_ID: None,  # entity id prefix.
+                               ENTITIES_TYPE: NONE,      # entity type prefix.
+                               ENTITIES_ID: None,        # entity id prefix.
+                               ENTITIES_PREFIX: EMPTY,   # allowed values(id | type)  -->  pending to modify in another PR, because it is used in all features
                                ATTRIBUTES_NUMBER: 0,
                                ATTRIBUTES_NAME: None,
                                ATTRIBUTES_VALUE: None,
@@ -222,7 +226,7 @@ class CB:
         :return response to an HTTP request
         """
         header = {"Accept": "application/json"}
-        resp = self.__send_request("GET", VERSION, headers=header)
+        resp = self.__send_request(GET, VERSION, headers=header)
 
         assert resp.status_code == 200, " ERROR - status code in context broker version request. \n " \
                                         " status code: %s \n " \
@@ -236,7 +240,7 @@ class CB:
         :return response to an HTTP request
         """
         header = {"Accept": "application/json"}
-        resp = self.__send_request("GET", "statistics", headers=header)
+        resp = self.__send_request(GET, "statistics", headers=header)
 
         assert resp.status_code == 200, " ERROR - status code in context broker statistics request. \n " \
                                         " status code: %s \n " \
@@ -250,7 +254,7 @@ class CB:
         :return: response to an HTTP request
         """
         header = {"Accept": "application/json"}
-        resp = self.__send_request("GET", "cache/statistics", headers=header)
+        resp = self.__send_request(GET, "cache/statistics", headers=header)
 
         assert resp.status_code == 200, " ERROR - status code in context broker cache statistics request. \n " \
                                         " status code: %s \n " \
@@ -264,7 +268,7 @@ class CB:
         :return response to an HTTP request
         """
         header = {"Accept": "application/json"}
-        resp = self.__send_request("GET", "v2", headers=header)
+        resp = self.__send_request(GET, "v2", headers=header)
 
         assert resp.status_code == 200, " ERROR - status code in context broker base request. \n" \
                                         " status code: %s \n " \
@@ -635,10 +639,10 @@ class CB:
         elif subscription_context[CONDITION_ATTRIBUTES] is not None:
             attrs = []
             for a in range(int(subscription_context[CONDITION_ATTRIBUTES_NUMBER])):
-                if int(subscription_context[CONDITION_ATTRIBUTES_NUMBER]) > 0:
+                if int(subscription_context[CONDITION_ATTRIBUTES_NUMBER]) > 1:
                     attrs.append("%s_%s" % (subscription_context[CONDITION_ATTRIBUTES], str(a)))
                 else:
-                   attrs.append(subscription_context[CONDITION_ATTRIBUTES])
+                    attrs.append(subscription_context[CONDITION_ATTRIBUTES])
             condition["attributes"] = attrs
         # expression field
         if subscription_context[CONDITION_EXPRESSION] == u'object is empty':
@@ -667,7 +671,7 @@ class CB:
         elif subscription_context[NOTIFICATION_ATTRIBUTES] is not None:
             attrs = []
             for a in range(int(subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER])):
-                if int(subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER]) > 0:
+                if int(subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER]) > 1:
                     attrs.append("%s_%s" % (subscription_context[NOTIFICATION_ATTRIBUTES], str(a)))
                 else:
                    attrs.append(subscription_context[NOTIFICATION_ATTRIBUTES])
@@ -685,6 +689,81 @@ class CB:
             notification["query"] = subscription_context[NOTIFICATION_QUERY]
 
         return notification
+
+    def __create_subsc_subject_raw(self, subscription_context):
+        """
+        create subject field (entities and condition) to subscriptions in raw mode
+        :return string
+        """
+        # entities fields
+        entities = u'"entities": [{'
+        # type field
+        if subscription_context[SUBJECT_TYPE] is not None:
+            entities = u'%s"type": %s,' % (entities, subscription_context[SUBJECT_TYPE])
+        # id field
+        if subscription_context[SUBJECT_ID] is not None:
+            entities = u'%s"id": %s}],' % (entities, subscription_context[SUBJECT_ID])
+        # idPattern field
+        if subscription_context[SUBJECT_IDPATTERN] is not None:
+            entities = u'%s"idPattern": %s}],' % (entities, subscription_context[SUBJECT_IDPATTERN])
+        # condition fields
+        condition = u'"condition": {'
+        # attributes field
+        if subscription_context[CONDITION_ATTRIBUTES] is not None:
+            condition = u'%s "attributes": [%s]' % (condition, subscription_context[CONDITION_ATTRIBUTES])
+            if subscription_context[CONDITION_EXPRESSION] is not None:
+                condition = "%s," % condition
+        # expression field
+        if subscription_context[CONDITION_EXPRESSION] is not None:
+            exp_op = subscription_context[CONDITION_EXPRESSION].split("&")
+            internal_conditions = EMPTY
+            for op in exp_op:
+                exp_split = op.split(">>>")
+                internal_conditions = u' %s %s: %s,' % (internal_conditions, exp_split[0], exp_split[1])
+            condition = u'%s "expression": {%s}' % (condition, internal_conditions[:-1])
+        condition = u'%s }' % condition
+        return  u'"subject": {%s %s}' % (entities, condition)
+
+    def __create_subsc_notification_raw(self, subscription_context):
+        """
+        create notification fields (callback, attributes, throttling, headers, query and attrsFormat) to subscription in raw mode
+        :return string
+        """
+        callback = EMPTY
+        attributes = EMPTY
+        throttling = EMPTY
+        headers = EMPTY
+        query = EMPTY
+        attrsFormat = EMPTY
+        notification = EMPTY
+        # callback field
+        if subscription_context[NOTIFICATION_CALLBACK] is not None:
+            callback = u'"callback": %s,' % subscription_context[NOTIFICATION_CALLBACK]
+            notification = "%s %s" % (notification, callback)
+        # attributes field
+        if subscription_context[NOTIFICATION_ATTRIBUTES] is not None:
+            attributes = u'"attributes": [%s],' % (subscription_context[NOTIFICATION_ATTRIBUTES])
+            notification = "%s %s" % (notification, attributes)
+        # throttling field
+        if subscription_context[NOTIFICATION_THROTTLING] is not None:
+            throttling = u'"throttling": %s,' % subscription_context[NOTIFICATION_THROTTLING]
+            notification = "%s %s" % (notification, throttling)
+
+        # pending to develop
+        # throttling field
+        if subscription_context[NOTIFICATION_HEADERS] is not None:
+            headers = u'"headers": %s,' % subscription_context[NOTIFICATION_HEADERS]
+            notification = "%s %s" % (notification, headers)
+        # query field
+        if subscription_context[NOTIFICATION_QUERY] is not None:
+            query = u'"query": %s,' % subscription_context[NOTIFICATION_QUERY]
+            notification = "%s %s" % (notification, query)
+        # attrsFormat field
+        if subscription_context[NOTIFICATION_ATTRSFORMAT] is not None:
+            attrsFormat = u'"attrsFormat": %s,' % subscription_context[NOTIFICATION_ATTRSFORMAT]
+            notification = "%s %s" % (notification, attrsFormat)
+
+        return u'"notification": {%s}' % notification[:-1]
 
     # -------------------- Entities -------------------------------------------------
 
@@ -949,7 +1028,7 @@ class CB:
         for item in self.entities_parameters:
             __logger__.debug("Queries parameters: %s=%s" % (item, self.entities_parameters[item]))
 
-        resp = self.__send_request("GET", V2_ENTITIES, headers=self.headers, parameters=self.entities_parameters)
+        resp = self.__send_request(GET, V2_ENTITIES, headers=self.headers, parameters=self.entities_parameters)
         return resp
 
     def list_an_entity_by_id(self, context, entity_id):
@@ -973,7 +1052,7 @@ class CB:
         for item in self.entities_parameters:
             __logger__.debug("Queries parameters: %s=%s" % (item, self.entities_parameters[item]))
 
-        resp = self.__send_request("GET", "%s/%s" % (V2_ENTITIES, self.entity_id_to_request), headers=self.headers,
+        resp = self.__send_request(GET, "%s/%s" % (V2_ENTITIES, self.entity_id_to_request), headers=self.headers,
                                    parameters=self.entities_parameters)
         return resp
 
@@ -1020,7 +1099,7 @@ class CB:
         __logger__.debug("entity_id: %s" % self.entity_id_to_request)
         __logger__.debug("attribute_name: %s" % self.attribute_name_to_request)
 
-        resp = self.__send_request("GET", "%s/%s/attrs/%s/%s" % (
+        resp = self.__send_request(GET, "%s/%s/attrs/%s/%s" % (
             V2_ENTITIES, self.entity_id_to_request, self.attribute_name_to_request, value),
                                    headers=self.headers, parameters=self.entities_parameters)
 
@@ -1030,7 +1109,6 @@ class CB:
         self.entity_context = dict_temp
         return resp
 
-    # list types (entities and attributes)
     def get_entity_types(self, context):
         """
         get entity types
@@ -1050,8 +1128,30 @@ class CB:
         for item in self.entities_parameters:
             __logger__.debug("Queries parameters: %s=%s" % (item, self.entities_parameters[item]))
 
-        resp = self.__send_request("GET", V2_TYPES, headers=self.headers, parameters=self.entities_parameters)
+        resp = self.__send_request(GET, V2_TYPES, headers=self.headers, parameters=self.entities_parameters)
         return resp
+
+    def get_an_entity_type(self, context, entity_type):
+        """
+        get an entity type
+        :request -> GET /v2/types/<entity_type>
+        :payload --> No
+        :query parameters --> No
+        """
+        # The same value from create request
+        if entity_type == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
+            self.entity_type_to_request = self.entity_context[ENTITIES_TYPE]
+        else:
+            self.entity_type_to_request = entity_type
+
+        # entity type in log
+        __logger__.debug("Type: %s" % self.entity_type_to_request)
+
+        resp = self.__send_request(GET , "%s/%s" % (V2_TYPES, self.entity_type_to_request), headers=self.headers)
+        return resp
+
+
+
 
     # update entity
     def update_or_append_an_attribute_by_id(self, method, context, entity_id, mode):
@@ -1370,6 +1470,15 @@ class CB:
 
         # Random values
         self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
+        if self.subscription_context[CONDITION_EXPRESSION] is not None and self.subscription_context[CONDITION_EXPRESSION].find(RANDOM) >= 0:   #  random condition expression
+            exp_op = self.subscription_context[CONDITION_EXPRESSION].split("&")
+            temp = EMPTY
+            for op in exp_op:
+                if op .find(RANDOM) >= 0:
+                    exp_split = op.split(">>>")
+                    op = "%s>>>%s" % (exp_split[0], string_generator(self.__get_random_number(exp_split[1])))
+                temp = "%s%s&" % (temp, op)
+            self.subscription_context[CONDITION_EXPRESSION] = temp[:-1]
 
         if self.subscription_context[CONDITION_ATTRIBUTES] is not None and self.subscription_context[CONDITION_ATTRIBUTES] != "array is empty" \
            and self.subscription_context[CONDITION_ATTRIBUTES_NUMBER] == 0:
@@ -1399,12 +1508,12 @@ class CB:
             # create subject field and sub-fields
             if self.subscription_context[SUBJECT_TYPE] !=  u'without subject field':
                 csub["subject"] = {}
-            if self.subscription_context[SUBJECT_TYPE] != u'without entitities field':
-                entities = self.__create_subsc_entities(self.subscription_context)
-                csub["subject"]["entities"] = entities
-            if self.subscription_context[CONDITION_ATTRIBUTES] != u'without condition field':
-                condition = self.__create_subsc_condition(self.subscription_context)
-                csub["subject"]["condition"] = condition
+                if self.subscription_context[SUBJECT_TYPE] != u'without entities field':
+                    entities = self.__create_subsc_entities(self.subscription_context)
+                    csub["subject"]["entities"] = entities
+                if self.subscription_context[CONDITION_ATTRIBUTES] != u'without condition field':
+                    condition = self.__create_subsc_condition(self.subscription_context)
+                    csub["subject"]["condition"] = condition
 
             # create notification field and sub-fields
             if self.subscription_context[NOTIFICATION_CALLBACK] != u'without notification field':
@@ -1429,6 +1538,40 @@ class CB:
             resp = self.__send_request(POST, V2_SUBSCRIPTIONS, parameters=self.entities_parameters,
                                        headers=self.headers)
         return  resp
+
+    def create_subscription_in_raw_mode(self):
+        """
+        create a subscription in raw mode
+        :request -> POST /v2/subscriptions/
+        :payload --> Yes
+        :query parameters --> No
+        :return responses
+        """
+        payload = "{"
+        # description field
+        if self.subscription_context[DESCRIPTION] is not None:
+            payload = u'%s "description": %s,' % (payload, self.subscription_context[DESCRIPTION])
+
+        # subject fields
+        payload = u'%s %s,' % (payload, self.__create_subsc_subject_raw(self.subscription_context))
+
+        # notification fields
+        payload = u'%s %s,' % (payload, self.__create_subsc_notification_raw(self.subscription_context))
+
+        # expires field
+        if self.subscription_context[EXPIRES] is not None:
+            payload = u'%s "expires": %s,' % (payload, self.subscription_context[EXPIRES])
+
+        # status field
+        if self.subscription_context[STATUS] is not None:
+            payload = u'%s "status": %s,' % (payload, self.subscription_context[STATUS])
+
+        # payload
+        payload = "%s }" % payload[:-1]
+        __logger__.debug("subscription: %s" % payload)
+        resp = self.__send_request(POST, V2_SUBSCRIPTIONS, headers=self.headers, payload=payload,
+                                   parameters=self.entities_parameters)
+        return resp
 
     #  --------- Fuctions that return values from library ---------
 
