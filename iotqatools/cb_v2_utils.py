@@ -81,16 +81,18 @@ SUBJECT_ID= u'subject_id'
 SUBJECT_IDPATTERN= u'subject_idPattern'
 SUBJECT_ENTITIES_NUMBER= u'subject_entities_number'
 SUBJECT_ENTITIES_PREFIX= u'subject_entities_prefix'
-CONDITION_ATTRIBUTES = u'condition_attributes'
-CONDITION_ATTRIBUTES_NUMBER = u'condition_attributes_number'
+CONDITION_ATTRS = u'condition_attrs'
+CONDITION_ATTRS_NUMBER = u'condition_attrs_number'
 CONDITION_EXPRESSION = u'condition_expression'
-NOTIFICATION_CALLBACK = u'notification_callback'
-NOTIFICATION_ATTRIBUTES = u'notification_attributes'
-NOTIFICATION_ATTRIBUTES_NUMBER = u'notification_attributes_number'
-NOTIFICATION_THROTTLING = u'notification_throttling'
-NOTIFICATION_HEADERS = u'notification_headers'
-NOTIFICATION_QUERY = u'notification_query'
+NOTIFICATION_ATTRS = u'notification_attrs'
+NOTIFICATION_ATTRS_NUMBER = u'notification_attrs_number'
 NOTIFICATION_ATTRSFORMAT = u'notification_attrsFormat'
+NOTIFICATION_HTTP_URL = u'notification_http_url'
+NOTIFICATION_HTTP_HEADERS = u'notification_http_headers'
+NOTIFICATION_HTTP_QS = u'notification_http_qs'
+NOTIFICATION_HTTP_METHOD = u'notification_http_method'
+NOTIFICATION_HTTP_PAYLOAD = u'notification_http_payload'
+THROTTLING = u'throttling'
 EXPIRES = u'expires'
 STATUS = u'status'
 
@@ -107,7 +109,7 @@ FIWARE_SERVICE = u'Fiware-Service'
 FIWARE_SERVICE_PATH = u'Fiware-ServicePath'
 RANDOM_ENTITIES_LABEL = [ATTRIBUTES_NAME, ATTRIBUTES_VALUE, ATTRIBUTES_TYPE, METADATAS_NAME, METADATAS_VALUE,
                          METADATAS_TYPE, ENTITIES_ID, ENTITIES_TYPE]
-RANDOM_SUBSCRIPTION_LABEL = [SUBJECT_TYPE, SUBJECT_ID, SUBJECT_IDPATTERN, CONDITION_ATTRIBUTES, NOTIFICATION_ATTRIBUTES, DESCRIPTION]
+RANDOM_SUBSCRIPTION_LABEL = [SUBJECT_TYPE, SUBJECT_ID, SUBJECT_IDPATTERN, CONDITION_ATTRS, NOTIFICATION_ATTRS, DESCRIPTION]
 RANDOM_QUERIES_PARAMETERS_LABELS = ["options"]
 
 __logger__ = logging.getLogger("utils")
@@ -187,16 +189,18 @@ class CB:
                                      SUBJECT_IDPATTERN: None,
                                      SUBJECT_ENTITIES_NUMBER: 1,
                                      SUBJECT_ENTITIES_PREFIX: EMPTY, # allowed values(id | type)
-                                     CONDITION_ATTRIBUTES: None,
-                                     CONDITION_ATTRIBUTES_NUMBER: 0,
+                                     CONDITION_ATTRS: None,
+                                     CONDITION_ATTRS_NUMBER: 0,
                                      CONDITION_EXPRESSION: None,
-                                     NOTIFICATION_CALLBACK: None,
-                                     NOTIFICATION_ATTRIBUTES: None,
-                                     NOTIFICATION_ATTRIBUTES_NUMBER: 0,
-                                     NOTIFICATION_THROTTLING: 0,
-                                     NOTIFICATION_HEADERS: None,
-                                     NOTIFICATION_QUERY: None,
+                                     NOTIFICATION_ATTRS: None,
+                                     NOTIFICATION_ATTRS_NUMBER: 0,
                                      NOTIFICATION_ATTRSFORMAT: None,
+                                     NOTIFICATION_HTTP_URL: None,
+                                     NOTIFICATION_HTTP_HEADERS: None,
+                                     NOTIFICATION_HTTP_QS: None,
+                                     NOTIFICATION_HTTP_METHOD: None,
+                                     NOTIFICATION_HTTP_PAYLOAD: None,
+                                     THROTTLING: 0,
                                      EXPIRES: None,
                                      STATUS: None}
 
@@ -632,27 +636,29 @@ class CB:
         :param subscription_context: subscription_context dict
         :return dict
         """
+        ATTRS_FIELD_NAME = u'attrs'
+        EXPRESSION_FIELD_NAME = u'expression'
         condition = {}
         # attributes field
-        if subscription_context[CONDITION_ATTRIBUTES] == u'array is empty':
-            condition["attributes"] = []
-        elif subscription_context[CONDITION_ATTRIBUTES] is not None:
+        if subscription_context[CONDITION_ATTRS] == u'array is empty':
+            condition[ATTRS_FIELD_NAME] = []
+        elif subscription_context[CONDITION_ATTRS] is not None:
             attrs = []
-            for a in range(int(subscription_context[CONDITION_ATTRIBUTES_NUMBER])):
-                if int(subscription_context[CONDITION_ATTRIBUTES_NUMBER]) > 1:
-                    attrs.append("%s_%s" % (subscription_context[CONDITION_ATTRIBUTES], str(a)))
+            for a in range(int(subscription_context[CONDITION_ATTRS_NUMBER])):
+                if int(subscription_context[CONDITION_ATTRS_NUMBER]) > 1:
+                    attrs.append("%s_%s" % (subscription_context[CONDITION_ATTRS], str(a)))
                 else:
-                    attrs.append(subscription_context[CONDITION_ATTRIBUTES])
-            condition["attributes"] = attrs
+                    attrs.append(subscription_context[CONDITION_ATTRS])
+            condition[ATTRS_FIELD_NAME] = attrs
         # expression field
         if subscription_context[CONDITION_EXPRESSION] == u'object is empty':
-            condition["expression"] = {}
+            condition[EXPRESSION_FIELD_NAME] = {}
         elif subscription_context[CONDITION_EXPRESSION] is not None:
-            condition["expression"] = {}
+            condition[EXPRESSION_FIELD_NAME] = {}
             exp_op = subscription_context[CONDITION_EXPRESSION].split("&")
             for op in exp_op:
                 exp_split = op.split(">>>")
-                condition["expression"][exp_split[0]] = exp_split[1]
+                condition[EXPRESSION_FIELD_NAME][exp_split[0]] = exp_split[1]
         return condition
 
     def __create_subsc_notification(self, subscription_context):
@@ -661,33 +667,53 @@ class CB:
         :param subscription_context: subscription_context dict
         :return dict
         """
+        ATTRS_FIELD_NAME = u'attrs'
+        HTTP_FIELD_NAME = u'http'
         notification = {}
-        # callback field
-        if subscription_context[NOTIFICATION_CALLBACK] is not None:
-            notification["callback"] = subscription_context[NOTIFICATION_CALLBACK]
-        # attributes field
-        if subscription_context[NOTIFICATION_ATTRIBUTES] == u'array is empty':
-            notification["attributes"] = []
-        elif subscription_context[NOTIFICATION_ATTRIBUTES] is not None:
-            attrs = []
-            for a in range(int(subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER])):
-                if int(subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER]) > 1:
-                    attrs.append("%s_%s" % (subscription_context[NOTIFICATION_ATTRIBUTES], str(a)))
-                else:
-                   attrs.append(subscription_context[NOTIFICATION_ATTRIBUTES])
-            notification["attributes"] = attrs
-        # throttling field
-        if subscription_context[NOTIFICATION_THROTTLING] != 0:
-            notification["throttling"] = int(subscription_context[NOTIFICATION_THROTTLING])
+        # http -url field
+        http_field_exist = False
+        if subscription_context[NOTIFICATION_HTTP_URL] is not None:
+            http_field_exist = True  # used to determine whether http dict is created or not
+            notification[HTTP_FIELD_NAME] = {}
+            notification[HTTP_FIELD_NAME]["url"] = subscription_context[NOTIFICATION_HTTP_URL]
 
-        # peding to develop (attrsFormat, headers and query)
+        # peding to develop (headers, qs, method and payload)
+        if subscription_context[NOTIFICATION_HTTP_HEADERS] is not None:
+            if not http_field_exist:
+                http_field_exist = True  # used to determine whether http dict is created or not
+                notification[HTTP_FIELD_NAME] = {}
+            notification[HTTP_FIELD_NAME]["headers"] = subscription_context[NOTIFICATION_HTTP_HEADERS]
+        if subscription_context[NOTIFICATION_HTTP_QS] is not None:
+            if not http_field_exist:
+                http_field_exist = True  # used to determine whether http dict is created or not
+                notification[HTTP_FIELD_NAME] = {}
+            notification[HTTP_FIELD_NAME]["query"] = subscription_context[NOTIFICATION_HTTP_QS]
+        if subscription_context[NOTIFICATION_HTTP_METHOD] is not None:
+            if not http_field_exist:
+                http_field_exist = True  # used to determine whether http dict is created or not
+                notification[HTTP_FIELD_NAME] = {}
+            notification[HTTP_FIELD_NAME]["method"] = subscription_context[NOTIFICATION_HTTP_METHOD]
+        if subscription_context[NOTIFICATION_HTTP_PAYLOAD] is not None:
+            if not http_field_exist:
+                http_field_exist = True  # used to determine whether http dict is created or not
+                notification[HTTP_FIELD_NAME] = {}
+            notification[HTTP_FIELD_NAME]["payload"] = subscription_context[NOTIFICATION_HTTP_PAYLOAD]
+
+        # attrs field
+        if subscription_context[NOTIFICATION_ATTRS] == u'array is empty':
+            notification[ATTRS_FIELD_NAME] = []
+        elif subscription_context[NOTIFICATION_ATTRS] is not None:
+            attrs = []
+            for a in range(int(subscription_context[NOTIFICATION_ATTRS_NUMBER])):
+                if int(subscription_context[NOTIFICATION_ATTRS_NUMBER]) > 1:
+                    attrs.append("%s_%s" % (subscription_context[NOTIFICATION_ATTRS], str(a)))
+                else:
+                   attrs.append(subscription_context[NOTIFICATION_ATTRS])
+            notification[ATTRS_FIELD_NAME] = attrs
+
+        # attrsFormat field (pending to develop)
         if subscription_context[NOTIFICATION_ATTRSFORMAT] is not None:
             notification["attrsFormat"] = subscription_context[NOTIFICATION_ATTRSFORMAT]
-        if subscription_context[NOTIFICATION_HEADERS] is not None:
-            notification["headers"] = subscription_context[NOTIFICATION_HEADERS]
-        if subscription_context[NOTIFICATION_QUERY] is not None:
-            notification["query"] = subscription_context[NOTIFICATION_QUERY]
-
         return notification
 
     def __create_subsc_subject_raw(self, subscription_context):
@@ -709,8 +735,8 @@ class CB:
         # condition fields
         condition = u'"condition": {'
         # attributes field
-        if subscription_context[CONDITION_ATTRIBUTES] is not None:
-            condition = u'%s "attributes": [%s]' % (condition, subscription_context[CONDITION_ATTRIBUTES])
+        if subscription_context[CONDITION_ATTRS] is not None:
+            condition = u'%s "attrs": [%s]' % (condition, subscription_context[CONDITION_ATTRS])
             if subscription_context[CONDITION_EXPRESSION] is not None:
                 condition = "%s," % condition
         # expression field
@@ -729,41 +755,58 @@ class CB:
         create notification fields (callback, attributes, throttling, headers, query and attrsFormat) to subscription in raw mode
         :return string
         """
-        callback = EMPTY
+        url = EMPTY
         attributes = EMPTY
         throttling = EMPTY
         headers = EMPTY
         query = EMPTY
         attrsFormat = EMPTY
         notification = EMPTY
-        # callback field
-        if subscription_context[NOTIFICATION_CALLBACK] is not None:
-            callback = u'"callback": %s,' % subscription_context[NOTIFICATION_CALLBACK]
-            notification = "%s %s" % (notification, callback)
-        # attributes field
-        if subscription_context[NOTIFICATION_ATTRIBUTES] is not None:
-            attributes = u'"attributes": [%s],' % (subscription_context[NOTIFICATION_ATTRIBUTES])
-            notification = "%s %s" % (notification, attributes)
-        # throttling field
-        if subscription_context[NOTIFICATION_THROTTLING] is not None:
-            throttling = u'"throttling": %s,' % subscription_context[NOTIFICATION_THROTTLING]
-            notification = "%s %s" % (notification, throttling)
-
+        http_field_exist = False
+        # http url field
+        if subscription_context[NOTIFICATION_HTTP_URL] is not None:
+            if not http_field_exist:
+                http_field_exist = True  # used to determine whether http dict is created or not
+                notification = u'"http": {'
+            notification = u'%s "url": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_URL])
         # pending to develop
-        # throttling field
-        if subscription_context[NOTIFICATION_HEADERS] is not None:
-            headers = u'"headers": %s,' % subscription_context[NOTIFICATION_HEADERS]
-            notification = "%s %s" % (notification, headers)
-        # query field
-        if subscription_context[NOTIFICATION_QUERY] is not None:
-            query = u'"query": %s,' % subscription_context[NOTIFICATION_QUERY]
-            notification = "%s %s" % (notification, query)
+        if subscription_context[NOTIFICATION_HTTP_HEADERS] is not None:
+            if not http_field_exist:
+                http_field_exist = True  # used to determine whether http dict is created or not
+                notification = u'"http": {'
+            notification = u'%s "headers": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_HEADERS])
+        if subscription_context[NOTIFICATION_HTTP_QS] is not None:
+            if not http_field_exist:
+                http_field_exist = True  # used to determine whether http dict is created or not
+                notification = u'"http": {'
+            notification = u'%s "qs": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_QS])
+        if subscription_context[NOTIFICATION_HTTP_METHOD] is not None:
+            if not http_field_exist:
+                http_field_exist = True  # used to determine whether http dict is created or not
+                notification = u'"http": {'
+            notification = u'%s "method": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_METHOD])
+        if subscription_context[NOTIFICATION_HTTP_PAYLOAD] is not None:
+            if not http_field_exist:
+                http_field_exist = True  # used to determine whether http dict is created or not
+                notification = u'"http": {'
+            notification = u'%s "payload": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_PAYLOAD])
+        if notification != EMPTY:
+            notification = u'%s},' % notification[:-1]
+
         # attrsFormat field
         if subscription_context[NOTIFICATION_ATTRSFORMAT] is not None:
             attrsFormat = u'"attrsFormat": %s,' % subscription_context[NOTIFICATION_ATTRSFORMAT]
             notification = "%s %s" % (notification, attrsFormat)
 
-        return u'"notification": {%s}' % notification[:-1]
+        # attributes field
+        if subscription_context[NOTIFICATION_ATTRS] is not None:
+            attributes = u'"attrs": [%s],' % (subscription_context[NOTIFICATION_ATTRS])
+            notification = "%s %s" % (notification, attributes)
+
+        if notification != EMPTY:
+            notification = u'{%s}' % notification[:-1]
+
+        return u'"notification": %s' % notification
 
     # -------------------- Entities -------------------------------------------------
 
@@ -1150,9 +1193,6 @@ class CB:
         resp = self.__send_request(GET , "%s/%s" % (V2_TYPES, self.entity_type_to_request), headers=self.headers)
         return resp
 
-
-
-
     # update entity
     def update_or_append_an_attribute_by_id(self, method, context, entity_id, mode):
         """
@@ -1183,10 +1223,10 @@ class CB:
 
         payload = convert_dict_to_str(entities, JSON)
         if entities != {}:
-            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID]),
+            resp = self.__send_request(method, "%s/%s/attrs" % (V2_ENTITIES, self.entity_context[ENTITIES_ID]),
                                        headers=self.headers, payload=payload, parameters=self.entities_parameters)
         else:
-            resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID]),
+            resp = self.__send_request(method, "%s/%s/attrs" % (V2_ENTITIES, self.entity_context[ENTITIES_ID]),
                                        headers=self.headers, parameters=self.entities_parameters)
         # update self.entity_context with last values (ex: create request)
         for item in self.entity_context:
@@ -1233,7 +1273,7 @@ class CB:
         # create attribute with/without attribute type and metadatas (with/without type)
         attribute_str = "{%s}" % self.__create_attribute_raw(self.entity_context, mode)
 
-        resp = self.__send_request(method, "%s/%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID]),
+        resp = self.__send_request(method, "%s/%s/attrs" % (V2_ENTITIES, self.entity_context[ENTITIES_ID]),
                                    headers=self.headers, payload=attribute_str, parameters=self.entities_parameters)
 
         # update self.entity_context with last values (ex: create request)
@@ -1480,12 +1520,12 @@ class CB:
                 temp = "%s%s&" % (temp, op)
             self.subscription_context[CONDITION_EXPRESSION] = temp[:-1]
 
-        if self.subscription_context[CONDITION_ATTRIBUTES] is not None and self.subscription_context[CONDITION_ATTRIBUTES] != "array is empty" \
-           and self.subscription_context[CONDITION_ATTRIBUTES_NUMBER] == 0:
-            self.subscription_context[CONDITION_ATTRIBUTES_NUMBER] = 1
-        if self.subscription_context[NOTIFICATION_ATTRIBUTES] is not None and self.subscription_context[NOTIFICATION_ATTRIBUTES] != "array is empty" \
-           and self.subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER] == 0:
-            self.subscription_context[NOTIFICATION_ATTRIBUTES_NUMBER] = 1
+        if self.subscription_context[CONDITION_ATTRS] is not None and self.subscription_context[CONDITION_ATTRS] != "array is empty" \
+           and self.subscription_context[CONDITION_ATTRS_NUMBER] == 0:
+            self.subscription_context[CONDITION_ATTRS_NUMBER] = 1
+        if self.subscription_context[NOTIFICATION_ATTRS] is not None and self.subscription_context[NOTIFICATION_ATTRS] != "array is empty" \
+           and self.subscription_context[NOTIFICATION_ATTRS_NUMBER] == 0:
+            self.subscription_context[NOTIFICATION_ATTRS_NUMBER] = 1
 
         # log entities contexts
         __logger__.debug("subscription context properties:")
@@ -1511,14 +1551,18 @@ class CB:
                 if self.subscription_context[SUBJECT_TYPE] != u'without entities field':
                     entities = self.__create_subsc_entities(self.subscription_context)
                     csub["subject"]["entities"] = entities
-                if self.subscription_context[CONDITION_ATTRIBUTES] != u'without condition field':
+                if self.subscription_context[CONDITION_ATTRS] != u'without condition field':
                     condition = self.__create_subsc_condition(self.subscription_context)
                     csub["subject"]["condition"] = condition
 
             # create notification field and sub-fields
-            if self.subscription_context[NOTIFICATION_CALLBACK] != u'without notification field':
+            if self.subscription_context[NOTIFICATION_HTTP_URL] != u'without notification field':
                 notification = self.__create_subsc_notification(self.subscription_context)
                 csub["notification"] = notification
+
+            # create throttling field
+            if self.subscription_context[THROTTLING] != 0:
+                csub["throttling"] = int(self.subscription_context[THROTTLING])
 
             # create expires field
             if self.subscription_context[EXPIRES] is not None:
@@ -1565,6 +1609,10 @@ class CB:
         # status field
         if self.subscription_context[STATUS] is not None:
             payload = u'%s "status": %s,' % (payload, self.subscription_context[STATUS])
+
+       # throttling field
+        if self.subscription_context[THROTTLING] is not None:
+            payload =  u'%s "throttling": %s,'  % (payload, self.subscription_context[THROTTLING])
 
         # payload
         payload = "%s }" % payload[:-1]
