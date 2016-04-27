@@ -934,7 +934,7 @@ class CbNgsi10Utils(object):
 
         if payload is not None:
             if self.check_json:
-                parameters.update({'data': json.dumps(payload)})
+                parameters.update({'data': json.dumps(payload, ensure_ascii=False).encode('utf-8')})
             else:
                 parameters.update({'data': payload})
 
