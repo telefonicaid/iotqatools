@@ -68,7 +68,7 @@ class Orchestrator(object):
     def _get_service_id(self,
                         service_name,
                         admin_domain_user='cloud_admin',
-                        admin_domain_password='password'):
+                        admin_domain_password='PA97sChqkR'):
 
         data = {
             "DOMAIN_NAME": "admin_domain",
