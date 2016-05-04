@@ -422,11 +422,11 @@ class CB:
             assert False, "ERROR  - send request \n     - url: %s\n    - %s" % (url, str(e))
         if show:
             __logger__.debug("----------------- Response ---------------------------------")
-            __logger__.debug(" http code: %s" % resp.status_code)
+            __logger__.debug(" http code: %s - %s" % (resp.status_code, resp.reason))
             __logger__.debug(" headers:")
             for h in resp.headers:
                 __logger__.debug("     %s: %s" % (h, resp.headers[h]))
-            __logger__.debug(" body: %s " % resp.text)
+            __logger__.debug(" payload: %s " % resp.text)
             __logger__.debug("-------------------------------------------------------------------------")
         return resp
 
@@ -672,32 +672,33 @@ class CB:
         notification = {}
         # http -url field
         http_field_exist = False
-        if subscription_context[NOTIFICATION_HTTP_URL] is not None:
-            http_field_exist = True  # used to determine whether http dict is created or not
-            notification[HTTP_FIELD_NAME] = {}
-            notification[HTTP_FIELD_NAME]["url"] = subscription_context[NOTIFICATION_HTTP_URL]
+        if subscription_context[NOTIFICATION_HTTP_URL] != u'without notification http field':
+            if subscription_context[NOTIFICATION_HTTP_URL] is not None:
+                http_field_exist = True  # used to determine whether http dict is created or not
+                notification[HTTP_FIELD_NAME] = {}
+                notification[HTTP_FIELD_NAME]["url"] = subscription_context[NOTIFICATION_HTTP_URL]
 
-        # peding to develop (headers, qs, method and payload)
-        if subscription_context[NOTIFICATION_HTTP_HEADERS] is not None:
-            if not http_field_exist:
-                http_field_exist = True  # used to determine whether http dict is created or not
-                notification[HTTP_FIELD_NAME] = {}
-            notification[HTTP_FIELD_NAME]["headers"] = subscription_context[NOTIFICATION_HTTP_HEADERS]
-        if subscription_context[NOTIFICATION_HTTP_QS] is not None:
-            if not http_field_exist:
-                http_field_exist = True  # used to determine whether http dict is created or not
-                notification[HTTP_FIELD_NAME] = {}
-            notification[HTTP_FIELD_NAME]["query"] = subscription_context[NOTIFICATION_HTTP_QS]
-        if subscription_context[NOTIFICATION_HTTP_METHOD] is not None:
-            if not http_field_exist:
-                http_field_exist = True  # used to determine whether http dict is created or not
-                notification[HTTP_FIELD_NAME] = {}
-            notification[HTTP_FIELD_NAME]["method"] = subscription_context[NOTIFICATION_HTTP_METHOD]
-        if subscription_context[NOTIFICATION_HTTP_PAYLOAD] is not None:
-            if not http_field_exist:
-                http_field_exist = True  # used to determine whether http dict is created or not
-                notification[HTTP_FIELD_NAME] = {}
-            notification[HTTP_FIELD_NAME]["payload"] = subscription_context[NOTIFICATION_HTTP_PAYLOAD]
+            # peding to develop (headers, qs, method and payload)
+            if subscription_context[NOTIFICATION_HTTP_HEADERS] is not None:
+                if not http_field_exist:
+                    http_field_exist = True  # used to determine whether http dict is created or not
+                    notification[HTTP_FIELD_NAME] = {}
+                notification[HTTP_FIELD_NAME]["headers"] = subscription_context[NOTIFICATION_HTTP_HEADERS]
+            if subscription_context[NOTIFICATION_HTTP_QS] is not None:
+                if not http_field_exist:
+                    http_field_exist = True  # used to determine whether http dict is created or not
+                    notification[HTTP_FIELD_NAME] = {}
+                notification[HTTP_FIELD_NAME]["query"] = subscription_context[NOTIFICATION_HTTP_QS]
+            if subscription_context[NOTIFICATION_HTTP_METHOD] is not None:
+                if not http_field_exist:
+                    http_field_exist = True  # used to determine whether http dict is created or not
+                    notification[HTTP_FIELD_NAME] = {}
+                notification[HTTP_FIELD_NAME]["method"] = subscription_context[NOTIFICATION_HTTP_METHOD]
+            if subscription_context[NOTIFICATION_HTTP_PAYLOAD] is not None:
+                if not http_field_exist:
+                    http_field_exist = True  # used to determine whether http dict is created or not
+                    notification[HTTP_FIELD_NAME] = {}
+                notification[HTTP_FIELD_NAME]["payload"] = subscription_context[NOTIFICATION_HTTP_PAYLOAD]
 
         # attrs field
         if subscription_context[NOTIFICATION_ATTRS] == u'array is empty':
@@ -1074,12 +1075,13 @@ class CB:
         resp = self.__send_request(GET, V2_ENTITIES, headers=self.headers, parameters=self.entities_parameters)
         return resp
 
-    def list_an_entity_by_id(self, context, entity_id):
+    def list_an_entity_by_id(self, context, entity_id, attrs=EMPTY):
         """
-        get an entity by ID
+        get an entity by ID or get attributes in an entity by ID
           | parameter | value       |
           | attrs     | temperature |
-        :request -> GET v2/entities/<entity_id>
+        :requests -> GET v2/entities/<entity_id>
+                     GET v2/entities/<entity_id>/attrs
         :payload --> No
         :query parameters --> Yes
         Hint: if we need " char, use \' and it will be replaced (mappping_quotes)
@@ -1095,7 +1097,7 @@ class CB:
         for item in self.entities_parameters:
             __logger__.debug("Queries parameters: %s=%s" % (item, self.entities_parameters[item]))
 
-        resp = self.__send_request(GET, "%s/%s" % (V2_ENTITIES, self.entity_id_to_request), headers=self.headers,
+        resp = self.__send_request(GET, "%s/%s%s" % (V2_ENTITIES, self.entity_id_to_request, attrs), headers=self.headers,
                                    parameters=self.entities_parameters)
         return resp
 
