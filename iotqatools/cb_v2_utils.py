@@ -353,9 +353,17 @@ class CB:
         :param prev:determine if the previous headers are kept or not ( true | false )
         """
         if prev.lower() != TRUE:
-            self.entities_parameters.clear()
+            self.headers.clear()
         for row in context.table:
             self.headers[row[PARAMETER]] = row[VALUE]
+
+    def append_new_header(self, key, value):
+        """
+        append a new header
+        :param key: header name
+        :param value: header value
+        """
+        self.headers[key] = value
 
     #  -----------------  Private methods ---------------------------
 
@@ -398,36 +406,39 @@ class CB:
         parameters = kwargs.get("parameters", None)
         __logger__.info("Request and Response are shown: %s" % show)
         if show:
-            __logger__.debug("----------------- Request ---------------------------------")
             p = EMPTY
+            self.request_string = EMPTY
+            self.response_string = EMPTY
             if parameters is not None and parameters != {}:
                 for item in parameters:
                     p = '%s&%s=%s' % (p, item, parameters[item])
                 p_t = list(p)
                 p_t[0] = "?"
                 p = "".join(p_t)
-            __logger__.debug("url: %s %s/%s%s" % (method, self.cb_url, path, p))
+            self.request_string = "url: %s %s/%s%s" % (method, self.cb_url, path, p)
+
             if headers is not None:
-                __logger__.debug("headers:")
+                self.request_string = "%s\nheaders:" % self.request_string
                 for item in headers:
-                    __logger__.debug("   %s: %s" % (item, headers[item]))
+                    self.request_string = "%s\n    %s: %s" % (self.request_string, item, headers[item])
             if payload is not None:
-                __logger__.debug("payload: %s" % payload)
-                __logger__.debug("payload length: %s" % str(len(payload)))
-            __logger__.debug("-------------------------------------------------------------------------")
+                self.request_string = "%s\npayload: %s" % (self.request_string, payload)
+                self.request_string = "%s\npayload length: %s" % (self.request_string, str(len(payload)))
+            __logger__.debug("----------------- Request ---------------------------------\n%s" % self.request_string)
+            __logger__.debug("-----------------------------------------------------------")
         url = "%s/%s" % (self.cb_url, path)
         try:
             resp = requests.request(method=method, url=url, headers=headers, data=payload, params=parameters)
         except Exception, e:
             assert False, "ERROR  - send request \n     - url: %s\n    - %s" % (url, str(e))
         if show:
-            __logger__.debug("----------------- Response ---------------------------------")
-            __logger__.debug(" http code: %s - %s" % (resp.status_code, resp.reason))
-            __logger__.debug(" headers:")
+            self.response_string = "http code: %s - %s" % (resp.status_code, resp.reason)
+            self.response_string = "%s\nheaders:" % self.response_string
             for h in resp.headers:
-                __logger__.debug("     %s: %s" % (h, resp.headers[h]))
-            __logger__.debug(" payload: %s " % resp.text)
-            __logger__.debug("-------------------------------------------------------------------------")
+                self.response_string = "%s\n   %s: %s" % (self.response_string, h, resp.headers[h])
+            self.response_string = "%s\npayload: %s " % (self.response_string, resp.text)
+            __logger__.debug("----------------- Response ---------------------------------\n%s" % self.response_string)
+            __logger__.debug("------------------------------------------------------------")
         return resp
 
     def __random_values(self, random_labels, dictionary):
@@ -1687,3 +1698,9 @@ class CB:
         :return dict (see "constructor" method by dict fields)
         """
         return self.subscription_context
+
+    def get_request_response_string(self):
+        """
+        return a string with request and another one to response
+        """
+        return self.request_string, self.response_string
