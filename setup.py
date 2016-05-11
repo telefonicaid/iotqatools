@@ -84,6 +84,7 @@ setup(
     py_modules=[
         'iotqatools.ac_utils',
         'iotqatools.cb_utils',
+        'iotqatools.cb_ngsiv2_utils',
         'iotqatools.cb_v2_utils',
         'iotqatools.cep_utils',
         'iotqatools.ckan_utils',
