@@ -64,7 +64,7 @@ req_dev = get_requirements('requirements.txt')
 
 setup(
     name='iotqatools',
-    version='0.3.4',
+    version='0.3.5',
     description='Iot QA Tools',
     url='https://github.com/telefonicaid/iotqatools',
     author='Telefonica I+D',
@@ -84,6 +84,7 @@ setup(
     py_modules=[
         'iotqatools.ac_utils',
         'iotqatools.cb_utils',
+        'iotqatools.cb_ngsiv2_utils',
         'iotqatools.cb_v2_utils',
         'iotqatools.cep_utils',
         'iotqatools.ckan_utils',
