@@ -225,12 +225,12 @@ class CbNgsi10v2Utils(object):
             self.log = get_logger('CbNgsi10Utilsv2', log_verbosity)
 
         # Assign the values
-        self.default_endpoint = protocol + '://' + instance + ':' + port
+        self.default_endpoint = "{}://{}:{}".format(protocol, instance, port)
         self.headers = default_headers
-        self.path_list_entities = self.default_endpoint + path_list_entities
+        self.path_list_entities = "{}{}".format(self.default_endpoint, path_list_entities)
         self.path_statistics = path_statistics
-        self.path_create_entity = self.default_endpoint + path_create_entity
-        self.path_context_subscriptions = self.default_endpoint + path_retrieve_subscriptions
+        self.path_create_entity = "{}{}".format(self.default_endpoint, path_create_entity)
+        self.path_context_subscriptions = "{}{}".format(self.default_endpoint, path_retrieve_subscriptions)
         self.path_version = path_version
         self.check_json = check_json
 
@@ -331,7 +331,6 @@ class CbNgsi10v2Utils(object):
         :param filters:
         :rtype : object
         :
-
         """
 
         # Add default headers to the request
@@ -347,25 +346,40 @@ class CbNgsi10v2Utils(object):
 
 
 if __name__ == '__main__':
-    cb = CbNgsi10v2Utils('127.0.0.1', 'http')
-    md = MetadataV2('crs', 'WGS84')
-    md2 = MetadataV2('crs2', 'WGS83')
+    # Example if use of the library as a client
+    cb = CbNgsi10v2Utils('192.168.21.64', 'http')
+
+    # ====================create entity================
+    # Compose the metadatas
+    md = MetadataV2(md_name='crs', md_value='WGS84')
+    md2 = MetadataV2(md_name='crs2', md_value='WGS83')
     print(md.get_metadata())
-    attr = AttributeV2('location', '41.3763726, 2.1864475', att_type='geo:point')
+
+    # Compose the attributes
+    attr = AttributeV2(att_name='location', att_value='41.3763726, 2.1864475', att_type='geo:point')
     attr.add_metadata(md)
     attr.add_metadata(md2)
-    attr2 = AttributeV2('temperature', 21.7)
-    attr3 = AttributeV2('humidity', 120)
+    attr2 = AttributeV2(att_name='temperature', att_value=21.7)
+    attr3 = AttributeV2(att_name='humidity', att_value=120)
     print(attr.get_attribute())
-    ent1 = EntityV2('Bcn-Welt8', 'Room5')
+
+    # Compose the entity
+    ent1 = EntityV2(entity_id='Bcn-Welt20', entity_type='Room5')
     ent1.add_attribute(attr)
     ent1.add_attribute(attr2)
     ent1.add_attribute(attr3)
     print(ent1.get_entity())
-    pl = PayloadUtilsV2.build_create_entity_payload(ent1)
-    headers = {'fiware-service': 'eeee', 'fiware-service-path': '/uuu'}
-    # resp = cb.create_entity(headers=headers, payload=pl)
 
-    # ========================================
-    filters = {'type': 'Room5', 'limit': 30, 'q': 'humidity<100'}
+    # create payload
+    pl = PayloadUtilsV2.build_create_entity_payload(ent1)
+
+    # invoke CB
+    headers = {'fiware-service': 'eeee', 'fiware-service-path': '/uuu'}
+    resp = cb.create_entity(headers=headers, payload=pl)
+
+    # ====================list entities================
+    # create filters
+    filters = {'type': 'Room5', 'limit': 3, 'q': 'humidity~=120'}
+
+    # invoke CB
     resp = cb.list_entities(headers, filters=filters)
