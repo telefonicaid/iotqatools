@@ -24,6 +24,7 @@ please contact with::[iot_support@tid.es]
 __author__ = 'Iván Arias León (ivan dot ariasleon at telefonica dot com)'
 
 import requests
+import socket
 
 from helpers_utils import *
 
@@ -102,6 +103,7 @@ MAX_LENGTH_ALLOWED_AND_TEN_LEVELS = u'max length allowed and ten levels'
 GREATER_THAN_MAX_LENGTH_ALLOWED_AND_TEN_LEVELS = u'greater than max length allowed and ten levels'
 MAX_LENGTH_ALLOWED_AND_ELEVEN_LEVELS = u'max length allowed and eleven levels'
 THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST = u'the same value of the previous request'
+REPLACE_HOST = u'replace_host'
 CHARS_ALLOWED = string.ascii_letters + string.digits + u'_'  # regular expression: [a-zA-Z0-9_]+
 SERVICE_MAX_CHARS_ALLOWED = 50
 SERVICE_PATH_LEVELS = 10
@@ -150,6 +152,7 @@ class CB:
            - **properties_to_subcription**: definition of properties to subscription
            - **create_subscription**: create a subscription (POST /v2/subscriptions/)
            - **create_subscription_in_raw_mode**: create a subscription in raw mode (POST /v2/subscriptions/)
+           - **get_subscription_by_id**: get a subscription by id
 
         #### Get used values per the library:
            - **get_entity_context**: return entities contexts (dict)
@@ -1461,16 +1464,18 @@ class CB:
           | subject_idPattern              | .*                      |
           | subject_entities_number        | 2                       |
           | subject_entities_suffix        | type                    |
-          | condition_attributes           | temperature             |
-          | condition_attributes_number    | 3                       |
+          | condition_attrs                | temperature             |
+          | condition_attrs_number         | 3                       |
           | condition_expression           | q>>>temperature>40      |
-          | notification_callback          | http://localhost:1234   |
-          | notification_attributes        | temperature             |
-          | notification_attributes_number | 3                       |
-          | notification_throttling        | 5                       |
-          | notification_header            | My-Header: activated    |
-          | notification_query             | options=myValues        |
+          | notification_http_url          | http://localhost:1234   |
+          | notification_http_headers      | My-Header: activated    |
+          | notification_http_qs           | options=myValues        |
+          | notification_http_method       | My-Header: activated    |
+          | notification_http_payload      | options=myValues        |
+          | notification_attrs             | temperature             |
+          | notification_attrs_number      | 3                       |
           | notification_attrsFormat       | options=keyValues       |
+          | throttling                     | 5                       |
           | expires                        | 2016-04-05T14:00:00.00Z |
           | status                         | active                  |
         Hint: - If `subject_entities_number` is major than "1" will have N entities object using `subject_entities_prefix` to differentiate.
@@ -1498,6 +1503,7 @@ class CB:
               - In expression value have multiples expressions uses `&` as separator, and in each operation use `>>>` as separator between the key and the value,
                  ex:
                      `| condition_expression | q>>>temperature>40&georel>>>near&geometry>>>point&coords>>>40.6391 |`
+              - If notification_http_url has `replace_host` value, ex: http://replace_host:1234/notify, it string is replaced by the hostname (used to notifications).
         :param context: context variable with properties to entities
         """
         # store previous subsciption context dict temporally (used in update request)
@@ -1520,6 +1526,12 @@ class CB:
         for item in self.subscription_context:
             if self.subscription_context[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
                 self.subscription_context[item] = self.subsc_dict_temp[item]
+
+        # replace_host (used in notifications)
+        hostname = socket.gethostname()
+        if self.subscription_context[NOTIFICATION_HTTP_URL].find(REPLACE_HOST) >= 0:
+            self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_HOST, "%s.hi.inet" % hostname)
+
 
         # Random values
         self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
@@ -1633,6 +1645,20 @@ class CB:
         resp = self.__send_request(POST, V2_SUBSCRIPTIONS, headers=self.headers, payload=payload,
                                    parameters=self.entities_parameters)
         return resp
+
+    # get subcriptions
+    def get_subscription_by_id(self, subscription_id):
+        """
+        get subscription by id
+        :request -> GET /v2/subscriptions/<subc_id>
+        :payload --> No
+        :query parameters --> No
+        Hint: If you do like to use the subscriptionId of the subscription created previously, use `previous subs` value
+        :return responses
+        """
+        __logger__.info("subscriptionId: %s" % subscription_id)
+        return self.__send_request(GET, "%s/%s" % (V2_SUBSCRIPTIONS, subscription_id),headers=self.headers)
+
 
     #  --------- Fuctions that return values from library ---------
 
