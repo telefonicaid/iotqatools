@@ -103,11 +103,11 @@ class RequestUtils(object):
         Get a specific header from a response
         """
         try:
-            dict_ = dict(response.headers)
+            dict_ = dict({k.lower(): v for k, v in response.headers.items()})
         except ValueError:
             raise NameError('The headers of the response are not a dict, the headers are: {header} \nThe body is: {body}'.format(header=response.headers, body=response.text))
         if value in dict_:
-            return dict_[value]
+            return dict_[value.lower()]
         else:
             raise NameError('The response headers have not the head requested "{head}", the headers are: {headers} \nThe body is: {body}'.format(head=value, headers=response.headers, body=response.text))
 
