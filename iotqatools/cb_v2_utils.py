@@ -24,7 +24,6 @@ please contact with::[iot_support@tid.es]
 __author__ = 'Iván Arias León (ivan dot ariasleon at telefonica dot com)'
 
 import requests
-import socket
 
 from helpers_utils import *
 
@@ -152,7 +151,7 @@ class CB:
            - **properties_to_subcription**: definition of properties to subscription
            - **create_subscription**: create a subscription (POST /v2/subscriptions/)
            - **create_subscription_in_raw_mode**: create a subscription in raw mode (POST /v2/subscriptions/)
-           - **get_subscription_by_id**: get a subscription by id
+           - **get_subscription_by_id**: get a subscription by id (GET /v2/subscriptions/<subscriptionId>)
 
         #### Get used values per the library:
            - **get_entity_context**: return entities contexts (dict)
@@ -1528,10 +1527,8 @@ class CB:
                 self.subscription_context[item] = self.subsc_dict_temp[item]
 
         # replace_host (used in notifications)
-        hostname = socket.gethostname()
         if self.subscription_context[NOTIFICATION_HTTP_URL].find(REPLACE_HOST) >= 0:
-            self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_HOST, "%s.hi.inet" % hostname)
-
+            self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_HOST, get_ip()) # get_ip in helper_utils.py library
 
         # Random values
         self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
