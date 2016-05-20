@@ -34,6 +34,7 @@ import logging
 import math
 from decimal import Decimal
 import operator
+import socket
 
 
 
@@ -314,3 +315,12 @@ def find_list_in_string (chars_list, text):
         if temp >= 0:
             return temp
     return -1
+
+def get_ip():
+    """
+    get the preferred local ip address
+    return: string
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(('8.8.8.8', 0))  # connecting to a UDP address doesn't send packets
+    return s.getsockname()[0]

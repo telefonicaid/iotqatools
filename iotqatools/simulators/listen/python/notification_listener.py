@@ -29,10 +29,12 @@ import BaseHTTPServer
 
 
 # variables
+default_payload = json.dumps({"msg":"without notification received"})
+unknown_path = json.dumps({"error":"unknown path: %s"})
 last_url = ""
 last_headers = {}
-last_payload = json.dumps({"msg":"without notification received"})
-unknown_path = json.dumps({"error":"unknown path: %s"})
+last_payload = default_payload
+
 
 def get_last_data(s):
     """
@@ -90,13 +92,17 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
         global last_headers, last_payload, unknown_path, last_url
         s.send_response(200)
-        if s.path != "/last_notification":
-            last_payload = unknown_path % s.path
-        else:
+        if s.path == "/last_notification":
             headers_prefix = u'last'
             for item in last_headers:
                 s.send_header("%s-%s" % (headers_prefix, item), last_headers[item])
             s.send_header("%s-url" % headers_prefix, "%s" % last_url)
+        elif s.path == "/reset":
+            last_url = ""
+            last_headers = {}
+            last_payload = default_payload
+        else:
+             last_payload = unknown_path % s.path
 
         show_last_data()   # verify VERBOSE global variable
 
