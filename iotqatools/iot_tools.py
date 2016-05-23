@@ -119,8 +119,8 @@ class PqaTools(object):
             log_msg += '\t> Headers: {}\n'.format(str(params['headers']))
         if 'data' in params:
             log_msg += '\t> Payload sent: {}\n'.format(pprint.pformat(params['data'], width=20))
-        if 'query' in params:
-            log_msg += '\t> Query: %s\n' % params['query']
+        if 'params' in params:
+            log_msg += '\t> Params sent: {}\n'.format(str(params['params']))
         if 'verify' in params:
             log_msg += '\t> Verify: %s\n' % params['verify']
 
