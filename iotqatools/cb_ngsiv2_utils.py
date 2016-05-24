@@ -232,6 +232,7 @@ class CbNgsi10v2Utils(object):
         self.path_statistics = path_statistics
         self.path_create_entity = "{}{}".format(self.default_endpoint, path_create_entity)
         self.path_context_subscriptions = "{}{}".format(self.default_endpoint, path_retrieve_subscriptions)
+        self.path_context_subscriptions_by_id = "{}{}".format(self.default_endpoint, path_retrieve_subscription_by_id)
         self.path_version = path_version
         self.check_json = check_json
 
@@ -388,6 +389,117 @@ class CbNgsi10v2Utils(object):
         # Make request
         return self.__send_request('get', path, headers=headers, verify=None, query=params)
 
+    def retrieve_subscriptions(self, headers, options=None):
+        """
+        Response
+        200
+        BODY
+        [
+            {
+                "id": "abcdefg",
+                "description": "One subscription to rule them all",
+                "subject": {
+                    "entities": [
+                        {
+                            "id": "Bcn_Welt",
+                            "type": "Room"
+                        }
+                    ],
+                    "condition": {
+                        "attrs": [
+                            "temperature "
+                        ],
+                        "expression": {
+                            "q": "temperature>40"
+                        }
+                    }
+                },
+                "notification": {
+                    "httpCustom": {
+                        "url": "http://localhost:1234",
+                        "headers": {
+                            "X-MyHeader": "foo"
+                        },
+                        "qs": {
+                            "authToken": "bar"
+                        }
+                    },
+                    "attrsFormat": "keyValues",
+                    "attrs": [
+                        "temperature",
+                        "humidity"
+                    ],
+                    "timesSent": 12,
+                    "lastNotification": "2015-10-05T16:00:00.00Z"
+                },
+                "expires": "2016-04-05T14:00:00.00Z",
+                "status": "active",
+                "throttling": 5
+            }
+        ]
+        """
+
+        # Add default headers to the request
+        headers.update(self.headers)
+
+        # Check params is a correct dict
+        if not isinstance(options, dict):
+            raise Exception('Wrong type in options. Dictionary is needed')
+
+        # Make request
+        return self.__send_request('get', self.path_context_subscriptions, headers=headers, verify=None, query=options)
+
+    def retrieve_subscription_by_id(self, headers, subscription_id):
+        """
+        Response
+        200
+        HEADERS
+            Content-Type:application/json
+        BODY
+        {
+            "id": "abcdef",
+            "description": "One subscription to rule them all",
+            "subject": {
+                "entities": [
+                    {
+                        "idPattern": ".*",
+                        "type": "Room"
+                    }
+                ],
+                "condition": {
+                    "attrs": [ "temperature " ],
+                    "expression": {
+                        "q": "temperature>40"
+                    }
+                }
+            },
+            "notification": {
+                "http": {
+                    "url": "http://localhost:1234"
+                },
+                "attrs": ["temperature", "humidity"],
+                "timesSent": 12,
+                "lastNotification": "2015-10-05T16:00:00.00Z"
+            },
+            "expires": "2016-04-05T14:00:00.00Z",
+            "status": "active",
+            "throttling": 5,
+        }
+        :param headers:
+        :param options:
+        :return:
+        """
+
+
+        # Add default headers to the request
+        headers.update(self.headers)
+
+        # Compose path
+        path = self.path_context_subscriptions_by_id.replace('subscriptionId', subscription_id)
+
+        # Make request
+        return self.__send_request('get', path, headers=headers, verify=None)
+
 
 if __name__ == '__main__':
     # Example if use of the library as a client
@@ -418,7 +530,7 @@ if __name__ == '__main__':
     pl = PayloadUtilsV2.build_create_entity_payload(ent1)
 
     # invoke CB
-    headers = {'fiware-service': 'eeee', 'fiware-servicepath': '/uuu'}
+    headers = {'fiware-service': 'city012', 'fiware-servicepath': '/electricidad'}
     # resp = cb.create_entity(headers=headers, payload=pl)
 
     # ====================list entities================
@@ -426,7 +538,22 @@ if __name__ == '__main__':
     filters = {'type': 'Room5', 'limit': 3, 'q': 'humidity~=120;temperature~=21.7'}
 
     # invoke CB
-    # resp = cb.list_entities(headers, filters=filters)
+    # resp = cb.list_entities(headers=headers, filters=filters)
+
+    # ===================get attribute data============
 
     # Get attribute data
-    resp = cb.get_attribute_data(headers, entity_id='Bcn-Welt25', entity_type='Room5', attribute_name='location')
+    # resp = cb.get_attribute_data(headers=headers, entity_id='Bcn-Welt25', entity_type='Room5', attribute_name='location')
+
+
+    # ===============retrieve subscriptions============
+
+    parameteres = {'limit': 1, 'offset': 4, 'options': 'count'}
+    wrong_parameters = '23'
+    # resp = cb.retrieve_subscriptions(headers=headers, options=parameteres)
+    # resp = cb.retrieve_subscriptions(headers=headers, options=wrong_parameters)
+
+    # ===============retrieve subscriptions by id ============
+
+    id = '572b35cc377ea57e2ay69771'
+    # resp = cb.retrieve_subscription_by_id(headers=headers, subscription_id=id)
