@@ -228,6 +228,7 @@ class CbNgsi10v2Utils(object):
         self.default_endpoint = "{}://{}:{}".format(protocol, instance, port)
         self.headers = default_headers
         self.path_list_entities = "{}{}".format(self.default_endpoint, path_list_entities)
+        self.path_get_attribute_data = "{}{}".format(self.default_endpoint, path_update_attribute_data)
         self.path_statistics = path_statistics
         self.path_create_entity = "{}{}".format(self.default_endpoint, path_create_entity)
         self.path_context_subscriptions = "{}{}".format(self.default_endpoint, path_retrieve_subscriptions)
@@ -263,7 +264,8 @@ class CbNgsi10v2Utils(object):
         try:
             response = requests.request(**parameters)
         except RequestException, e:
-            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
+            PqaTools.log_requestAndResponse(url=url, headers=headers, params=query, data=payload, comp='CB',
+                                            method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 
         # Log data
@@ -344,10 +346,52 @@ class CbNgsi10v2Utils(object):
 
         return self.__send_request('get', self.path_list_entities, headers=headers, verify=None, query=params)
 
+    def get_attribute_data(self, headers, entity_id, entity_type, attribute_name):
+        """
+        GET
+        http://orion.lab.fiware.org/v2/entities/entityId/attrs/attrName?type=type
+
+        Parameters
+        entityId:
+            Entity ID Example: Bcn_Welt. (String)
+        type:
+            Entity type, to avoid ambiguity in the case there are several entities with the same entity id. (String)
+        attrName:
+            Attribute to be retrieved. Example: temperature. (String)
+
+        Response
+        200
+        HEADERS
+            Content-Type:application/json
+        BODY
+        {
+            "value": 21.7,
+            "type": "none",
+            "metadata": {}
+        }
+
+        :param entity_id:
+        :param entity_type:
+        :param attribute_name:
+        :return:
+        """
+
+        # Add default headers to the request
+        headers.update(self.headers)
+
+        # Compose path
+        path = self.path_get_attribute_data.replace('entityId', entity_id).replace('attrName', attribute_name)
+
+        # Compose params
+        params = {'type': entity_type}
+
+        # Make request
+        return self.__send_request('get', path, headers=headers, verify=None, query=params)
+
 
 if __name__ == '__main__':
     # Example if use of the library as a client
-    cb = CbNgsi10v2Utils('192.168.21.64', 'http')
+    cb = CbNgsi10v2Utils('127.0.0.1', 'http')
 
     # ====================create entity================
     # Compose the metadatas
@@ -364,7 +408,7 @@ if __name__ == '__main__':
     print(attr.get_attribute())
 
     # Compose the entity
-    ent1 = EntityV2(entity_id='Bcn-Welt20', entity_type='Room5')
+    ent1 = EntityV2(entity_id='Bcn-Welt25', entity_type='Room5')
     ent1.add_attribute(attr)
     ent1.add_attribute(attr2)
     ent1.add_attribute(attr3)
@@ -374,12 +418,15 @@ if __name__ == '__main__':
     pl = PayloadUtilsV2.build_create_entity_payload(ent1)
 
     # invoke CB
-    headers = {'fiware-service': 'eeee', 'fiware-service-path': '/uuu'}
-    resp = cb.create_entity(headers=headers, payload=pl)
+    headers = {'fiware-service': 'eeee', 'fiware-servicepath': '/uuu'}
+    # resp = cb.create_entity(headers=headers, payload=pl)
 
     # ====================list entities================
     # create filters
-    filters = {'type': 'Room5', 'limit': 3, 'q': 'humidity~=120'}
+    filters = {'type': 'Room5', 'limit': 3, 'q': 'humidity~=120;temperature~=21.7'}
 
     # invoke CB
-    resp = cb.list_entities(headers, filters=filters)
+    # resp = cb.list_entities(headers, filters=filters)
+
+    # Get attribute data
+    resp = cb.get_attribute_data(headers, entity_id='Bcn-Welt25', entity_type='Room5', attribute_name='location')
