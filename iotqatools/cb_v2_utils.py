@@ -69,6 +69,7 @@ ATTRIBUTES_NUMBER = u'attributes_number'
 ATTRIBUTES_NAME = u'attributes_name'
 ATTRIBUTES_VALUE = u'attributes_value'
 ATTRIBUTES_TYPE = u'attributes_type'
+ATTRIBUTES_METADATA = u'attributes_metadata'
 METADATAS_NUMBER = u'metadatas_number'
 METADATAS_NAME = u'metadatas_name'
 METADATAS_TYPE = u'metadatas_type'
@@ -85,6 +86,7 @@ CONDITION_ATTRS = u'condition_attrs'
 CONDITION_ATTRS_NUMBER = u'condition_attrs_number'
 CONDITION_EXPRESSION = u'condition_expression'
 NOTIFICATION_ATTRS = u'notification_attrs'
+NOTIFICATION_EXCEPTATTRS = u'notification_exceptAttrs'
 NOTIFICATION_ATTRS_NUMBER = u'notification_attrs_number'
 NOTIFICATION_ATTRSFORMAT = u'notification_attrsFormat'
 NOTIFICATION_HTTP_URL = u'notification_http_url'
@@ -176,6 +178,7 @@ class CB:
                                ATTRIBUTES_NAME: None,
                                ATTRIBUTES_VALUE: None,
                                ATTRIBUTES_TYPE: NONE,
+                               ATTRIBUTES_METADATA: TRUE,
                                METADATAS_NUMBER: 0,
                                METADATAS_NAME: None,
                                METADATAS_TYPE: NONE,
@@ -195,6 +198,7 @@ class CB:
                                      CONDITION_ATTRS_NUMBER: 0,
                                      CONDITION_EXPRESSION: None,
                                      NOTIFICATION_ATTRS: None,
+                                     NOTIFICATION_EXCEPTATTRS: None,
                                      NOTIFICATION_ATTRS_NUMBER: 0,
                                      NOTIFICATION_ATTRSFORMAT: None,
                                      NOTIFICATION_HTTP_URL: None,
@@ -391,7 +395,12 @@ class CB:
         :param label: ex: random=10 return: 10
         :return int
         """
-        return int(label.split("=")[1])
+        number = u'0123456789'
+        c = 0
+        length = len(label)-1
+        while (length >= c) and (label[c] in number):
+            c=c+1
+        return int(label[:c])
 
     def __send_request(self, method, path, **kwargs):
         """
@@ -424,7 +433,7 @@ class CB:
                 for item in headers:
                     self.request_string = "%s\n    %s: %s" % (self.request_string, item, headers[item])
             if payload is not None:
-                self.request_string = "%s\npayload: %s" % (self.request_string, payload)
+                self.request_string = unicode("%s\npayload: %s" % (self.request_string, payload.decode("utf-8")))
                 self.request_string = "%s\npayload length: %s" % (self.request_string, str(len(payload)))
             __logger__.debug("----------------- Request ---------------------------------\n%s" % self.request_string)
             __logger__.debug("-----------------------------------------------------------")
@@ -454,14 +463,17 @@ class CB:
         :return (string) random
         """
         for random_label in dictionary:
-            quote_exist = False
             if random_label in random_labels:
                 if (dictionary[random_label] is not None) and (dictionary[random_label].find(RANDOM) >= 0):
-                    if dictionary[random_label].find("\"") >= 0:
-                        quote_exist = True
-                    dictionary[random_label] = string_generator(self.__get_random_number(remove_quote(dictionary[random_label])))
-                    if quote_exist:
-                        dictionary[random_label] = '"%s"' % dictionary[random_label]
+                    temp = dictionary[random_label].split(u'random=')
+                    label_final = EMPTY
+                    for pos in range(len(temp)-1):
+                        rn = self.__get_random_number(temp[pos+1])
+                        label_final = string_generator(rn) + temp[pos+1][rn:]
+                        rns = str(rn)
+                    if temp[-1] != rns:  # used mainly with values with quotes
+                        label_final = "%s%s" % (label_final, temp[-1][len(rns):])
+                    dictionary[random_label] = "%s%s" % (temp[0], label_final)
         return dictionary
 
     # create entity/ies dinamically or manually
@@ -528,45 +540,72 @@ class CB:
         """
         create an attribute with entity context in raw mode
         :return (string)
+        Hint: to create N attributes use & as separator. Ev:
+                  | parameter           | value                                 |
+                  | entities_type       | "house"                               |
+                  | entities_id         | "room_2"                              |
+                  | attributes_name     | "temperature"&"pressure"&"humidity"   |
+                  | attributes_value    | 34&"high"&"random=3"                  |
+                  | attributes_type     | "celsius"&&"porcent"                  |
+                  | attributes_metadata | true&false                            |
+                  | metadatas_name      | "very_hot"                            |
+                  | metadatas_type      | "alarm"                               |
+                  | metadatas_value     | "default"                             |
         """
-        attribute_str = EMPTY
-        # create attribute with/without attribute type and metadatas (with/without type)
-        if mode == NORMALIZED:
-            # append attribute type if it does exist
-            if entity_context[ATTRIBUTES_TYPE] != NONE:
-                attribute_str = '"type": %s' % self.entity_context[ATTRIBUTES_TYPE]
+        attributes_final = EMPTY
+        separator = "&"
+        # create N attributes with/without attribute type and metadatas (with/without type)
+        name_list = convert_str_to_list(self.entity_context[ATTRIBUTES_NAME], separator)
+        values_list = convert_str_to_list(self.entity_context[ATTRIBUTES_VALUE], separator)
+        self.entity_context[ATTRIBUTES_TYPE] = self.entity_context[ATTRIBUTES_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+        type_list = convert_str_to_list(self.entity_context[ATTRIBUTES_TYPE], separator)
+        self.entity_context[ATTRIBUTES_METADATA] = self.entity_context[ATTRIBUTES_METADATA].replace("%s%s" % (separator, separator), '%s"true"%s' % (separator, separator))
+        meta_list = convert_str_to_list(self.entity_context[ATTRIBUTES_METADATA], separator)
 
-            # append metadata if it does exist
-            if entity_context[METADATAS_NAME] is not None:
-                if entity_context[METADATAS_TYPE] != NONE:
-                    metadata = '"metadata": {%s: {"value": %s, "type": %s}}' % (entity_context[METADATAS_NAME],
-                                                                                entity_context[METADATAS_VALUE],
-                                                                                entity_context[METADATAS_TYPE])
-                else:
-                    metadata = '"metadata": {%s: {"value": %s}}' % (entity_context[METADATAS_NAME],
-                                                                    entity_context[METADATAS_VALUE])
-                if attribute_str != EMPTY:
-                    attribute_str = '%s, %s' % (attribute_str, metadata)
-                else:
-                    attribute_str = metadata
+        for pos in range(len(name_list)):
+            attribute_str = EMPTY
+            # create a entity with N attributes in normalized mode
+            if mode == NORMALIZED:
+                # append attribute type if it does exist
+                if (len(type_list) > pos) and (remove_quote(type_list[pos]) != NONE):
+                    attribute_str = '"type": %s' % type_list[pos]
 
-            # append attribute value if it exist
-            if entity_context[ATTRIBUTES_VALUE] is not None:
-                if attribute_str != EMPTY:
-                    attribute_str = '%s, "value": %s' % (attribute_str, entity_context[ATTRIBUTES_VALUE])
-                else:
-                    attribute_str = '"value": %s' % entity_context[ATTRIBUTES_VALUE]
+                # append metadata if it does exist
+                if (len(meta_list) <= pos):
+                    meta_list.append(TRUE)
+                if remove_quote(meta_list[pos]) == TRUE:
+                    if entity_context[METADATAS_NAME] != None:
+                        if entity_context[METADATAS_TYPE] != NONE:
+                            metadata = '"metadata": {%s: {"value": %s, "type": %s}}' % (entity_context[METADATAS_NAME],
+                                                                                        entity_context[METADATAS_VALUE],
+                                                                                        entity_context[METADATAS_TYPE])
+                        else:
+                            metadata = '"metadata": {%s: {"value": %s}}' % (entity_context[METADATAS_NAME],
+                                                                            entity_context[METADATAS_VALUE])
+                        if attribute_str != EMPTY:
+                            attribute_str = '%s, %s' % (attribute_str, metadata)
+                        else:
+                            attribute_str = metadata
 
-            # append attribute name
-            if entity_context[ATTRIBUTES_NAME] is not None:
-                attribute_str = u'%s:{%s}' % (entity_context[ATTRIBUTES_NAME], attribute_str)
+                # append attribute value if it exist
+                if values_list[pos] is not None:
+                    if attribute_str != EMPTY:
+                        attribute_str = '%s, "value": %s' % (attribute_str, values_list[pos])
+                    else:
+                        attribute_str = '"value": %s' % values_list[pos]
 
-        elif mode == KEY_VALUES and entity_context[ATTRIBUTES_NAME] is not None:
-            attribute_str = u'%s:{%s}' % (entity_context[ATTRIBUTES_NAME], attribute_str)
-            attribute_str = u'%s: %s' % (entity_context[ATTRIBUTES_NAME], entity_context[ATTRIBUTES_VALUE])
+                # append attribute name
+                if name_list[pos] is not None:
+                    attribute_str = u'%s:{%s},' % (name_list[pos], attribute_str)
+                attributes_final = "%s %s" % (attributes_final, attribute_str)
 
-        __logger__.debug("Atribute with raw values: %s" % attribute_str)
-        return attribute_str
+            # create a entity with N attributes in keyValues mode
+            elif mode == KEY_VALUES and entity_context[ATTRIBUTES_NAME] is not None:
+                attribute_str = u'%s: %s,' % (name_list[pos], values_list[pos])
+                attributes_final = "%s %s" % (attributes_final, attribute_str)
+
+        __logger__.debug("Atribute with raw values: %s" % attributes_final[:-1])
+        return attributes_final[:-1]
 
     def __create_attributes_values(self, entity_context):
         """
@@ -716,13 +755,21 @@ class CB:
         # attrs field
         if subscription_context[NOTIFICATION_ATTRS] == u'array is empty':
             notification[ATTRS_FIELD_NAME] = []
-        elif subscription_context[NOTIFICATION_ATTRS] is not None:
+        if subscription_context[NOTIFICATION_ATTRS] is not None:
             attrs = []
             for a in range(int(subscription_context[NOTIFICATION_ATTRS_NUMBER])):
                 if int(subscription_context[NOTIFICATION_ATTRS_NUMBER]) > 1:
                     attrs.append("%s_%s" % (subscription_context[NOTIFICATION_ATTRS], str(a)))
                 else:
                    attrs.append(subscription_context[NOTIFICATION_ATTRS])
+            notification[ATTRS_FIELD_NAME] = attrs
+        if subscription_context[NOTIFICATION_EXCEPTATTRS] is not None:
+            attrs = []
+            for a in range(int(subscription_context[NOTIFICATION_ATTRS_NUMBER])):
+                if int(subscription_context[NOTIFICATION_ATTRS_NUMBER]) > 1:
+                    attrs.append("%s_%s" % (subscription_context[NOTIFICATION_EXCEPTATTRS], str(a)))
+                else:
+                   attrs.append(subscription_context[NOTIFICATION_EXCEPTATTRS])
             notification[ATTRS_FIELD_NAME] = attrs
 
         # attrsFormat field (pending to develop)
@@ -815,6 +862,11 @@ class CB:
         # attributes field
         if subscription_context[NOTIFICATION_ATTRS] is not None:
             attributes = u'"attrs": [%s],' % (subscription_context[NOTIFICATION_ATTRS])
+            notification = "%s %s" % (notification, attributes)
+
+        # exceptAttributes field
+        if subscription_context[NOTIFICATION_EXCEPTATTRS] is not None:
+            attributes = u'"exceptAttrs": [%s],' % (subscription_context[NOTIFICATION_EXCEPTATTRS])
             notification = "%s %s" % (notification, attributes)
 
         if notification != EMPTY:
@@ -1527,18 +1579,19 @@ class CB:
                 self.subscription_context[item] = self.subsc_dict_temp[item]
 
         # replace_host (used in notifications)
-        if self.subscription_context[NOTIFICATION_HTTP_URL].find(REPLACE_HOST) >= 0:
+        if (self.subscription_context[NOTIFICATION_HTTP_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_URL].find(REPLACE_HOST) >= 0):
             self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_HOST, get_ip()) # get_ip in helper_utils.py library
 
         # Random values
         self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
         if self.subscription_context[CONDITION_EXPRESSION] is not None and self.subscription_context[CONDITION_EXPRESSION].find(RANDOM) >= 0:   #  random condition expression
-            exp_op = self.subscription_context[CONDITION_EXPRESSION].split("&")
+            exp_op = self.subscription_context[CONDITION_EXPRESSION].split("&") # ex: ["q>>>random=10", "georel>>>near;minDistance:5000", "geometry>>><geometry>", "coords>>>25.774,-80.190"]
             temp = EMPTY
             for op in exp_op:
                 if op .find(RANDOM) >= 0:
-                    exp_split = op.split(">>>")
-                    op = "%s>>>%s" % (exp_split[0], string_generator(self.__get_random_number(exp_split[1])))
+                    exp_split = op.split(">>>")  # ex: ["q>", "random=10"]
+                    rnd_split = exp_split[1].split("=")  # ex: ["random", "10"]
+                    op = "%s>>>%s" % (exp_split[0], string_generator(self.__get_random_number(rnd_split[1])))
                 temp = "%s%s&" % (temp, op)
             self.subscription_context[CONDITION_EXPRESSION] = temp[:-1]
 
