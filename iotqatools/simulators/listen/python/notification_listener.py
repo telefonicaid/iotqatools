@@ -62,6 +62,8 @@ def show_last_data():
     if VERBOSE.lower() == "true":
         print("Request data received in listener:\n Url: %s\n Headers: %s\n Payload: %s\n" % (last_url, str(last_headers), last_payload))
 
+
+
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """
     HTTP server
@@ -72,6 +74,57 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(s):
         """
         POST request
+        """
+        global last_headers, last_payload, last_url, get_last_data, show_last_data
+        s.send_response(200)
+        get_last_data(s)
+        headers_prefix = u'last'
+        for item in last_headers:
+            s.send_header("%s-%s" % (headers_prefix, item), last_headers[item])
+        s.send_header("%s-url" % headers_prefix, "%s" % (last_url))
+
+        show_last_data()   # verify VERBOSE global variable
+
+        s.end_headers()
+        s.wfile.write(last_payload)
+
+    def do_PUT(s):
+        """
+        PUT request
+        """
+        global last_headers, last_payload, last_url, get_last_data, show_last_data
+        s.send_response(200)
+        get_last_data(s)
+        headers_prefix = u'last'
+        for item in last_headers:
+            s.send_header("%s-%s" % (headers_prefix, item), last_headers[item])
+        s.send_header("%s-url" % headers_prefix, "%s" % (last_url))
+
+        show_last_data()   # verify VERBOSE global variable
+
+        s.end_headers()
+        s.wfile.write(last_payload)
+
+    def do_DELETE(s):
+        """
+        PUT request
+        """
+        global last_headers, last_payload, last_url, get_last_data, show_last_data
+        s.send_response(200)
+        get_last_data(s)
+        headers_prefix = u'last'
+        for item in last_headers:
+            s.send_header("%s-%s" % (headers_prefix, item), last_headers[item])
+        s.send_header("%s-url" % headers_prefix, "%s" % (last_url))
+
+        show_last_data()   # verify VERBOSE global variable
+
+        s.end_headers()
+        s.wfile.write(last_payload)
+
+    def do_PATCH(s):
+        """
+        PUT request
         """
         global last_headers, last_payload, last_url, get_last_data, show_last_data
         s.send_response(200)
