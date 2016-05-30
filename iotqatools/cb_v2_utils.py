@@ -90,10 +90,11 @@ NOTIFICATION_EXCEPTATTRS = u'notification_exceptAttrs'
 NOTIFICATION_ATTRS_NUMBER = u'notification_attrs_number'
 NOTIFICATION_ATTRSFORMAT = u'notification_attrsFormat'
 NOTIFICATION_HTTP_URL = u'notification_http_url'
-NOTIFICATION_HTTP_HEADERS = u'notification_http_headers'
-NOTIFICATION_HTTP_QS = u'notification_http_qs'
-NOTIFICATION_HTTP_METHOD = u'notification_http_method'
-NOTIFICATION_HTTP_PAYLOAD = u'notification_http_payload'
+NOTIFICATION_HTTP_CUSTOM_URL = u'notification_http_custom_url'
+NOTIFICATION_HTTP_CUSTOM_HEADERS = u'notification_http_custom_headers'
+NOTIFICATION_HTTP_CUSTOM_QS = u'notification_http_custom_qs'
+NOTIFICATION_HTTP_CUSTOM_METHOD = u'notification_http_custom_method'
+NOTIFICATION_HTTP_CUSTOM_PAYLOAD = u'notification_http_custom_payload'
 THROTTLING = u'throttling'
 EXPIRES = u'expires'
 STATUS = u'status'
@@ -154,6 +155,7 @@ class CB:
            - **create_subscription**: create a subscription (POST /v2/subscriptions/)
            - **create_subscription_in_raw_mode**: create a subscription in raw mode (POST /v2/subscriptions/)
            - **get_subscription_by_id**: get a subscription by id (GET /v2/subscriptions/<subscriptionId>)
+           - **delete_subscription_by_id**: delete a subscription by id (DELETE /v2/subscriptions/<subscriptionId>)
 
         #### Get used values per the library:
            - **get_entity_context**: return entities contexts (dict)
@@ -202,11 +204,12 @@ class CB:
                                      NOTIFICATION_ATTRS_NUMBER: 0,
                                      NOTIFICATION_ATTRSFORMAT: None,
                                      NOTIFICATION_HTTP_URL: None,
-                                     NOTIFICATION_HTTP_HEADERS: None,
-                                     NOTIFICATION_HTTP_QS: None,
-                                     NOTIFICATION_HTTP_METHOD: None,
-                                     NOTIFICATION_HTTP_PAYLOAD: None,
-                                     THROTTLING: 0,
+                                     NOTIFICATION_HTTP_CUSTOM_URL: None,
+                                     NOTIFICATION_HTTP_CUSTOM_HEADERS: None,
+                                     NOTIFICATION_HTTP_CUSTOM_QS: None,
+                                     NOTIFICATION_HTTP_CUSTOM_METHOD: None,
+                                     NOTIFICATION_HTTP_CUSTOM_PAYLOAD: None,
+                                     THROTTLING: None,
                                      EXPIRES: None,
                                      STATUS: None}
 
@@ -720,39 +723,60 @@ class CB:
         :return dict
         """
         ATTRS_FIELD_NAME = u'attrs'
+        EXCEPT_ATTRS_FIELD_NAME = u'exceptAttrs'
         HTTP_FIELD_NAME = u'http'
+        HTTP_CUSTOM_FIELD_NAME = u'httpCustom'
         notification = {}
-        # http -url field
-        http_field_exist = False
+        http_custom_field_exist = False
+
+        ## http field
         if subscription_context[NOTIFICATION_HTTP_URL] != u'without notification http field':
+            # http - url field
             if subscription_context[NOTIFICATION_HTTP_URL] is not None:
-                http_field_exist = True  # used to determine whether http dict is created or not
                 notification[HTTP_FIELD_NAME] = {}
                 notification[HTTP_FIELD_NAME]["url"] = subscription_context[NOTIFICATION_HTTP_URL]
 
-            # peding to develop (headers, qs, method and payload)
-            if subscription_context[NOTIFICATION_HTTP_HEADERS] is not None:
-                if not http_field_exist:
-                    http_field_exist = True  # used to determine whether http dict is created or not
-                    notification[HTTP_FIELD_NAME] = {}
-                notification[HTTP_FIELD_NAME]["headers"] = subscription_context[NOTIFICATION_HTTP_HEADERS]
-            if subscription_context[NOTIFICATION_HTTP_QS] is not None:
-                if not http_field_exist:
-                    http_field_exist = True  # used to determine whether http dict is created or not
-                    notification[HTTP_FIELD_NAME] = {}
-                notification[HTTP_FIELD_NAME]["query"] = subscription_context[NOTIFICATION_HTTP_QS]
-            if subscription_context[NOTIFICATION_HTTP_METHOD] is not None:
-                if not http_field_exist:
-                    http_field_exist = True  # used to determine whether http dict is created or not
-                    notification[HTTP_FIELD_NAME] = {}
-                notification[HTTP_FIELD_NAME]["method"] = subscription_context[NOTIFICATION_HTTP_METHOD]
-            if subscription_context[NOTIFICATION_HTTP_PAYLOAD] is not None:
-                if not http_field_exist:
-                    http_field_exist = True  # used to determine whether http dict is created or not
-                    notification[HTTP_FIELD_NAME] = {}
-                notification[HTTP_FIELD_NAME]["payload"] = subscription_context[NOTIFICATION_HTTP_PAYLOAD]
+            # httpCustom - url field
+            if subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                notification[HTTP_CUSTOM_FIELD_NAME] = {}
+                notification[HTTP_CUSTOM_FIELD_NAME]["url"] = subscription_context[NOTIFICATION_HTTP_CUSTOM_URL]
 
-        # attrs field
+            # httpCustom - headers field
+            if subscription_context[NOTIFICATION_HTTP_CUSTOM_HEADERS] is not None:
+                if not http_custom_field_exist:
+                    http_custom_field_exist = True  # used to determine whether http dict is created or not
+                    notification[HTTP_CUSTOM_FIELD_NAME] = {}
+                notification[HTTP_CUSTOM_FIELD_NAME]["headers"] = {}
+                temp_headers = convert_str_to_dict(subscription_context[NOTIFICATION_HTTP_CUSTOM_HEADERS], JSON)
+                for item in temp_headers:
+                    notification[HTTP_CUSTOM_FIELD_NAME]["headers"][item] = temp_headers[item]
+
+            # httpCustom - qs field
+            if subscription_context[NOTIFICATION_HTTP_CUSTOM_QS] is not None:
+                if not http_custom_field_exist:
+                    http_custom_field_exist = True  # used to determine whether http dict is created or not
+                    notification[HTTP_CUSTOM_FIELD_NAME] = {}
+                notification[HTTP_CUSTOM_FIELD_NAME]["qs"] = {}
+                temp_qs = convert_str_to_dict(subscription_context[NOTIFICATION_HTTP_CUSTOM_QS], JSON)
+                for item in temp_qs:
+                    notification[HTTP_CUSTOM_FIELD_NAME]["qs"][item] = temp_qs[item]
+
+            # httpCustom - method field
+            if subscription_context[NOTIFICATION_HTTP_CUSTOM_METHOD] is not None:
+                if not http_custom_field_exist:
+                    http_custom_field_exist = True  # used to determine whether http dict is created or not
+                    notification[HTTP_CUSTOM_FIELD_NAME] = {}
+                notification[HTTP_CUSTOM_FIELD_NAME]["method"] = subscription_context[NOTIFICATION_HTTP_CUSTOM_METHOD]
+
+            # httpCustom - payload field
+            if subscription_context[NOTIFICATION_HTTP_CUSTOM_PAYLOAD] is not None:
+                if not http_custom_field_exist:
+                    http_custom_field_exist = True  # used to determine whether http dict is created or not
+                    notification[HTTP_CUSTOM_FIELD_NAME] = {}
+                notification[HTTP_CUSTOM_FIELD_NAME]["payload"] = subscription_context[NOTIFICATION_HTTP_CUSTOM_PAYLOAD]
+
+        # attrs fields
         if subscription_context[NOTIFICATION_ATTRS] == u'array is empty':
             notification[ATTRS_FIELD_NAME] = []
         if subscription_context[NOTIFICATION_ATTRS] is not None:
@@ -763,6 +787,10 @@ class CB:
                 else:
                    attrs.append(subscription_context[NOTIFICATION_ATTRS])
             notification[ATTRS_FIELD_NAME] = attrs
+
+        # exceptAttrs fields
+        if subscription_context[NOTIFICATION_EXCEPTATTRS] == u'array is empty':
+            notification[EXCEPT_ATTRS_FIELD_NAME] = []
         if subscription_context[NOTIFICATION_EXCEPTATTRS] is not None:
             attrs = []
             for a in range(int(subscription_context[NOTIFICATION_ATTRS_NUMBER])):
@@ -770,9 +798,9 @@ class CB:
                     attrs.append("%s_%s" % (subscription_context[NOTIFICATION_EXCEPTATTRS], str(a)))
                 else:
                    attrs.append(subscription_context[NOTIFICATION_EXCEPTATTRS])
-            notification[ATTRS_FIELD_NAME] = attrs
+            notification[EXCEPT_ATTRS_FIELD_NAME] = attrs
 
-        # attrsFormat field (pending to develop)
+        # attrsFormat field
         if subscription_context[NOTIFICATION_ATTRSFORMAT] is not None:
             notification["attrsFormat"] = subscription_context[NOTIFICATION_ATTRSFORMAT]
         return notification
@@ -823,34 +851,43 @@ class CB:
         query = EMPTY
         attrsFormat = EMPTY
         notification = EMPTY
-        http_field_exist = False
+        http_custom_field_exist = False
+        http_custom = 'httpCustom'
         # http url field
         if subscription_context[NOTIFICATION_HTTP_URL] is not None:
-            if not http_field_exist:
-                http_field_exist = True  # used to determine whether http dict is created or not
-                notification = u'"http": {'
-            notification = u'%s "url": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_URL])
-        # pending to develop
-        if subscription_context[NOTIFICATION_HTTP_HEADERS] is not None:
-            if not http_field_exist:
-                http_field_exist = True  # used to determine whether http dict is created or not
-                notification = u'"http": {'
-            notification = u'%s "headers": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_HEADERS])
-        if subscription_context[NOTIFICATION_HTTP_QS] is not None:
-            if not http_field_exist:
-                http_field_exist = True  # used to determine whether http dict is created or not
-                notification = u'"http": {'
-            notification = u'%s "qs": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_QS])
-        if subscription_context[NOTIFICATION_HTTP_METHOD] is not None:
-            if not http_field_exist:
-                http_field_exist = True  # used to determine whether http dict is created or not
-                notification = u'"http": {'
-            notification = u'%s "method": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_METHOD])
-        if subscription_context[NOTIFICATION_HTTP_PAYLOAD] is not None:
-            if not http_field_exist:
-                http_field_exist = True  # used to determine whether http dict is created or not
-                notification = u'"http": {'
-            notification = u'%s "payload": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_PAYLOAD])
+            notification = u'"http": { "url": %s,' % (subscription_context[NOTIFICATION_HTTP_URL])
+
+        ## httpCustom fields
+        # httpCustom url field
+        if subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None:
+            if not http_custom_field_exist:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                #notification = u'"%s": {' % http_custom
+            notification = u'"%s": { "url": %s,' % (http_custom, subscription_context[NOTIFICATION_HTTP_CUSTOM_URL])
+        # httpCustom headers field
+        if subscription_context[NOTIFICATION_HTTP_CUSTOM_HEADERS] is not None:
+            if not http_custom_field_exist:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                notification = u'"%s": {' % http_custom
+            notification = u'%s "headers": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_CUSTOM_HEADERS])
+        # httpCustom qs field
+        if subscription_context[NOTIFICATION_HTTP_CUSTOM_QS] is not None:
+            if not http_custom_field_exist:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                notification = u'"%s": {' % http_custom
+            notification = u'%s "qs": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_CUSTOM_QS])
+       # httpCustom method field
+        if subscription_context[NOTIFICATION_HTTP_CUSTOM_METHOD] is not None:
+            if not http_custom_field_exist:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                notification = u'"%s": {' % http_custom
+            notification = u'%s "method": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_CUSTOM_METHOD])
+        # httpCustom payload field
+        if subscription_context[NOTIFICATION_HTTP_CUSTOM_PAYLOAD] is not None:
+            if not http_custom_field_exist:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                notification = u'"%s": {' % http_custom
+            notification = u'%s "payload": %s,' % (notification, subscription_context[NOTIFICATION_HTTP_CUSTOM_PAYLOAD])
         if notification != EMPTY:
             notification = u'%s},' % notification[:-1]
 
@@ -1636,7 +1673,7 @@ class CB:
                 csub["notification"] = notification
 
             # create throttling field
-            if self.subscription_context[THROTTLING] != 0:
+            if self.subscription_context[THROTTLING] is not None:
                 csub["throttling"] = int(self.subscription_context[THROTTLING])
 
             # create expires field
@@ -1708,6 +1745,19 @@ class CB:
         """
         __logger__.info("subscriptionId: %s" % subscription_id)
         return self.__send_request(GET, "%s/%s" % (V2_SUBSCRIPTIONS, subscription_id),headers=self.headers)
+
+    # delete subcriptions
+    def delete_subscription_by_id(self, subscription_id):
+        """
+        delete subscription by id
+        :request -> DELETE /v2/subscriptions/<subc_id>
+        :payload --> No
+        :query parameters --> No
+        Hint: If you do like to use the subscriptionId of the subscription created previously, use `previous subs` value
+        :return responses
+        """
+        __logger__.info("subscriptionId: %s" % subscription_id)
+        return self.__send_request(DELETE, "%s/%s" % (V2_SUBSCRIPTIONS, subscription_id),headers=self.headers)
 
 
     #  --------- Fuctions that return values from library ---------
