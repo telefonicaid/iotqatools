@@ -154,6 +154,7 @@ class CB:
            - **properties_to_subcription**: definition of properties to subscription
            - **create_subscription**: create a subscription (POST /v2/subscriptions/)
            - **create_subscription_in_raw_mode**: create a subscription in raw mode (POST /v2/subscriptions/)
+           - **get_all_subscriptions**: get all subscriptions (GET /v2/subscriptions)
            - **get_subscription_by_id**: get a subscription by id (GET /v2/subscriptions/<subscriptionId>)
            - **delete_subscription_by_id**: delete a subscription by id (DELETE /v2/subscriptions/<subscriptionId>)
 
@@ -1734,6 +1735,20 @@ class CB:
         return resp
 
     # get subcriptions
+    def get_all_subscriptions(self, context):
+        """
+        get all subscriptions
+        :request -> GET /v2/subscriptions
+        :payload --> No
+        :query parameters --> Yes
+        :return responses
+        """
+        self.entities_parameters.clear()
+        if context.table is not None:
+            for row in context.table:
+                self.entities_parameters[row[PARAMETER]] = row[VALUE]
+        return self.__send_request(GET, V2_SUBSCRIPTIONS, parameters=self.entities_parameters, headers=self.headers)
+
     def get_subscription_by_id(self, subscription_id):
         """
         get subscription by id
