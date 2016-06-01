@@ -443,8 +443,9 @@ class CbNgsi10v2Utils(object):
         headers.update(self.headers)
 
         # Check params is a correct dict
-        if not isinstance(options, dict):
-            raise Exception('Wrong type in options. Dictionary is needed')
+        if options is not None:
+            if not isinstance(options, dict):
+                raise Exception('Wrong type in options. Dictionary is needed')
 
         # Make request
         return self.__send_request('get', self.path_context_subscriptions, headers=headers, verify=None, query=options)
@@ -490,7 +491,6 @@ class CbNgsi10v2Utils(object):
         :return:
         """
 
-
         # Add default headers to the request
         headers.update(self.headers)
 
@@ -531,14 +531,15 @@ if __name__ == '__main__':
 
     # invoke CB
     headers = {'fiware-service': 'city012', 'fiware-servicepath': '/electricidad'}
-    # resp = cb.create_entity(headers=headers, payload=pl)
+    # headers = {'fiware-service': 'eeee', 'fiware-servicepath': '/uuu'}
+    resp = cb.create_entity(headers=headers, payload=pl)
 
     # ====================list entities================
     # create filters
-    filters = {'type': 'Room5', 'limit': 3, 'q': 'humidity~=120;temperature~=21.7'}
-
+    filters2 = {'type': 'Room5', 'limit': 3, 'q': 'humidity~=120;temperature~=21.7'}
+    filters = {'q': 'dateCreated>2016-04-04T14:00:00.00Z', 'options':'dateCreated'}
     # invoke CB
-    # resp = cb.list_entities(headers=headers, filters=filters)
+    resp = cb.list_entities(headers=headers, filters=filters2)
 
     # ===================get attribute data============
 
