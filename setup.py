@@ -64,7 +64,7 @@ req_dev = get_requirements('requirements.txt')
 
 setup(
     name='iotqatools',
-    version='0.4.8',
+    version='0.4.9',
     description='Iot QA Tools',
     url='https://github.com/telefonicaid/iotqatools',
     author='Telefonica I+D',

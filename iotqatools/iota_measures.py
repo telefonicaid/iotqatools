@@ -35,9 +35,9 @@ SERVER_ROOT = 'http://localhost:8002'
 
 MeasuresType = {
     "UL": "/idas/2.0?apikey={}&ID={}",
-    "UL2": "/d?k={}&i={}",
-    "IoTUL2CmdResp": "/iot/d?k={}&i={}&c={}",
-    "IoTUL2": "/iot/d?k={}&i={}",
+    "UL2": "/ul?k={}&i={}",
+    "IoTUL2CmdResp": "/iot/ul?k={}&i={}&c={}",
+    "IoTUL2": "/iot/ul?k={}&i={}",
     "IoTRepsol": "/iot/repsol",
     "IoTTT": "/iot/tt",
     "IoTEvadts": "/iot/evadts?apikey={}&ID={}",
