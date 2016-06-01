@@ -105,7 +105,7 @@ class Gw_Measures_Utils(object):
 
         print 'url: ' + url
         data = self.getMeasure(measure_type, measures, field)
-        res = requests.post(url, data=data)
+        res = requests.post(url,headers = {'content-type': 'text/plain'},data=data)
 
         #log request
         PqaTools.log_requestAndResponse(url=url, headers={}, data=data, comp='IOTA', response=res, method='post')
