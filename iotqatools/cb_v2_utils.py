@@ -826,6 +826,8 @@ class CB:
         condition = u'"condition": {'
         # attributes field
         if subscription_context[CONDITION_ATTRS] is not None:
+            if remove_quote(subscription_context[CONDITION_ATTRS]) == "array is empty":
+                subscription_context[CONDITION_ATTRS] = EMPTY
             condition = u'%s "attrs": [%s]' % (condition, subscription_context[CONDITION_ATTRS])
             if subscription_context[CONDITION_EXPRESSION] is not None:
                 condition = "%s," % condition
