@@ -1757,7 +1757,7 @@ class CB:
         :request -> GET /v2/subscriptions/<subc_id>
         :payload --> No
         :query parameters --> No
-        Hint: If you do like to use the subscriptionId of the subscription created previously, use `previous subs` value
+        Hint: If you do like to use the subscriptionId of the subscription created previously, use `previous subsc` value
         :return responses
         """
         __logger__.info("subscriptionId: %s" % subscription_id)
@@ -1770,7 +1770,7 @@ class CB:
         :request -> DELETE /v2/subscriptions/<subc_id>
         :payload --> No
         :query parameters --> No
-        Hint: If you do like to use the subscriptionId of the subscription created previously, use `previous subs` value
+        Hint: If you do like to use the subscriptionId of the subscription created previously, use `previous subsc` value
         :return responses
         """
         __logger__.info("subscriptionId: %s" % subscription_id)

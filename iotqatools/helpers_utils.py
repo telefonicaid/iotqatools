@@ -324,3 +324,17 @@ def get_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(('8.8.8.8', 0))  # connecting to a UDP address doesn't send packets
     return s.getsockname()[0]
+
+def list_swap(l, init_pos, end_pos):
+    """
+    swap an item in a list from a initial position to another position
+    :param l: list
+    :init_pos: item initial position
+    :end_pos: item end position
+    :return list (swapped)
+    """
+    try:
+      l[int(init_pos)], l[int(end_pos)] = l[int(end_pos)], l[int(init_pos)]
+    except Exception, e:
+        raise "ERROR - trying to swap items in a list: \n      - %s" % e
+    return l
