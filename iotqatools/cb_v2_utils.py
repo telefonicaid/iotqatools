@@ -86,7 +86,7 @@ CONDITION_ATTRS = u'condition_attrs'
 CONDITION_ATTRS_NUMBER = u'condition_attrs_number'
 CONDITION_EXPRESSION = u'condition_expression'
 NOTIFICATION_ATTRS = u'notification_attrs'
-NOTIFICATION_EXCEPTATTRS = u'notification_exceptAttrs'
+NOTIFICATION_EXCEPTATTRS = u'notification_except_attrs'
 NOTIFICATION_ATTRS_NUMBER = u'notification_attrs_number'
 NOTIFICATION_ATTRSFORMAT = u'notification_attrsFormat'
 NOTIFICATION_HTTP_URL = u'notification_http_url'
@@ -731,16 +731,19 @@ class CB:
         http_custom_field_exist = False
 
         ## http field
-        if subscription_context[NOTIFICATION_HTTP_URL] != u'without notification http field':
-            # http - url field
-            if subscription_context[NOTIFICATION_HTTP_URL] is not None:
-                notification[HTTP_FIELD_NAME] = {}
+        if subscription_context[NOTIFICATION_HTTP_URL] is not None:
+            notification[HTTP_FIELD_NAME] = {}
+            if subscription_context[NOTIFICATION_HTTP_URL] != u'without notification http url field':
+                # http - url field
                 notification[HTTP_FIELD_NAME]["url"] = subscription_context[NOTIFICATION_HTTP_URL]
 
-            # httpCustom - url field
-            if subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None:
+        ## httpCustom field
+        if subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None:
+
+            notification[HTTP_CUSTOM_FIELD_NAME] = {}
+            if subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] != u'without notification httpCustom url field':
+                # httpCustom - url field
                 http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
-                notification[HTTP_CUSTOM_FIELD_NAME] = {}
                 notification[HTTP_CUSTOM_FIELD_NAME]["url"] = subscription_context[NOTIFICATION_HTTP_CUSTOM_URL]
 
             # httpCustom - headers field
