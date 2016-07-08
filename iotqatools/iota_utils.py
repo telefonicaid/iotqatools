@@ -132,7 +132,7 @@ class Rest_Utils_IoTA(object):
     def api_get(self, path, headers={}, params={}):
         res = requests.get(path, headers=headers, params=params)
         #log request
-        PqaTools.log_requestAndResponse(url=path, headers=headers, data='', comp='IOTA', response=res, method='get')
+        PqaTools.log_requestAndResponse(url=path, headers=headers, params=params, data='', comp='IOTA', response=res, method='get')
         return res
 
     # See decoratorAPI comments
@@ -140,7 +140,7 @@ class Rest_Utils_IoTA(object):
     def api_post(self, path, headers={}, params={}, data={}):
         res = requests.post(path, data=data, headers=headers, params=params)
         #log request
-        PqaTools.log_requestAndResponse(url=path, headers=headers, data=data, comp='IOTA', response=res, method='post')
+        PqaTools.log_requestAndResponse(url=path, headers=headers, params=params, data=data, comp='IOTA', response=res, method='post')
         return res
 
     # See decoratorAPI comments
@@ -148,7 +148,7 @@ class Rest_Utils_IoTA(object):
     def api_put(self, path, headers={}, params={}, data={}):
         res = requests.put(path, data=data, headers=headers, params=params)
         #log request
-        PqaTools.log_requestAndResponse(url=path, headers=headers, data=data, comp='IOTA', response=res, method='put')
+        PqaTools.log_requestAndResponse(url=path, headers=headers, params=params, data=data, comp='IOTA', response=res, method='put')
         return res
 
     # See decoratorAPI comments
@@ -156,7 +156,13 @@ class Rest_Utils_IoTA(object):
     def api_delete(self, path, headers={}, params={}):
         res = requests.delete(path, headers=headers, params=params)
         #log request
-        PqaTools.log_requestAndResponse(url=path, headers=headers, data='', comp='IOTA', response=res, method='delete')
+        PqaTools.log_requestAndResponse(url=path,
+                                        params=params,
+                                        headers=headers,
+                                        data='',
+                                        comp='IOTA',
+                                        response=res,
+                                        method='delete')
         return res
 
     """Version Methods"""
