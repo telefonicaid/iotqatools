@@ -231,7 +231,11 @@ class Rest_Utils_IoTA(object):
             return "ERROR"
 
             # log request
-        PqaTools.log_requestAndResponse(url=path, headers=headers, params=params, data=data, comp='IOTA', response=res,
+        PqaTools.log_requestAndResponse(url=path,
+                                        headers=headers,
+                                        params=params, data=data,
+                                        comp='IOTA',
+                                        response=res,
                                         method='put')
         return res
 
