@@ -24,7 +24,6 @@ please contact with::[iot_support@tid.es]
 
 __author__ = 'gtsa07'
 
-
 # Standard library imports
 import json
 
@@ -32,18 +31,16 @@ import json
 import requests
 from iotqatools.iot_tools import PqaTools
 
-
 # Params APIREST
 SERVER_ROOT = 'http://localhost:5371/m2m/v2'
 SERVER_ROOT_SECURE = 'http://localhost:5371/secure/m2m/v2'
 SERVICES_DETAIL = "services"
 DEVICES_DETAIL = "devices"
-SERVICE_HEADER='Fiware-Service'
-SERVICE_PATH_HEADER='Fiware-ServicePath'
-DEF_ENTITY_TYPE='thing'
-CBROKER_URL='http://127.0.0.1:1026'
-TOKEN=''
-
+SERVICE_HEADER = 'Fiware-Service'
+SERVICE_PATH_HEADER = 'Fiware-ServicePath'
+DEF_ENTITY_TYPE = 'thing'
+CBROKER_URL = 'http://127.0.0.1:1026'
+TOKEN = ''
 
 URLTypes = {
     "IoTUL2": "/iot/d",
@@ -130,32 +127,144 @@ class Rest_Utils_IoTA(object):
     # See decoratorAPI comments
     @decoratorApi
     def api_get(self, path, headers={}, params={}):
-        res = requests.get(path, headers=headers, params=params)
-        #log request
-        PqaTools.log_requestAndResponse(url=path, headers=headers, params=params, data='', comp='IOTA', response=res, method='get')
+        res = None
+
+        try:
+            res = requests.get(url=path,
+                               headers=headers,
+                               params=params)
+
+        except requests.exceptions.Timeout:
+            PqaTools.log_requestAndResponse(url=path,
+                                            params=params,
+                                            headers=headers,
+                                            data='',
+                                            comp='IOTA',
+                                            response="TIMEOUT",
+                                            method='get')
+
+        except requests.exceptions.RequestException as e:
+            PqaTools.log_requestAndResponse(url=path,
+                                            params=params,
+                                            headers=headers,
+                                            data='',
+                                            comp='IOTA',
+                                            response=e, method='get')
+            return "ERROR"
+
+        # log request
+        PqaTools.log_requestAndResponse(url=path,
+                                        headers=headers,
+                                        params=params,
+                                        data='',
+                                        comp='IOTA',
+                                        response=res,
+                                        method='get')
         return res
+
 
     # See decoratorAPI comments
     @decoratorApi
     def api_post(self, path, headers={}, params={}, data={}):
-        res = requests.post(path, data=data, headers=headers, params=params)
-        #log request
-        PqaTools.log_requestAndResponse(url=path, headers=headers, params=params, data=data, comp='IOTA', response=res, method='post')
+        res = None
+        try:
+            res = requests.post(url=path,
+                                data=data,
+                                headers=headers,
+                                params=params)
+
+        except requests.exceptions.Timeout:
+            PqaTools.log_requestAndResponse(url=path,
+                                            params=params,
+                                            headers=headers,
+                                            data=data,
+                                            comp='IOTA',
+                                            response="TIMEOUT",
+                                            method='post')
+
+        except requests.exceptions.RequestException as e:
+            PqaTools.log_requestAndResponse(url=path,
+                                            params=params,
+                                            headers=headers,
+                                            data=data,
+                                            comp='IOTA',
+                                            response=e,
+                                            method='post')
+            return "ERROR"
+
+        # log request
+        PqaTools.log_requestAndResponse(url=path,
+                                        headers=headers,
+                                        params=params,
+                                        data=data,
+                                        comp='IOTA',
+                                        response=res,
+                                        method='post')
         return res
 
     # See decoratorAPI comments
     @decoratorApi
     def api_put(self, path, headers={}, params={}, data={}):
-        res = requests.put(path, data=data, headers=headers, params=params)
-        #log request
-        PqaTools.log_requestAndResponse(url=path, headers=headers, params=params, data=data, comp='IOTA', response=res, method='put')
+        res = None
+        try:
+            res = requests.put(url=path,
+                               data=data,
+                               headers=headers,
+                               params=params)
+
+        except requests.exceptions.Timeout:
+            PqaTools.log_requestAndResponse(url=path,
+                                            params=params,
+                                            headers=headers,
+                                            data=data,
+                                            comp='IOTA',
+                                            response="TIMEOUT",
+                                            method='put')
+
+        except requests.exceptions.RequestException as e:
+            PqaTools.log_requestAndResponse(url=path,
+                                            params=params,
+                                            headers=headers,
+                                            data=data,
+                                            comp='IOTA',
+                                            response=e, method='put')
+            return "ERROR"
+
+            # log request
+        PqaTools.log_requestAndResponse(url=path,
+                                        headers=headers,
+                                        params=params, data=data,
+                                        comp='IOTA',
+                                        response=res,
+                                        method='put')
         return res
 
     # See decoratorAPI comments
     @decoratorApi
     def api_delete(self, path, headers={}, params={}):
-        res = requests.delete(path, headers=headers, params=params)
-        #log request
+        res = None
+        try:
+            res = requests.delete(url=path,
+                                  headers=headers,
+                                  params=params)
+        except requests.exceptions.Timeout:
+            PqaTools.log_requestAndResponse(url=path,
+                                            params=params,
+                                            headers=headers,
+                                            data='', comp='IOTA',
+                                            response="TIMEOUT",
+                                            method='delete')
+
+        except requests.exceptions.RequestException as e:
+            PqaTools.log_requestAndResponse(url=path,
+                                            params=params,
+                                            headers=headers,
+                                            data='',
+                                            comp='IOTA',
+                                            response=e, method='delete')
+            return "ERROR"
+
+        # log request
         PqaTools.log_requestAndResponse(url=path,
                                         params=params,
                                         headers=headers,
@@ -166,6 +275,7 @@ class Rest_Utils_IoTA(object):
         return res
 
     """Version Methods"""
+
     def version(self, headers={}):
         """
         Get IOTA version
@@ -173,7 +283,6 @@ class Rest_Utils_IoTA(object):
         headers = self.compose_headers(headers)
         res = self.api_get("about", headers=headers)
         return res
-
 
     """Services Methods"""
 
@@ -250,10 +359,10 @@ class Rest_Utils_IoTA(object):
         else:
             headers[self.srv_path_header] = '/'
         if resource:
-            params['resource']= resource
+            params['resource'] = resource
         if keystone_token:
             self.token = keystone_token
-        service =  self.get_service('', headers, params)
+        service = self.get_service('', headers, params)
         if service.status_code == 200:
             serv = service.json()
             if serv['count'] == 1:
@@ -269,17 +378,17 @@ class Rest_Utils_IoTA(object):
         headers[self.srv_path_header] = '/'
         resource = URLTypes.get(protocol)
         if (protocol == 'IotTT') | (protocol == 'IoTRepsol') | (protocol == 'IoTModbus'):
-            apikey=''
+            apikey = ''
         else:
-            apikey='apikey_' + str(service_name)
-        service={
-            "services":[
+            apikey = 'apikey_' + str(service_name)
+        service = {
+            "services": [
                 {
                     "apikey": apikey,
                     "resource": resource
                 }
-                ]
-                }
+            ]
+        }
         if cbroker:
             service['services'][0]['cbroker'] = cbroker
         else:
@@ -291,18 +400,19 @@ class Rest_Utils_IoTA(object):
         req = self.post_service(service, headers)
         return req
 
-    def create_service_with_params(self, service_name, service_path, resource={}, apikey={}, cbroker={}, entity_type={}, token={}, attributes={}, static_attributes={}, protocol={}, keystone_token={}):
+    def create_service_with_params(self, service_name, service_path, resource={}, apikey={}, cbroker={}, entity_type={},
+                                   token={}, attributes={}, static_attributes={}, protocol={}, keystone_token={}):
         headers = {}
         if not service_name == 'void':
             headers[self.srv_header] = service_name
         if not service_path == 'void':
             headers[self.srv_path_header] = str(service_path)
-        service={
-            "services":[
+        service = {
+            "services": [
                 {
                 }
-                ]
-                }
+            ]
+        }
         if resource:
             if not resource == 'void':
                 if not resource == 'null':
@@ -334,7 +444,7 @@ class Rest_Utils_IoTA(object):
                     prot = ProtocolTypes.get(protocol)
                     if not prot:
                         prot = protocol
-                    service['services'][0]['protocol']= [prot]
+                    service['services'][0]['protocol'] = [prot]
             else:
                 resource = protocol
                 service['services'][0]['protocol'] = []
@@ -354,28 +464,28 @@ class Rest_Utils_IoTA(object):
             else:
                 headers[self.srv_path_header] = '/'
         if resource:
-            params['resource']= resource
+            params['resource'] = resource
         if limit:
-            params['limit']= limit
+            params['limit'] = limit
         if offset:
-            params['offset']= offset
+            params['offset'] = offset
         if protocol:
             prot = ProtocolTypes.get(protocol)
             if not prot:
                 prot = protocol
-            params['protocol']= prot
-        req =  self.get_service('', headers, params)
+            params['protocol'] = prot
+        req = self.get_service('', headers, params)
         return req
 
     def update_service_with_params(self, json, service_name, service_path={}, resource={}, apikey={}):
-        params={}
+        params = {}
         headers = {}
         if not service_name == 'void':
             headers[self.srv_header] = service_name
         if resource:
-            params['resource']= resource
+            params['resource'] = resource
         if apikey:
-            params['apikey']= apikey
+            params['apikey'] = apikey
         if service_path:
             if not service_path == 'void':
                 headers[self.srv_path_header] = str(service_path)
@@ -387,17 +497,18 @@ class Rest_Utils_IoTA(object):
         req = self.put_service('', json, headers, params)
         return req
 
-    def delete_service_with_params(self, service_name, service_path={}, resource={}, apikey={}, device={}, keystone_token={}):
-        params={}
+    def delete_service_with_params(self, service_name, service_path={}, resource={}, apikey={}, device={},
+                                   keystone_token={}):
+        params = {}
         headers = {}
         if not service_name == 'void':
             headers[self.srv_header] = service_name
         if resource:
-            params['resource']= resource
+            params['resource'] = resource
         if apikey:
-            params['apikey']= apikey
+            params['apikey'] = apikey
         if device:
-            params['device']= device
+            params['device'] = device
         if keystone_token:
             self.token = keystone_token
         if service_path:
@@ -416,7 +527,7 @@ class Rest_Utils_IoTA(object):
         headers = {}
         headers[self.srv_header] = str(service_name)
         if service_path:
-            if not service_path=='void':
+            if not service_path == 'void':
                 headers[self.srv_path_header] = str(service_path)
         else:
             headers[self.srv_path_header] = '/'
@@ -426,30 +537,31 @@ class Rest_Utils_IoTA(object):
         if device.status_code == 200:
             data = json.loads(device.text)
             if "count" in data:
-               return data["count"] > 0
+                return data["count"] > 0
             else:
                 return True
         else:
             return False
 
-    def create_device(self, service_name, device_name, service_path={}, endpoint={}, commands={}, entity_name={}, entity_type={}, attributes={}, static_attributes={}, protocol={}, keystone_token={}):
+    def create_device(self, service_name, device_name, service_path={}, endpoint={}, commands={}, entity_name={},
+                      entity_type={}, attributes={}, static_attributes={}, protocol={}, keystone_token={}):
         headers = {}
-        if not service_name=='void':
+        if not service_name == 'void':
             headers[self.srv_header] = str(service_name)
         if service_path:
-            if not service_path=='void':
+            if not service_path == 'void':
                 headers[self.srv_path_header] = str(service_path)
         else:
             headers[self.srv_path_header] = '/'
-        device={
-            "devices":[
+        device = {
+            "devices": [
                 {
                 }
-                ]
-               }
+            ]
+        }
         if device_name:
-            if device_name=='void':
-                device_name=""
+            if device_name == 'void':
+                device_name = ""
             device['devices'][0]['device_id'] = device_name
         if commands:
             device['devices'][0]['commands'] = commands
@@ -464,17 +576,17 @@ class Rest_Utils_IoTA(object):
         if static_attributes:
             device['devices'][0]['static_attributes'] = static_attributes
         if protocol:
-            if protocol=="void":
-                protocol=""
+            if protocol == "void":
+                protocol = ""
             device['devices'][0]['protocol'] = protocol
         if keystone_token:
             self.token = keystone_token
-        req = self.post_device(device,headers)
+        req = self.post_device(device, headers)
         return req
 
     def get_device_with_params(self, service_name, device_name, service_path={}, protocol={}, keystone_token={}):
         headers = {}
-        params={}
+        params = {}
         if not service_name == 'void':
             headers[self.srv_header] = str(service_name)
         if service_path:
@@ -486,15 +598,16 @@ class Rest_Utils_IoTA(object):
             prot = ProtocolTypes.get(protocol)
             if not prot:
                 prot = protocol
-            params['protocol']= prot
+            params['protocol'] = prot
         if keystone_token:
             self.token = keystone_token
         req = self.get_device(device_name, headers, params)
         return req
 
-    def get_devices_with_params(self, service_name, service_path={}, protocol={}, entity={}, detailed={}, limit={}, offset={}, keystone_token={}):
+    def get_devices_with_params(self, service_name, service_path={}, protocol={}, entity={}, detailed={}, limit={},
+                                offset={}, keystone_token={}):
         headers = {}
-        params={}
+        params = {}
         if not service_name == 'void':
             headers[self.srv_header] = str(service_name)
         if service_path:
@@ -506,22 +619,23 @@ class Rest_Utils_IoTA(object):
             prot = ProtocolTypes.get(protocol)
             if not prot:
                 prot = protocol
-            params['protocol']= prot
+            params['protocol'] = prot
         if detailed:
-            params['detailed']= detailed
+            params['detailed'] = detailed
         if entity:
-            params['entity']= entity
+            params['entity'] = entity
         if limit:
-            params['limit']= limit
+            params['limit'] = limit
         if offset:
-            params['offset']= offset
+            params['offset'] = offset
         if keystone_token:
             self.token = keystone_token
         req = self.get_listDevices(headers, params)
         return req
 
-    def update_device_with_params(self, json, device_name, service_name, service_path={}, protocol={}, keystone_token={}):
-        params={}
+    def update_device_with_params(self, json, device_name, service_name, service_path={}, protocol={},
+                                  keystone_token={}):
+        params = {}
         headers = {}
         if not service_name == 'void':
             headers[self.srv_header] = service_name
@@ -534,19 +648,20 @@ class Rest_Utils_IoTA(object):
             prot = ProtocolTypes.get(protocol)
             if not prot:
                 prot = protocol
-            params['protocol']= prot
+            params['protocol'] = prot
         if keystone_token:
             self.token = keystone_token
         req = self.put_device(device_name, json, headers, params)
         return req
 
-    def delete_device_with_params(self, device_name, service_name, service_path={}, protocol={}, keystone_token={}, resource={}):
-        params={}
+    def delete_device_with_params(self, device_name, service_name, service_path={}, protocol={}, keystone_token={},
+                                  resource={}):
+        params = {}
         headers = {}
         if not service_name == 'void':
             headers[self.srv_header] = service_name
         if service_path:
-            if not service_path=='void':
+            if not service_path == 'void':
                 headers[self.srv_path_header] = str(service_path)
         else:
             headers[self.srv_path_header] = '/'
@@ -554,17 +669,17 @@ class Rest_Utils_IoTA(object):
             prot = ProtocolTypes.get(protocol)
             if not prot:
                 prot = protocol
-            params['protocol']= prot
+            params['protocol'] = prot
         if resource:
-            params['resource']= resource
+            params['resource'] = resource
         if keystone_token:
             self.token = keystone_token
-        req = self.delete_device(device_name,headers, params)
+        req = self.delete_device(device_name, headers, params)
         return req
 
     def get_protocols(self, headers={}, params={}):
         headers = self.compose_headers(headers)
-        res = self.api_get( "protocols", headers=headers)
+        res = self.api_get("protocols", headers=headers)
         return res
 
     def get_identifier(self, headers={}, params={}):
@@ -574,7 +689,7 @@ class Rest_Utils_IoTA(object):
             ind1 = res.content.find("identifier:")
             if (ind1 > 0):
                 ind2 = res.content.find(" ", ind1)
-                return res._content[ind1+11:ind2]
+                return res._content[ind1 + 11:ind2]
 
         return ""
 
@@ -588,13 +703,13 @@ class Rest_Utils_IoTA(object):
         :return:  True if ok
         '''
 
-        json = { "protocol" : "PDI-IoTA-UltraLight", "description" : "UL2"}
+        json = {"protocol": "PDI-IoTA-UltraLight", "description": "UL2"}
         json["iotagent"] = ip
         json["identifier"] = identifier
         json["resource"] = "/iot/d"
 
         headers = self.compose_headers(headers)
-        res = self.api_post( "protocols", headers=headers, data=json)
+        res = self.api_post("protocols", headers=headers, data=json)
 
         if (res.status_code == 201):
             return ""
@@ -602,5 +717,4 @@ class Rest_Utils_IoTA(object):
             return res.content
 
     def set_token(self, token):
-        self.token=token
-
+        self.token = token
