@@ -50,6 +50,7 @@ ORION = u'orion'
 V2_ENTITIES = u'v2/entities'
 V2_SUBSCRIPTIONS = u'v2/subscriptions'
 V2_TYPES = u'v2/types'
+V2_BATCH = u'v2/op'
 GET = u'GET'
 POST = u'POST'
 PUT = u'PUT'
@@ -113,7 +114,7 @@ FIWARE_SERVICE = u'Fiware-Service'
 FIWARE_SERVICE_PATH = u'Fiware-ServicePath'
 RANDOM_ENTITIES_LABEL = [ATTRIBUTES_NAME, ATTRIBUTES_VALUE, ATTRIBUTES_TYPE, METADATAS_NAME, METADATAS_VALUE,
                          METADATAS_TYPE, ENTITIES_ID, ENTITIES_TYPE]
-RANDOM_SUBSCRIPTION_LABEL = [SUBJECT_TYPE, SUBJECT_ID, SUBJECT_IDPATTERN, CONDITION_ATTRS, NOTIFICATION_ATTRS, DESCRIPTION]
+RANDOM_SUBSCRIPTION_LABEL = [SUBJECT_TYPE, SUBJECT_ID, SUBJECT_IDPATTERN, CONDITION_ATTRS, NOTIFICATION_ATTRS, NOTIFICATION_EXCEPTATTRS, DESCRIPTION]
 RANDOM_QUERIES_PARAMETERS_LABELS = ["options"]
 
 __logger__ = logging.getLogger("utils")
@@ -158,6 +159,12 @@ class CB:
            - **get_subscription_by_id**: get a subscription by id (GET /v2/subscriptions/<subscriptionId>)
            - **delete_subscription_by_id**: delete a subscription by id (DELETE /v2/subscriptions/<subscriptionId>)
 
+        ### Batch operations:
+           - **append_an_entity_properties**: define a entity to update in a single batch operation
+           - **batch_update**: allows to create, update and/or delete several entities in a single batch operation
+           - **query_entities_properties**: define properties to query in a single batch operation
+           - **batch_query**: returns an Array containing one object per matching entity
+
         #### Get used values per the library:
            - **get_entity_context**: return entities contexts (dict)
            - **get_headers**: return headers (dict)
@@ -167,6 +174,9 @@ class CB:
            - **get_entity_type_to_request**: return entity type used in request to get/delete an entity, used to verify if the entity returned is the expected (string)
            - **get_attribute_name_to_request**: return attribute name used in request to get an attribute, used to verify if the attribute returned is the expected (string)
            - **get_subscription_context**: return queries parameters (dict)
+           - **get_request_response_string**: return a string with request and another one to response (string)
+           - **get_update_batch_context**: get update batch properties (dict)
+           - **get_query_batch_context**: get query batch properties
     """
 
     def __init_entity_context_dict(self):
@@ -214,6 +224,19 @@ class CB:
                                      EXPIRES: None,
                                      STATUS: None}
 
+    def __init_update_batch_properties_dict(self):
+        """
+        initialize update batch dict (used in update batch operations)
+        """
+        self.update_batch_dict = {"actionType": None,
+                                  "entities": []}
+
+    def __init_query_batch_properties_dict(self):
+        """
+        initialize query batch dict (used in query batch operations)
+        """
+        self.query_batch_dict = {}
+
     def __init__(self, **kwargs):
         """
         constructor
@@ -230,6 +253,8 @@ class CB:
         self.headers = {}
         self.__init_entity_context_dict()
         self.__init_subscription_context_dict()
+        self.__init_update_batch_properties_dict()
+        self.__init_query_batch_properties_dict()
         self.entities_parameters = {}
 
     # ------------------------------------Generals --------------------------------------------
@@ -314,21 +339,10 @@ class CB:
         except Exception, e:
             return False
 
-    def definition_headers(self, context):
+    def __update_headers(self):
         """
-        definition of headers
-           | parameter          | value            |
-           | Fiware-Service     | happy_path       |
-           | Fiware-ServicePath | /test            |
-           | Content-Type       | application/json |
-           | Accept             | application/json |
-        Hint: if value is "max length allowed", per example, it is random value with max length allowed and characters
-              allowed
-        :param context: context variable with headers
+        update an header if any constant is used
         """
-        for row in context.table:
-            self.headers[row[PARAMETER]] = row[VALUE]
-
         if FIWARE_SERVICE in self.headers:
             if self.headers[FIWARE_SERVICE] == MAX_LENGTH_ALLOWED:
                 self.headers[FIWARE_SERVICE] = string_generator(SERVICE_MAX_CHARS_ALLOWED, CHARS_ALLOWED)
@@ -351,6 +365,22 @@ class CB:
                                                                                  SERVICE_PATH_LEVELS + 1)
         __logger__.debug("Headers: %s" % str(self.headers))
 
+    def definition_headers(self, context):
+        """
+        definition of headers
+           | parameter          | value            |
+           | Fiware-Service     | happy_path       |
+           | Fiware-ServicePath | /test            |
+           | Content-Type       | application/json |
+           | Accept             | application/json |
+        Hint: if value is "max length allowed", per example, it is random value with max length allowed and characters
+              allowed
+        :param context: context variable with headers
+        """
+        for row in context.table:
+            self.headers[row[PARAMETER]] = row[VALUE]
+        self.__update_headers()
+
     def modification_headers(self, context, prev):
         """
         modification or append of headers
@@ -362,10 +392,17 @@ class CB:
         :param context: context variable with headers
         :param prev:determine if the previous headers are kept or not ( true | false )
         """
+        header_temp = {}
+        for item in self.headers:
+            header_temp[item] = self.headers[item]
         if prev.lower() != TRUE:
             self.headers.clear()
         for row in context.table:
-            self.headers[row[PARAMETER]] = row[VALUE]
+            if row[VALUE] == "the same value of the previous request":
+                self.headers[row[PARAMETER]] = header_temp[row[PARAMETER]]
+            else:
+                self.headers[row[PARAMETER]] = row[VALUE]
+        self.__update_headers()
 
     def append_new_header(self, key, value):
         """
@@ -1644,6 +1681,9 @@ class CB:
         if self.subscription_context[NOTIFICATION_ATTRS] is not None and self.subscription_context[NOTIFICATION_ATTRS] != "array is empty" \
            and self.subscription_context[NOTIFICATION_ATTRS_NUMBER] == 0:
             self.subscription_context[NOTIFICATION_ATTRS_NUMBER] = 1
+        if self.subscription_context[NOTIFICATION_EXCEPTATTRS] is not None and self.subscription_context[NOTIFICATION_EXCEPTATTRS] != "array is empty" \
+           and self.subscription_context[NOTIFICATION_ATTRS_NUMBER] == 0:
+            self.subscription_context[NOTIFICATION_ATTRS_NUMBER] = 1
 
         # log entities contexts
         __logger__.debug("subscription context properties:")
@@ -1779,9 +1819,106 @@ class CB:
         __logger__.info("subscriptionId: %s" % subscription_id)
         return self.__send_request(DELETE, "%s/%s" % (V2_SUBSCRIPTIONS, subscription_id),headers=self.headers)
 
+    #  --------- Batch operations ---------
+
+    def append_an_entity_properties(self, entity, mode):
+        """
+        define a entity to update in a single batch operation
+        :param entity: entity properties to append
+        :param mode: format used, ex: normalized or keyValues (defined in "options" query param)
+        """
+        entity_dict = {}
+        self.__init_entity_context_dict()
+
+        for item in entity:
+            if item in self.entity_context:
+                self.entity_context[item] = entity[item]
+
+        # The same value from create request (used in update request)
+        for item in self.entity_context:
+            if self.entity_context[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
+                self.entity_context[item] = self.dict_temp[item]
+
+        # Random values
+        self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
+
+        if self.entity_context[ATTRIBUTES_NAME] is not None and self.entity_context[ATTRIBUTES_NUMBER] == 0:
+            self.entity_context[ATTRIBUTES_NUMBER] = 1
+        if self.entity_context[METADATAS_NAME] is not None and self.entity_context[METADATAS_NUMBER] == 0:
+            self.entity_context[METADATAS_NUMBER] = 1
+
+        # create attributes with entity context
+        entity = self.__create_attributes(self.entity_context, mode)
+
+        # id and type fields
+        if self.entity_context[ENTITIES_ID] is not None:
+            entity[ID] = self.entity_context[ENTITIES_ID]
+        if self.entity_context[ENTITIES_TYPE] is not None:
+            entity[TYPE] = self.entity_context[ENTITIES_TYPE]
+
+        self.update_batch_dict["entities"].append(entity)
+
+    def batch_update(self, parameters, op):
+        """
+        allows to create, update and/or delete several entities in a single batch operation
+        :request -> POST /v2/op/update
+        :payload --> Yes
+        :query parameters --> Yes
+        :param parameters: queries parameters
+        :param op: specify the kind of update action to do (APPEND, APPEND_STRICT, UPDATE, DELETE)
+        :return http response
+        """
+        self.update_batch_dict["actionType"] = op
+        self.entities_parameters = parameters
+
+        payload = convert_dict_to_str(self.update_batch_dict, JSON)
+        if self.update_batch_dict != {}:
+            resp = self.__send_request(POST, "%s/update" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
+        else:
+            resp = self.__send_request(POST, "%s/update" % V2_BATCH, parameters=self.entities_parameters, headers=self.headers)
+        return resp
+
+    def query_entities_properties(self, entities, attributes, scope):
+        """"
+        define properties to query in a single batch operation
+        :param entities: entities list
+        :param attributes: attributes list
+        :param scopes: a list of scopes to restrict the result of the query
+        """
+        if len(entities) > 0:
+            for ent in entities:
+                entities = {}
+                items_split = ent.split(",")         # | entities   | type>>>house,id>>>room1 |
+                for items in items_split:
+                    item_split = items.split(">>>")
+                    entities[item_split[0]] = item_split[1]
+                if "entities" not in self.query_batch_dict:
+                    self.query_batch_dict["entities"] = []
+                self.query_batch_dict["entities"].append(entities)
+        if len(attributes) > 0:
+            self.query_batch_dict["attributes"] = attributes.split(",")
+        #scope fields still are pendind to define
+
+    def batch_query(self, parameters):
+        """
+        returns an Array containing one object per matching entity
+        :request -> POST /v2/op/query
+        :payload --> Yes
+        :query parameters --> Yes
+        :param parameters: queries parameters
+        :return http response
+        """
+        self.entities_parameters = parameters
+
+        payload = convert_dict_to_str(self.query_batch_dict, JSON)
+        if self.update_batch_dict != {}:
+            resp = self.__send_request(POST, "%s/query" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
+        else:
+            resp = self.__send_request(POST, "%s/query" % V2_BATCH, parameters=self.entities_parameters, headers=self.headers)
+        return resp
+
 
     #  --------- Fuctions that return values from library ---------
-
     def get_headers(self):
         """
         return headers
@@ -1850,3 +1987,17 @@ class CB:
         return a string with request and another one to response
         """
         return self.request_string, self.response_string
+
+    def get_update_batch_context(self):
+        """
+        get update batch properties
+        :return dict (see "constructor" method by dict fields)
+        """
+        return self.update_batch_dict
+
+    def get_query_batch_context(self):
+        """
+        get query batch properties
+        :return dict (see "constructor" method by dict fields)
+        """
+        return self.query_batch_dict
