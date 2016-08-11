@@ -46,6 +46,7 @@ IDPATTERN = u'idPattern'
 
 # requests constants
 VERSION = u'version'
+LOG_LEVEL = u'admin/log'
 ORION = u'orion'
 V2_ENTITIES = u'v2/entities'
 V2_SUBSCRIPTIONS = u'v2/subscriptions'
@@ -136,6 +137,8 @@ class CB:
            - **is_cb_started**: determine whether cb is started or not
            - **definition_headers**: definition of headers using a table of data.
            - **modification_headers**: modification or append of headers and determine if the previous headers are kept or not ( true | false )
+           - **retrieve_the_log_level**: get the retrieve the log level
+           - **change_the_log_level**: change the retrieve the log level
 
          #### Entity:
            - **properties_to_entities**: definition of properties to entities
@@ -228,8 +231,7 @@ class CB:
         """
         initialize update batch dict (used in update batch operations)
         """
-        self.update_batch_dict = {"actionType": None,
-                                  "entities": []}
+        self.update_batch_dict = {"actionType": None, "entities": []}
 
     def __init_query_batch_properties_dict(self):
         """
@@ -411,6 +413,27 @@ class CB:
         :param value: header value
         """
         self.headers[key] = value
+
+    def retrieve_the_log_level(self):
+        """
+        get the retrieve the log level
+        :return response to an HTTP request
+        """
+        resp = self.__send_request(GET, LOG_LEVEL)
+        assert resp.status_code == 200, " ERROR - status code in retrieve the log level request. \n " \
+                                        " status code: %s \n " \
+                                        " body: %s" % (resp.status_code, resp.text)
+        __logger__.info(" -- status code is 200 OK in retrieve the log level request")
+        return resp
+
+    def change_the_log_level(self, queries_params):
+        """
+        change the retrieve the log level
+        :param queries_params: queries params used to the request
+        :return response to an HTTP request
+        """
+        resp = self.__send_request(PUT, LOG_LEVEL, parameters=queries_params)
+        return resp
 
     #  -----------------  Private methods ---------------------------
 
@@ -598,10 +621,15 @@ class CB:
         # create N attributes with/without attribute type and metadatas (with/without type)
         name_list = convert_str_to_list(self.entity_context[ATTRIBUTES_NAME], separator)
         values_list = convert_str_to_list(self.entity_context[ATTRIBUTES_VALUE], separator)
-        self.entity_context[ATTRIBUTES_TYPE] = self.entity_context[ATTRIBUTES_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+        while self.entity_context[ATTRIBUTES_TYPE].find("&&") >= 0:
+            self.entity_context[ATTRIBUTES_TYPE] = self.entity_context[ATTRIBUTES_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
         type_list = convert_str_to_list(self.entity_context[ATTRIBUTES_TYPE], separator)
-        self.entity_context[ATTRIBUTES_METADATA] = self.entity_context[ATTRIBUTES_METADATA].replace("%s%s" % (separator, separator), '%s"true"%s' % (separator, separator))
-        meta_list = convert_str_to_list(self.entity_context[ATTRIBUTES_METADATA], separator)
+
+        meta_names_list = convert_str_to_list(self.entity_context[METADATAS_NAME], separator)
+        meta_values_list = convert_str_to_list(self.entity_context[METADATAS_VALUE], separator)
+        while self.entity_context[METADATAS_TYPE].find("&&") >= 0:
+            self.entity_context[METADATAS_TYPE] = self.entity_context[METADATAS_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+        meta_types_list = convert_str_to_list(self.entity_context[METADATAS_TYPE], separator)
 
         for pos in range(len(name_list)):
             attribute_str = EMPTY
@@ -612,21 +640,18 @@ class CB:
                     attribute_str = '"type": %s' % type_list[pos]
 
                 # append metadata if it does exist
-                if (len(meta_list) <= pos):
-                    meta_list.append(TRUE)
-                if remove_quote(meta_list[pos]) == TRUE:
-                    if entity_context[METADATAS_NAME] != None:
-                        if entity_context[METADATAS_TYPE] != NONE:
-                            metadata = '"metadata": {%s: {"value": %s, "type": %s}}' % (entity_context[METADATAS_NAME],
-                                                                                        entity_context[METADATAS_VALUE],
-                                                                                        entity_context[METADATAS_TYPE])
-                        else:
-                            metadata = '"metadata": {%s: {"value": %s}}' % (entity_context[METADATAS_NAME],
-                                                                            entity_context[METADATAS_VALUE])
-                        if attribute_str != EMPTY:
-                            attribute_str = '%s, %s' % (attribute_str, metadata)
-                        else:
-                            attribute_str = metadata
+                if (len(meta_names_list) > pos) and meta_names_list[pos] != None:
+                    if (len(meta_types_list) > pos) and remove_quote(meta_types_list[pos]) != NONE:
+                        metadata = '"metadata": {%s: {"value": %s, "type": %s}}' % (meta_names_list[pos],
+                                                                                    meta_values_list[pos],
+                                                                                    meta_types_list[pos])
+                    else:
+                        metadata = '"metadata": {%s: {"value": %s}}' % (meta_names_list[pos],
+                                                                        meta_values_list[pos])
+                    if attribute_str != EMPTY:
+                        attribute_str = '%s, %s' % (attribute_str, metadata)
+                    else:
+                        attribute_str = metadata
 
                 # append attribute value if it exist
                 if values_list[pos] is not None:
@@ -1856,6 +1881,7 @@ class CB:
         if self.entity_context[ENTITIES_TYPE] is not None:
             entity[TYPE] = self.entity_context[ENTITIES_TYPE]
 
+        # append a new entity to the batch dict
         self.update_batch_dict["entities"].append(entity)
 
     def batch_update(self, parameters, op):
@@ -1876,6 +1902,7 @@ class CB:
             resp = self.__send_request(POST, "%s/update" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
         else:
             resp = self.__send_request(POST, "%s/update" % V2_BATCH, parameters=self.entities_parameters, headers=self.headers)
+        self.__init_update_batch_properties_dict()
         return resp
 
     def query_entities_properties(self, entities, attributes, scope):

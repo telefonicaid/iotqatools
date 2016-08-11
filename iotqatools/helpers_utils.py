@@ -321,9 +321,7 @@ def get_ip():
     get the preferred local ip address
     return: string
     """
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(('8.8.8.8', 0))  # connecting to a UDP address doesn't send packets
-    return s.getsockname()[0]
+    return socket.gethostbyname(socket.gethostname())
 
 def list_swap(l, init_pos, end_pos):
     """
