@@ -618,18 +618,30 @@ class CB:
         """
         attributes_final = EMPTY
         separator = "&"
+        name_list = []
+        values_list = []
+        type_list = []
+        meta_names_list = []
+        meta_values_list = []
+        meta_types_list = []
         # create N attributes with/without attribute type and metadatas (with/without type)
-        name_list = convert_str_to_list(self.entity_context[ATTRIBUTES_NAME], separator)
-        values_list = convert_str_to_list(self.entity_context[ATTRIBUTES_VALUE], separator)
-        while self.entity_context[ATTRIBUTES_TYPE].find("&&") >= 0:
-            self.entity_context[ATTRIBUTES_TYPE] = self.entity_context[ATTRIBUTES_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
-        type_list = convert_str_to_list(self.entity_context[ATTRIBUTES_TYPE], separator)
+        if self.entity_context[ATTRIBUTES_NAME] is not None:
+            name_list = convert_str_to_list(self.entity_context[ATTRIBUTES_NAME], separator)
+        if self.entity_context[ATTRIBUTES_VALUE] is not None:
+            values_list = convert_str_to_list(self.entity_context[ATTRIBUTES_VALUE], separator)
 
-        meta_names_list = convert_str_to_list(self.entity_context[METADATAS_NAME], separator)
-        meta_values_list = convert_str_to_list(self.entity_context[METADATAS_VALUE], separator)
-        while self.entity_context[METADATAS_TYPE].find("&&") >= 0:
-            self.entity_context[METADATAS_TYPE] = self.entity_context[METADATAS_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
-        meta_types_list = convert_str_to_list(self.entity_context[METADATAS_TYPE], separator)
+        if self.entity_context[ATTRIBUTES_TYPE] is not None:
+            while self.entity_context[ATTRIBUTES_TYPE].find("&&") >= 0:
+                self.entity_context[ATTRIBUTES_TYPE] = self.entity_context[ATTRIBUTES_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+                type_list = convert_str_to_list(self.entity_context[ATTRIBUTES_TYPE], separator)
+        if self.entity_context[METADATAS_NAME] is not None:
+            meta_names_list = convert_str_to_list(self.entity_context[METADATAS_NAME], separator)
+        if self.entity_context[METADATAS_VALUE] is not None:
+            meta_values_list = convert_str_to_list(self.entity_context[METADATAS_VALUE], separator)
+        if self.entity_context[METADATAS_TYPE] is not None:
+            while self.entity_context[METADATAS_TYPE].find("&&") >= 0:
+                self.entity_context[METADATAS_TYPE] = self.entity_context[METADATAS_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+                meta_types_list = convert_str_to_list(self.entity_context[METADATAS_TYPE], separator)
 
         for pos in range(len(name_list)):
             attribute_str = EMPTY
