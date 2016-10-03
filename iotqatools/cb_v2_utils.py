@@ -95,6 +95,7 @@ NOTIFICATION_ATTRS = u'notification_attrs'
 NOTIFICATION_EXCEPTATTRS = u'notification_except_attrs'
 NOTIFICATION_ATTRS_NUMBER = u'notification_attrs_number'
 NOTIFICATION_ATTRSFORMAT = u'notification_attrsFormat'
+NOTIFICATION_METADATA = u'notification_metadata'
 NOTIFICATION_HTTP_URL = u'notification_http_url'
 NOTIFICATION_HTTP_CUSTOM_URL = u'notification_http_custom_url'
 NOTIFICATION_HTTP_CUSTOM_HEADERS = u'notification_http_custom_headers'
@@ -184,7 +185,9 @@ class CB:
            - **get_request_response_string**: return a string with request and another one to response (string)
            - **get_update_batch_context**: get update batch properties (dict)
            - **get_query_batch_context**: get query batch properties
-    """
+           - **get_action_type**: get action type, used to notification special metadata "actionType"
+           - **get_previous_value**: get previous value and previous type in the attributes before the update, used to notification special metadata "previousValue".
+        """
 
     def __init_entity_context_dict(self):
         """
@@ -222,6 +225,7 @@ class CB:
                                      NOTIFICATION_EXCEPTATTRS: None,
                                      NOTIFICATION_ATTRS_NUMBER: 0,
                                      NOTIFICATION_ATTRSFORMAT: None,
+                                     NOTIFICATION_METADATA: None,
                                      NOTIFICATION_HTTP_URL: None,
                                      NOTIFICATION_HTTP_CUSTOM_URL: None,
                                      NOTIFICATION_HTTP_CUSTOM_HEADERS: None,
@@ -263,6 +267,8 @@ class CB:
         self.__init_update_batch_properties_dict()
         self.__init_query_batch_properties_dict()
         self.entities_parameters = {}
+        self.action_type = None
+        self.previous_value = {TYPE: None, VALUE: None}
 
     # ------------------------------------Generals --------------------------------------------
     # start, stop and verifications of CB
@@ -887,6 +893,12 @@ class CB:
         # attrsFormat field
         if subscription_context[NOTIFICATION_ATTRSFORMAT] is not None:
             notification["attrsFormat"] = subscription_context[NOTIFICATION_ATTRSFORMAT]
+
+        # metadata field
+        if self.subscription_context[NOTIFICATION_METADATA] == u'array is empty':
+            notification[METADATA] = []
+        if self.subscription_context[NOTIFICATION_METADATA] is not None:
+            notification[METADATA] = self.subscription_context[NOTIFICATION_METADATA].split(",")
         return notification
 
     def __create_subsc_subject_raw(self, subscription_context):
@@ -993,6 +1005,11 @@ class CB:
         if subscription_context[NOTIFICATION_EXCEPTATTRS] is not None:
             attributes = u'"exceptAttrs": [%s],' % (subscription_context[NOTIFICATION_EXCEPTATTRS])
             notification = "%s %s" % (notification, attributes)
+
+        # metadata field
+        if subscription_context[NOTIFICATION_METADATA] is not None:
+            metadata = u'"metadata": %s,' % (subscription_context[NOTIFICATION_METADATA])
+            notification = "%s %s" % (notification, metadata)
 
         if notification != EMPTY:
             notification = u'{%s}' % notification[:-1]
@@ -1154,6 +1171,7 @@ class CB:
             else:
                 resp_list.append(self.__send_request(POST, V2_ENTITIES, parameters=self.entities_parameters,
                                                      headers=self.headers))
+        self.action_type = "append"
         return resp_list
 
     def create_entity_raw(self, context, mode):
@@ -1214,6 +1232,7 @@ class CB:
 
         resp = self.__send_request(POST, V2_ENTITIES, headers=self.headers, payload=payload,
                                    parameters=self.entities_parameters)
+        self.action_type = "append"
         return resp
 
     # list entity/ies
@@ -1431,6 +1450,12 @@ class CB:
         if OPTIONS in self.entities_parameters and self.entities_parameters[OPTIONS] == KEY_VALUES:
             self.entity_context[ATTRIBUTES_TYPE] = NONE
             self.entity_context[METADATAS_NUMBER] = 0
+        if method == "POST":
+            self.action_type = "append"
+        else:
+            self.action_type = "update"
+        self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
+        self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
 
     def update_or_append_an_attribute_in_raw_by_id(self, method, context, entity_id, mode):
@@ -1473,6 +1498,12 @@ class CB:
         for item in self.entity_context:
             if (self.entity_context[item] is None) and (self.dict_temp[item] is not None):
                 self.entity_context[item] = self.dict_temp[item]
+        if method == "POST":
+            self.action_type = "append"
+        else:
+            self.action_type = "update"
+        self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
+        self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
 
     def update_an_attribute_by_id_and_by_name(self, context, entity_id, attribute_name, value=EMPTY):
@@ -1526,6 +1557,9 @@ class CB:
         for item in self.entity_context:
             if (self.entity_context[item] is None) or (self.entity_context[item] == NONE) or (self.entity_context[item] == THING):
                 self.entity_context[item] = self.dict_temp[item]
+        self.action_type = "update"
+        self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
+        self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
 
     def update_an_attribute_by_id_and_by_name_in_raw_mode(self, context, entity_id, attribute_name, value=EMPTY):
@@ -1575,6 +1609,9 @@ class CB:
         for item in self.entity_context:
             if (self.entity_context[item] is None)  or (self.entity_context[item] == NONE)  or (self.entity_context[item] == THING):
                 self.entity_context[item] = self.dict_temp[item]
+        self.action_type = "update"
+        self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
+        self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
 
     # delete entity
@@ -1622,8 +1659,12 @@ class CB:
 
 
         # requests
-        return self.__send_request(DELETE, "%s/%s%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID], attribute_url),
+        resp = self.__send_request(DELETE, "%s/%s%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID], attribute_url),
                                    headers=self.headers, parameters=self.entities_parameters)
+        self.action_type = "delete"
+        self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
+        self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
+        return resp
 
         # ------- get CB values ------
 
@@ -2099,3 +2140,17 @@ class CB:
         :return dict (see "constructor" method by dict fields)
         """
         return self.query_batch_dict
+
+    def get_action_type(self):
+        """
+        get action type, used to notification special metadata "actionType"
+        """
+        return self.action_type
+
+    def get_previous_value(self):
+        """
+        get previous value and previous type in the attributes before the update, used to notification special metadata "previousValue". Ex:
+        self.previous_value = {"type": None,
+                               "value": None}
+        """
+        return self.previous_value
