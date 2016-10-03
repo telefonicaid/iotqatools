@@ -61,6 +61,9 @@ PATCH = u'PATCH'
 DELETE = u'DELETE'
 NORMALIZED = u'normalized'
 KEY_VALUES = u'keyValues'
+ACTION_TYPE_APPEND = u'append'
+ACTION_TYPE_UPDATE = u'update'
+ACTION_TYPE_DELETE = u'delete'
 
 # queries parameters
 OPTIONS = u'options'
@@ -1171,7 +1174,7 @@ class CB:
             else:
                 resp_list.append(self.__send_request(POST, V2_ENTITIES, parameters=self.entities_parameters,
                                                      headers=self.headers))
-        self.action_type = "append"
+        self.action_type = ACTION_TYPE_APPEND
         return resp_list
 
     def create_entity_raw(self, context, mode):
@@ -1232,7 +1235,7 @@ class CB:
 
         resp = self.__send_request(POST, V2_ENTITIES, headers=self.headers, payload=payload,
                                    parameters=self.entities_parameters)
-        self.action_type = "append"
+        self.action_type = ACTION_TYPE_APPEND
         return resp
 
     # list entity/ies
@@ -1450,10 +1453,10 @@ class CB:
         if OPTIONS in self.entities_parameters and self.entities_parameters[OPTIONS] == KEY_VALUES:
             self.entity_context[ATTRIBUTES_TYPE] = NONE
             self.entity_context[METADATAS_NUMBER] = 0
-        if method == "POST":
-            self.action_type = "append"
+        if method == POST:
+            self.action_type = ACTION_TYPE_APPEND
         else:
-            self.action_type = "update"
+            self.action_type = ACTION_TYPE_UPDATE
         self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
         self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
@@ -1498,10 +1501,10 @@ class CB:
         for item in self.entity_context:
             if (self.entity_context[item] is None) and (self.dict_temp[item] is not None):
                 self.entity_context[item] = self.dict_temp[item]
-        if method == "POST":
-            self.action_type = "append"
+        if method == POST:
+            self.action_type = ACTION_TYPE_APPEND
         else:
-            self.action_type = "update"
+            self.action_type = ACTION_TYPE_UPDATE
         self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
         self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
@@ -1557,7 +1560,7 @@ class CB:
         for item in self.entity_context:
             if (self.entity_context[item] is None) or (self.entity_context[item] == NONE) or (self.entity_context[item] == THING):
                 self.entity_context[item] = self.dict_temp[item]
-        self.action_type = "update"
+        self.action_type = ACTION_TYPE_UPDATE
         self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
         self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
@@ -1609,7 +1612,7 @@ class CB:
         for item in self.entity_context:
             if (self.entity_context[item] is None)  or (self.entity_context[item] == NONE)  or (self.entity_context[item] == THING):
                 self.entity_context[item] = self.dict_temp[item]
-        self.action_type = "update"
+        self.action_type = ACTION_TYPE_UPDATE
         self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
         self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
@@ -1661,9 +1664,7 @@ class CB:
         # requests
         resp = self.__send_request(DELETE, "%s/%s%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID], attribute_url),
                                    headers=self.headers, parameters=self.entities_parameters)
-        self.action_type = "delete"
-        self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
-        self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
+        self.action_type = ACTION_TYPE_DELETE
         return resp
 
         # ------- get CB values ------
