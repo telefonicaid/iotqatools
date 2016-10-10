@@ -946,7 +946,7 @@ class CbNgsi10Utils(object):
 
         # filter the content-type if it is a GET verb
         if method is "GET" or method is "get":
-            parameters.pop(headers["content-type"], None)
+            parameters["headers"].pop("content-type", None)
 
         # Send the requests
         try:
