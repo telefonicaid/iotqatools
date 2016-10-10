@@ -944,6 +944,10 @@ class CbNgsi10Utils(object):
         if verify is not None:
             parameters.update({'verify': verify})
 
+        # filter the content-type if it is a GET verb
+        if method is "GET" or method is "get":
+            parameters["headers"].pop("content-type", None)
+
         # Send the requests
         try:
             response = requests.request(**parameters)
