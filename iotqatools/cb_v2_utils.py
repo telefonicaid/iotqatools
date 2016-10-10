@@ -38,6 +38,7 @@ THING = u'Thing'
 PARAMETER = u'parameter'
 VALUE = u'value'
 TYPE = u'type'
+NAME = u'name'
 METADATA = u'metadata'
 RANDOM = u'random'
 ENTITY = u'entity'
@@ -271,7 +272,7 @@ class CB:
         self.__init_query_batch_properties_dict()
         self.entities_parameters = {}
         self.action_type = None
-        self.previous_value = {TYPE: None, VALUE: None}
+        self.previous_value = {NAME: None, TYPE: None, VALUE: None}
 
     # ------------------------------------Generals --------------------------------------------
     # start, stop and verifications of CB
@@ -1454,9 +1455,13 @@ class CB:
             self.entity_context[ATTRIBUTES_TYPE] = NONE
             self.entity_context[METADATAS_NUMBER] = 0
         if method == POST:
-            self.action_type = ACTION_TYPE_APPEND
+            if self.entity_context[ATTRIBUTES_NAME] != self.dict_temp[ATTRIBUTES_NAME] or self.entity_context[ATTRIBUTES_NUMBER] != self.dict_temp[ATTRIBUTES_NUMBER]:
+                self.action_type = ACTION_TYPE_APPEND
+            else:
+                self.action_type = ACTION_TYPE_UPDATE
         else:
             self.action_type = ACTION_TYPE_UPDATE
+        self.previous_value[NAME] = self.dict_temp[ATTRIBUTES_NAME]
         self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
         self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
@@ -1498,13 +1503,19 @@ class CB:
                                    headers=self.headers, payload=attribute_str, parameters=self.entities_parameters)
 
         # update self.entity_context with last values (ex: create request)
+
         for item in self.entity_context:
+            self.entity_context[item] = remove_quote(self.entity_context[item])
             if (self.entity_context[item] is None) and (self.dict_temp[item] is not None):
                 self.entity_context[item] = self.dict_temp[item]
         if method == POST:
-            self.action_type = ACTION_TYPE_APPEND
+            if remove_quote(self.entity_context[ATTRIBUTES_NAME]) != self.dict_temp[ATTRIBUTES_NAME]:
+                self.action_type = ACTION_TYPE_APPEND
+            else:
+                self.action_type = ACTION_TYPE_UPDATE
         else:
             self.action_type = ACTION_TYPE_UPDATE
+        self.previous_value[NAME] = self.dict_temp[ATTRIBUTES_NAME]
         self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
         self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
@@ -1558,9 +1569,12 @@ class CB:
 
         # update self.entity_context with last values (ex: create request)
         for item in self.entity_context:
-            if (self.entity_context[item] is None) or (self.entity_context[item] == NONE) or (self.entity_context[item] == THING):
+            if value is not EMPTY and item != ATTRIBUTES_VALUE:
+                self.entity_context[item] = self.dict_temp[item]
+            elif (self.entity_context[item] is None) or (self.entity_context[item] == NONE) or (self.entity_context[item] == THING):
                 self.entity_context[item] = self.dict_temp[item]
         self.action_type = ACTION_TYPE_UPDATE
+        self.previous_value[NAME] = self.dict_temp[ATTRIBUTES_NAME]
         self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
         self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
@@ -1613,6 +1627,7 @@ class CB:
             if (self.entity_context[item] is None)  or (self.entity_context[item] == NONE)  or (self.entity_context[item] == THING):
                 self.entity_context[item] = self.dict_temp[item]
         self.action_type = ACTION_TYPE_UPDATE
+        self.previous_value[NAME] = self.dict_temp[ATTRIBUTES_NAME]
         self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
         self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
@@ -2151,7 +2166,8 @@ class CB:
     def get_previous_value(self):
         """
         get previous value and previous type in the attributes before the update, used to notification special metadata "previousValue". Ex:
-        self.previous_value = {"type": None,
+        self.previous_value = {"name": None,
+                               "type": None,
                                "value": None}
         """
         return self.previous_value
