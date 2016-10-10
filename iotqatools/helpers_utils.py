@@ -346,7 +346,7 @@ def get_type_value(value):
     :param value: value in string
     :return: typed value, type
     """
-    if value.find("true") == 0 or value.find("false") == 0:
+    if (value.lower() == "true") or (value.lower() == "false"):
         return bool(convert_str_to_bool(value)), "bool"
     elif value.find(u'{') >= 0:
         return json.loads(value), "dict"
