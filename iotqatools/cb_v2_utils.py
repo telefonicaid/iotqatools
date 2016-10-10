@@ -34,28 +34,37 @@ TRUE = u'true'
 FALSE = u'false'
 JSON = u'JSON'
 NONE = u'none'   # used as default value in type, attr_type and metadata_type
+THING = u'Thing'
 PARAMETER = u'parameter'
 VALUE = u'value'
 TYPE = u'type'
+NAME = u'name'
 METADATA = u'metadata'
 RANDOM = u'random'
 ENTITY = u'entity'
 PREFIX = u'prefix'
 ID = u'id'
 IDPATTERN = u'idPattern'
+TYPEPATTERN = u'typePattern'
 
 # requests constants
 VERSION = u'version'
+LOG_LEVEL = u'admin/log'
 ORION = u'orion'
 V2_ENTITIES = u'v2/entities'
 V2_SUBSCRIPTIONS = u'v2/subscriptions'
 V2_TYPES = u'v2/types'
+V2_BATCH = u'v2/op'
 GET = u'GET'
 POST = u'POST'
 PUT = u'PUT'
+PATCH = u'PATCH'
 DELETE = u'DELETE'
 NORMALIZED = u'normalized'
 KEY_VALUES = u'keyValues'
+ACTION_TYPE_APPEND = u'append'
+ACTION_TYPE_UPDATE = u'update'
+ACTION_TYPE_DELETE = u'delete'
 
 # queries parameters
 OPTIONS = u'options'
@@ -77,11 +86,12 @@ METADATAS_VALUE = u'metadatas_value'
 
 # description context dict
 DESCRIPTION = u'description'
-SUBJECT_TYPE= u'subject_type'
-SUBJECT_ID= u'subject_id'
-SUBJECT_IDPATTERN= u'subject_idPattern'
-SUBJECT_ENTITIES_NUMBER= u'subject_entities_number'
-SUBJECT_ENTITIES_PREFIX= u'subject_entities_prefix'
+SUBJECT_TYPE = u'subject_type'
+SUBJECT_ID = u'subject_id'
+SUBJECT_IDPATTERN = u'subject_idPattern'
+SUBJECT_TYPEPATTERN = u'subject_typePattern'
+SUBJECT_ENTITIES_NUMBER = u'subject_entities_number'
+SUBJECT_ENTITIES_PREFIX = u'subject_entities_prefix'
 CONDITION_ATTRS = u'condition_attrs'
 CONDITION_ATTRS_NUMBER = u'condition_attrs_number'
 CONDITION_EXPRESSION = u'condition_expression'
@@ -89,6 +99,7 @@ NOTIFICATION_ATTRS = u'notification_attrs'
 NOTIFICATION_EXCEPTATTRS = u'notification_except_attrs'
 NOTIFICATION_ATTRS_NUMBER = u'notification_attrs_number'
 NOTIFICATION_ATTRSFORMAT = u'notification_attrsFormat'
+NOTIFICATION_METADATA = u'notification_metadata'
 NOTIFICATION_HTTP_URL = u'notification_http_url'
 NOTIFICATION_HTTP_CUSTOM_URL = u'notification_http_custom_url'
 NOTIFICATION_HTTP_CUSTOM_HEADERS = u'notification_http_custom_headers'
@@ -113,7 +124,7 @@ FIWARE_SERVICE = u'Fiware-Service'
 FIWARE_SERVICE_PATH = u'Fiware-ServicePath'
 RANDOM_ENTITIES_LABEL = [ATTRIBUTES_NAME, ATTRIBUTES_VALUE, ATTRIBUTES_TYPE, METADATAS_NAME, METADATAS_VALUE,
                          METADATAS_TYPE, ENTITIES_ID, ENTITIES_TYPE]
-RANDOM_SUBSCRIPTION_LABEL = [SUBJECT_TYPE, SUBJECT_ID, SUBJECT_IDPATTERN, CONDITION_ATTRS, NOTIFICATION_ATTRS, DESCRIPTION]
+RANDOM_SUBSCRIPTION_LABEL = [SUBJECT_TYPE, SUBJECT_ID, SUBJECT_IDPATTERN, CONDITION_ATTRS, NOTIFICATION_ATTRS, NOTIFICATION_EXCEPTATTRS, DESCRIPTION]
 RANDOM_QUERIES_PARAMETERS_LABELS = ["options"]
 
 __logger__ = logging.getLogger("utils")
@@ -135,6 +146,8 @@ class CB:
            - **is_cb_started**: determine whether cb is started or not
            - **definition_headers**: definition of headers using a table of data.
            - **modification_headers**: modification or append of headers and determine if the previous headers are kept or not ( true | false )
+           - **retrieve_the_log_level**: get the retrieve the log level
+           - **change_the_log_level**: change the retrieve the log level
 
          #### Entity:
            - **properties_to_entities**: definition of properties to entities
@@ -158,6 +171,12 @@ class CB:
            - **get_subscription_by_id**: get a subscription by id (GET /v2/subscriptions/<subscriptionId>)
            - **delete_subscription_by_id**: delete a subscription by id (DELETE /v2/subscriptions/<subscriptionId>)
 
+        ### Batch operations:
+           - **append_an_entity_properties**: define a entity to update in a single batch operation
+           - **batch_update**: allows to create, update and/or delete several entities in a single batch operation
+           - **query_entities_properties**: define properties to query in a single batch operation
+           - **batch_query**: returns an Array containing one object per matching entity
+
         #### Get used values per the library:
            - **get_entity_context**: return entities contexts (dict)
            - **get_headers**: return headers (dict)
@@ -167,14 +186,19 @@ class CB:
            - **get_entity_type_to_request**: return entity type used in request to get/delete an entity, used to verify if the entity returned is the expected (string)
            - **get_attribute_name_to_request**: return attribute name used in request to get an attribute, used to verify if the attribute returned is the expected (string)
            - **get_subscription_context**: return queries parameters (dict)
-    """
+           - **get_request_response_string**: return a string with request and another one to response (string)
+           - **get_update_batch_context**: get update batch properties (dict)
+           - **get_query_batch_context**: get query batch properties
+           - **get_action_type**: get action type, used to notification special metadata "actionType"
+           - **get_previous_value**: get previous value and previous type in the attributes before the update, used to notification special metadata "previousValue".
+        """
 
     def __init_entity_context_dict(self):
         """
         initialize entity_context dict (used in create, update or append entity)
         """
         self.entity_context = {ENTITIES_NUMBER: 1,
-                               ENTITIES_TYPE: NONE,      # entity type prefix.
+                               ENTITIES_TYPE: THING,      # entity type prefix.
                                ENTITIES_ID: None,        # entity id prefix.
                                ENTITIES_PREFIX: EMPTY,   # allowed values(id | type)  -->  pending to modify in another PR, because it is used in all features
                                ATTRIBUTES_NUMBER: 0,
@@ -195,6 +219,7 @@ class CB:
                                      SUBJECT_TYPE: None,
                                      SUBJECT_ID: None,
                                      SUBJECT_IDPATTERN: None,
+                                     SUBJECT_TYPEPATTERN: None,
                                      SUBJECT_ENTITIES_NUMBER: 1,
                                      SUBJECT_ENTITIES_PREFIX: EMPTY, # allowed values(id | type)
                                      CONDITION_ATTRS: None,
@@ -204,6 +229,7 @@ class CB:
                                      NOTIFICATION_EXCEPTATTRS: None,
                                      NOTIFICATION_ATTRS_NUMBER: 0,
                                      NOTIFICATION_ATTRSFORMAT: None,
+                                     NOTIFICATION_METADATA: None,
                                      NOTIFICATION_HTTP_URL: None,
                                      NOTIFICATION_HTTP_CUSTOM_URL: None,
                                      NOTIFICATION_HTTP_CUSTOM_HEADERS: None,
@@ -213,6 +239,18 @@ class CB:
                                      THROTTLING: None,
                                      EXPIRES: None,
                                      STATUS: None}
+
+    def __init_update_batch_properties_dict(self):
+        """
+        initialize update batch dict (used in update batch operations)
+        """
+        self.update_batch_dict = {"actionType": None, "entities": []}
+
+    def __init_query_batch_properties_dict(self):
+        """
+        initialize query batch dict (used in query batch operations)
+        """
+        self.query_batch_dict = {}
 
     def __init__(self, **kwargs):
         """
@@ -230,7 +268,11 @@ class CB:
         self.headers = {}
         self.__init_entity_context_dict()
         self.__init_subscription_context_dict()
+        self.__init_update_batch_properties_dict()
+        self.__init_query_batch_properties_dict()
         self.entities_parameters = {}
+        self.action_type = None
+        self.previous_value = {NAME: None, TYPE: None, VALUE: None}
 
     # ------------------------------------Generals --------------------------------------------
     # start, stop and verifications of CB
@@ -314,21 +356,10 @@ class CB:
         except Exception, e:
             return False
 
-    def definition_headers(self, context):
+    def __update_headers(self):
         """
-        definition of headers
-           | parameter          | value            |
-           | Fiware-Service     | happy_path       |
-           | Fiware-ServicePath | /test            |
-           | Content-Type       | application/json |
-           | Accept             | application/json |
-        Hint: if value is "max length allowed", per example, it is random value with max length allowed and characters
-              allowed
-        :param context: context variable with headers
+        update an header if any constant is used
         """
-        for row in context.table:
-            self.headers[row[PARAMETER]] = row[VALUE]
-
         if FIWARE_SERVICE in self.headers:
             if self.headers[FIWARE_SERVICE] == MAX_LENGTH_ALLOWED:
                 self.headers[FIWARE_SERVICE] = string_generator(SERVICE_MAX_CHARS_ALLOWED, CHARS_ALLOWED)
@@ -351,6 +382,22 @@ class CB:
                                                                                  SERVICE_PATH_LEVELS + 1)
         __logger__.debug("Headers: %s" % str(self.headers))
 
+    def definition_headers(self, context):
+        """
+        definition of headers
+           | parameter          | value            |
+           | Fiware-Service     | happy_path       |
+           | Fiware-ServicePath | /test            |
+           | Content-Type       | application/json |
+           | Accept             | application/json |
+        Hint: if value is "max length allowed", per example, it is random value with max length allowed and characters
+              allowed
+        :param context: context variable with headers
+        """
+        for row in context.table:
+            self.headers[row[PARAMETER]] = row[VALUE]
+        self.__update_headers()
+
     def modification_headers(self, context, prev):
         """
         modification or append of headers
@@ -362,10 +409,17 @@ class CB:
         :param context: context variable with headers
         :param prev:determine if the previous headers are kept or not ( true | false )
         """
+        header_temp = {}
+        for item in self.headers:
+            header_temp[item] = self.headers[item]
         if prev.lower() != TRUE:
             self.headers.clear()
         for row in context.table:
-            self.headers[row[PARAMETER]] = row[VALUE]
+            if row[VALUE] == "the same value of the previous request":
+                self.headers[row[PARAMETER]] = header_temp[row[PARAMETER]]
+            else:
+                self.headers[row[PARAMETER]] = row[VALUE]
+        self.__update_headers()
 
     def append_new_header(self, key, value):
         """
@@ -374,6 +428,27 @@ class CB:
         :param value: header value
         """
         self.headers[key] = value
+
+    def retrieve_the_log_level(self):
+        """
+        get the retrieve the log level
+        :return response to an HTTP request
+        """
+        resp = self.__send_request(GET, LOG_LEVEL)
+        assert resp.status_code == 200, " ERROR - status code in retrieve the log level request. \n " \
+                                        " status code: %s \n " \
+                                        " body: %s" % (resp.status_code, resp.text)
+        __logger__.info(" -- status code is 200 OK in retrieve the log level request")
+        return resp
+
+    def change_the_log_level(self, queries_params):
+        """
+        change the retrieve the log level
+        :param queries_params: queries params used to the request
+        :return response to an HTTP request
+        """
+        resp = self.__send_request(PUT, LOG_LEVEL, parameters=queries_params)
+        return resp
 
     #  -----------------  Private methods ---------------------------
 
@@ -558,13 +633,29 @@ class CB:
         """
         attributes_final = EMPTY
         separator = "&"
+        name_list = []
+        values_list = []
+        type_list = []
+        meta_names_list = []
+        meta_values_list = []
+        meta_types_list = []
         # create N attributes with/without attribute type and metadatas (with/without type)
-        name_list = convert_str_to_list(self.entity_context[ATTRIBUTES_NAME], separator)
-        values_list = convert_str_to_list(self.entity_context[ATTRIBUTES_VALUE], separator)
-        self.entity_context[ATTRIBUTES_TYPE] = self.entity_context[ATTRIBUTES_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
-        type_list = convert_str_to_list(self.entity_context[ATTRIBUTES_TYPE], separator)
-        self.entity_context[ATTRIBUTES_METADATA] = self.entity_context[ATTRIBUTES_METADATA].replace("%s%s" % (separator, separator), '%s"true"%s' % (separator, separator))
-        meta_list = convert_str_to_list(self.entity_context[ATTRIBUTES_METADATA], separator)
+        if self.entity_context[ATTRIBUTES_NAME] is not None:
+            name_list = convert_str_to_list(self.entity_context[ATTRIBUTES_NAME], separator)
+        if self.entity_context[ATTRIBUTES_VALUE] is not None:
+            values_list = convert_str_to_list(self.entity_context[ATTRIBUTES_VALUE], separator)
+        if self.entity_context[ATTRIBUTES_TYPE] is not None:
+            while self.entity_context[ATTRIBUTES_TYPE].find("&&") >= 0:
+                self.entity_context[ATTRIBUTES_TYPE] = self.entity_context[ATTRIBUTES_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+            type_list = convert_str_to_list(self.entity_context[ATTRIBUTES_TYPE], separator)
+        if self.entity_context[METADATAS_NAME] is not None:
+            meta_names_list = convert_str_to_list(self.entity_context[METADATAS_NAME], separator)
+        if self.entity_context[METADATAS_VALUE] is not None:
+            meta_values_list = convert_str_to_list(self.entity_context[METADATAS_VALUE], separator)
+        if self.entity_context[METADATAS_TYPE] is not None:
+            while self.entity_context[METADATAS_TYPE].find("&&") >= 0:
+                self.entity_context[METADATAS_TYPE] = self.entity_context[METADATAS_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+            meta_types_list = convert_str_to_list(self.entity_context[METADATAS_TYPE], separator)
 
         for pos in range(len(name_list)):
             attribute_str = EMPTY
@@ -575,21 +666,18 @@ class CB:
                     attribute_str = '"type": %s' % type_list[pos]
 
                 # append metadata if it does exist
-                if (len(meta_list) <= pos):
-                    meta_list.append(TRUE)
-                if remove_quote(meta_list[pos]) == TRUE:
-                    if entity_context[METADATAS_NAME] != None:
-                        if entity_context[METADATAS_TYPE] != NONE:
-                            metadata = '"metadata": {%s: {"value": %s, "type": %s}}' % (entity_context[METADATAS_NAME],
-                                                                                        entity_context[METADATAS_VALUE],
-                                                                                        entity_context[METADATAS_TYPE])
-                        else:
-                            metadata = '"metadata": {%s: {"value": %s}}' % (entity_context[METADATAS_NAME],
-                                                                            entity_context[METADATAS_VALUE])
-                        if attribute_str != EMPTY:
-                            attribute_str = '%s, %s' % (attribute_str, metadata)
-                        else:
-                            attribute_str = metadata
+                if (len(meta_names_list) > pos) and meta_names_list[pos] != None:
+                    if (len(meta_types_list) > pos) and remove_quote(meta_types_list[pos]) != NONE:
+                        metadata = '"metadata": {%s: {"value": %s, "type": %s}}' % (meta_names_list[pos],
+                                                                                    meta_values_list[pos],
+                                                                                    meta_types_list[pos])
+                    else:
+                        metadata = '"metadata": {%s: {"value": %s}}' % (meta_names_list[pos],
+                                                                        meta_values_list[pos])
+                    if attribute_str != EMPTY:
+                        attribute_str = '%s, %s' % (attribute_str, metadata)
+                    else:
+                        attribute_str = metadata
 
                 # append attribute value if it exist
                 if values_list[pos] is not None:
@@ -673,6 +761,8 @@ class CB:
             entity = {}
             if subscription_context[SUBJECT_IDPATTERN] is not None:
                 entity[IDPATTERN] = subscription_context[SUBJECT_IDPATTERN]
+            if subscription_context[SUBJECT_TYPEPATTERN] is not None:
+                entity[TYPEPATTERN] = subscription_context[SUBJECT_TYPEPATTERN]
             if subscription_context[SUBJECT_ID] is not None:
                 if subscription_context[SUBJECT_ENTITIES_PREFIX] == ID and subscription_context[SUBJECT_ENTITIES_NUMBER] > 1:
                     entity[ID] = "%s_%s" % (subscription_context[SUBJECT_ID], str(e))
@@ -807,6 +897,12 @@ class CB:
         # attrsFormat field
         if subscription_context[NOTIFICATION_ATTRSFORMAT] is not None:
             notification["attrsFormat"] = subscription_context[NOTIFICATION_ATTRSFORMAT]
+
+        # metadata field
+        if self.subscription_context[NOTIFICATION_METADATA] == u'array is empty':
+            notification[METADATA] = []
+        elif self.subscription_context[NOTIFICATION_METADATA] is not None:
+            notification[METADATA] = self.subscription_context[NOTIFICATION_METADATA].split(",")
         return notification
 
     def __create_subsc_subject_raw(self, subscription_context):
@@ -816,15 +912,17 @@ class CB:
         """
         # entities fields
         entities = u'"entities": [{'
-        # type field
+        # type or typePattern field
         if subscription_context[SUBJECT_TYPE] is not None:
             entities = u'%s"type": %s,' % (entities, subscription_context[SUBJECT_TYPE])
-        # id field
+        elif subscription_context[SUBJECT_TYPEPATTERN] is not None:
+            entities = u'%s"typePattern": %s,' % (entities, subscription_context[SUBJECT_TYPEPATTERN])
+        # id or idPattern field
         if subscription_context[SUBJECT_ID] is not None:
             entities = u'%s"id": %s}],' % (entities, subscription_context[SUBJECT_ID])
-        # idPattern field
-        if subscription_context[SUBJECT_IDPATTERN] is not None:
+        elif subscription_context[SUBJECT_IDPATTERN] is not None:
             entities = u'%s"idPattern": %s}],' % (entities, subscription_context[SUBJECT_IDPATTERN])
+
         # condition fields
         condition = u'"condition": {'
         # attributes field
@@ -911,6 +1009,11 @@ class CB:
         if subscription_context[NOTIFICATION_EXCEPTATTRS] is not None:
             attributes = u'"exceptAttrs": [%s],' % (subscription_context[NOTIFICATION_EXCEPTATTRS])
             notification = "%s %s" % (notification, attributes)
+
+        # metadata field
+        if subscription_context[NOTIFICATION_METADATA] is not None:
+            metadata = u'"metadata": %s,' % (subscription_context[NOTIFICATION_METADATA])
+            notification = "%s %s" % (notification, metadata)
 
         if notification != EMPTY:
             notification = u'{%s}' % notification[:-1]
@@ -1029,6 +1132,7 @@ class CB:
                 if row[ENTITY] in self.prefixes:
                     self.prefixes[row[ENTITY]] = row[PREFIX]
         self.entity_context[ENTITIES_NUMBER] = int(entities_number)
+        self.entity_context[ENTITIES_PREFIX] = self.prefixes
 
         # log id and type prefixes
         __logger__.debug("id prefix  : %s" % self.prefixes[ID])
@@ -1056,7 +1160,7 @@ class CB:
                 else:
                     entity_id = self.entity_context[ENTITIES_ID]
                 entity[ID] = entity_id
-            if self.entity_context[ENTITIES_TYPE] != NONE:
+            if self.entity_context[ENTITIES_TYPE] != THING:
                 if self.prefixes[TYPE] and self.entity_context[ENTITIES_NUMBER] > 1:
                     entity_type = "%s_%s" % (self.entity_context[ENTITIES_TYPE], str(e))
                 else:
@@ -1071,6 +1175,7 @@ class CB:
             else:
                 resp_list.append(self.__send_request(POST, V2_ENTITIES, parameters=self.entities_parameters,
                                                      headers=self.headers))
+        self.action_type = ACTION_TYPE_APPEND
         return resp_list
 
     def create_entity_raw(self, context, mode):
@@ -1117,7 +1222,7 @@ class CB:
             self.entity_context[METADATAS_NAME] = None
 
         # create entity with attribute value in raw
-        if self.entity_context[ENTITIES_TYPE] != NONE:
+        if self.entity_context[ENTITIES_TYPE] != THING:
             entity = '"type": %s' % self.entity_context[ENTITIES_TYPE]
         if self.entity_context[ENTITIES_ID] is not None:
             if entity != EMPTY:
@@ -1131,6 +1236,7 @@ class CB:
 
         resp = self.__send_request(POST, V2_ENTITIES, headers=self.headers, payload=payload,
                                    parameters=self.entities_parameters)
+        self.action_type = ACTION_TYPE_APPEND
         return resp
 
     # list entity/ies
@@ -1340,7 +1446,7 @@ class CB:
                                        headers=self.headers, parameters=self.entities_parameters)
         # update self.entity_context with last values (ex: create request)
         for item in self.entity_context:
-            if (self.entity_context[item] is None) or (self.entity_context[item] == "none"):
+            if (self.entity_context[item] is None) or (self.entity_context[item] == NONE) or (self.entity_context[item] ==THING) :
                 if item not in (ATTRIBUTES_TYPE, METADATAS_TYPE, ATTRIBUTES_VALUE):
                     self.entity_context[item] = self.dict_temp[item]
 
@@ -1348,6 +1454,16 @@ class CB:
         if OPTIONS in self.entities_parameters and self.entities_parameters[OPTIONS] == KEY_VALUES:
             self.entity_context[ATTRIBUTES_TYPE] = NONE
             self.entity_context[METADATAS_NUMBER] = 0
+        if method == POST:
+            if self.entity_context[ATTRIBUTES_NAME] != self.dict_temp[ATTRIBUTES_NAME] or self.entity_context[ATTRIBUTES_NUMBER] != self.dict_temp[ATTRIBUTES_NUMBER]:
+                self.action_type = ACTION_TYPE_APPEND
+            else:
+                self.action_type = ACTION_TYPE_UPDATE
+        else:
+            self.action_type = ACTION_TYPE_UPDATE
+        self.previous_value[NAME] = self.dict_temp[ATTRIBUTES_NAME]
+        self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
+        self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
 
     def update_or_append_an_attribute_in_raw_by_id(self, method, context, entity_id, mode):
@@ -1387,9 +1503,21 @@ class CB:
                                    headers=self.headers, payload=attribute_str, parameters=self.entities_parameters)
 
         # update self.entity_context with last values (ex: create request)
+
         for item in self.entity_context:
+            self.entity_context[item] = remove_quote(self.entity_context[item])
             if (self.entity_context[item] is None) and (self.dict_temp[item] is not None):
                 self.entity_context[item] = self.dict_temp[item]
+        if method == POST:
+            if remove_quote(self.entity_context[ATTRIBUTES_NAME]) != self.dict_temp[ATTRIBUTES_NAME]:
+                self.action_type = ACTION_TYPE_APPEND
+            else:
+                self.action_type = ACTION_TYPE_UPDATE
+        else:
+            self.action_type = ACTION_TYPE_UPDATE
+        self.previous_value[NAME] = self.dict_temp[ATTRIBUTES_NAME]
+        self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
+        self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
 
     def update_an_attribute_by_id_and_by_name(self, context, entity_id, attribute_name, value=EMPTY):
@@ -1441,9 +1569,14 @@ class CB:
 
         # update self.entity_context with last values (ex: create request)
         for item in self.entity_context:
-            if (self.entity_context[item] is None) or (self.entity_context[item] == "none"):
-                if item not in (ATTRIBUTES_TYPE, METADATAS_TYPE):
-                    self.entity_context[item] = self.dict_temp[item]
+            if value is not EMPTY and item != ATTRIBUTES_VALUE:
+                self.entity_context[item] = self.dict_temp[item]
+            elif (self.entity_context[item] is None) or (self.entity_context[item] == NONE) or (self.entity_context[item] == THING):
+                self.entity_context[item] = self.dict_temp[item]
+        self.action_type = ACTION_TYPE_UPDATE
+        self.previous_value[NAME] = self.dict_temp[ATTRIBUTES_NAME]
+        self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
+        self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
 
     def update_an_attribute_by_id_and_by_name_in_raw_mode(self, context, entity_id, attribute_name, value=EMPTY):
@@ -1491,9 +1624,12 @@ class CB:
 
         # update self.entity_context with last values (ex: create request)
         for item in self.entity_context:
-            if (self.entity_context[item] is None)  or (self.entity_context[item] == "none"):
-                if not (item in (ATTRIBUTES_TYPE, METADATAS_TYPE) and self.entity_context[item] is None):
-                    self.entity_context[item] = self.dict_temp[item]
+            if (self.entity_context[item] is None)  or (self.entity_context[item] == NONE)  or (self.entity_context[item] == THING):
+                self.entity_context[item] = self.dict_temp[item]
+        self.action_type = ACTION_TYPE_UPDATE
+        self.previous_value[NAME] = self.dict_temp[ATTRIBUTES_NAME]
+        self.previous_value[VALUE] = self.dict_temp[ATTRIBUTES_VALUE]
+        self.previous_value[TYPE] = self.dict_temp[ATTRIBUTES_TYPE]
         return resp
 
     # delete entity
@@ -1541,8 +1677,10 @@ class CB:
 
 
         # requests
-        return self.__send_request(DELETE, "%s/%s%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID], attribute_url),
+        resp = self.__send_request(DELETE, "%s/%s%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID], attribute_url),
                                    headers=self.headers, parameters=self.entities_parameters)
+        self.action_type = ACTION_TYPE_DELETE
+        return resp
 
         # ------- get CB values ------
 
@@ -1624,6 +1762,8 @@ class CB:
         # replace_host (used in notifications)
         if (self.subscription_context[NOTIFICATION_HTTP_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_URL].find(REPLACE_HOST) >= 0):
             self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_HOST, get_ip()) # get_ip in helper_utils.py library
+        if (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].find(REPLACE_HOST) >= 0):
+            self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] = self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].replace(REPLACE_HOST, get_ip()) # get_ip in helper_utils.py library
 
         # Random values
         self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
@@ -1642,6 +1782,9 @@ class CB:
            and self.subscription_context[CONDITION_ATTRS_NUMBER] == 0:
             self.subscription_context[CONDITION_ATTRS_NUMBER] = 1
         if self.subscription_context[NOTIFICATION_ATTRS] is not None and self.subscription_context[NOTIFICATION_ATTRS] != "array is empty" \
+           and self.subscription_context[NOTIFICATION_ATTRS_NUMBER] == 0:
+            self.subscription_context[NOTIFICATION_ATTRS_NUMBER] = 1
+        if self.subscription_context[NOTIFICATION_EXCEPTATTRS] is not None and self.subscription_context[NOTIFICATION_EXCEPTATTRS] != "array is empty" \
            and self.subscription_context[NOTIFICATION_ATTRS_NUMBER] == 0:
             self.subscription_context[NOTIFICATION_ATTRS_NUMBER] = 1
 
@@ -1739,6 +1882,56 @@ class CB:
                                    parameters=self.entities_parameters)
         return resp
 
+    # update subcription
+    def update_subscription(self, subscription_id):
+        """
+        update a subscription
+        :request -> POST /v2/subscriptions/<subscriptionId>
+        :payload --> Yes
+        :query parameters --> No
+        :return http response
+        """
+        pass
+
+    def update_subscription_by_id_in_raw_mode(self, subscription_id):
+        """
+        update a subscription
+        :request -> POST /v2/subscriptions/<subscriptionId>
+        :payload --> Yes
+        :query parameters --> No
+        :return http response
+        """
+        payload = "{"
+        # description field
+        if self.subscription_context[DESCRIPTION] is not None:
+            payload = u'%s "description": %s,' % (payload, self.subscription_context[DESCRIPTION])
+
+        # subject fields
+        payload = u'%s %s,' % (payload, self.__create_subsc_subject_raw(self.subscription_context))
+
+        # notification fields
+        payload = u'%s %s,' % (payload, self.__create_subsc_notification_raw(self.subscription_context))
+
+        # expires field
+        if self.subscription_context[EXPIRES] is not None:
+            payload = u'%s "expires": %s,' % (payload, self.subscription_context[EXPIRES])
+
+        # status field
+        if self.subscription_context[STATUS] is not None:
+            payload = u'%s "status": %s,' % (payload, self.subscription_context[STATUS])
+
+       # throttling field
+        if self.subscription_context[THROTTLING] is not None:
+            payload =  u'%s "throttling": %s,'  % (payload, self.subscription_context[THROTTLING])
+
+        # payload
+        payload = "%s }" % payload[:-1]
+        __logger__.debug("subscription: %s" % payload)
+        resp = self.__send_request(PATCH, "%s/%s" % (V2_SUBSCRIPTIONS, subscription_id), headers=self.headers,
+                                   payload=payload)
+        return resp
+
+
     # get subcriptions
     def get_all_subscriptions(self, context):
         """
@@ -1779,9 +1972,108 @@ class CB:
         __logger__.info("subscriptionId: %s" % subscription_id)
         return self.__send_request(DELETE, "%s/%s" % (V2_SUBSCRIPTIONS, subscription_id),headers=self.headers)
 
+    #  --------- Batch operations ---------
+
+    def append_an_entity_properties(self, entity, mode):
+        """
+        define a entity to update in a single batch operation
+        :param entity: entity properties to append
+        :param mode: format used, ex: normalized or keyValues (defined in "options" query param)
+        """
+        entity_dict = {}
+        self.__init_entity_context_dict()
+
+        for item in entity:
+            if item in self.entity_context:
+                self.entity_context[item] = entity[item]
+
+        # The same value from create request (used in update request)
+        for item in self.entity_context:
+            if self.entity_context[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
+                self.entity_context[item] = self.dict_temp[item]
+
+        # Random values
+        self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
+
+        if self.entity_context[ATTRIBUTES_NAME] is not None and self.entity_context[ATTRIBUTES_NUMBER] == 0:
+            self.entity_context[ATTRIBUTES_NUMBER] = 1
+        if self.entity_context[METADATAS_NAME] is not None and self.entity_context[METADATAS_NUMBER] == 0:
+            self.entity_context[METADATAS_NUMBER] = 1
+
+        # create attributes with entity context
+        entity = self.__create_attributes(self.entity_context, mode)
+
+        # id and type fields
+        if self.entity_context[ENTITIES_ID] is not None:
+            entity[ID] = self.entity_context[ENTITIES_ID]
+        if self.entity_context[ENTITIES_TYPE] != THING:
+            entity[TYPE] = self.entity_context[ENTITIES_TYPE]
+
+        # append a new entity to the batch dict
+        self.update_batch_dict["entities"].append(entity)
+
+    def batch_update(self, parameters, op):
+        """
+        allows to create, update and/or delete several entities in a single batch operation
+        :request -> POST /v2/op/update
+        :payload --> Yes
+        :query parameters --> Yes
+        :param parameters: queries parameters
+        :param op: specify the kind of update action to do (APPEND, APPEND_STRICT, UPDATE, DELETE)
+        :return http response
+        """
+        self.update_batch_dict["actionType"] = op
+        self.entities_parameters = parameters
+
+        payload = convert_dict_to_str(self.update_batch_dict, JSON)
+        if self.update_batch_dict != {}:
+            resp = self.__send_request(POST, "%s/update" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
+        else:
+            resp = self.__send_request(POST, "%s/update" % V2_BATCH, parameters=self.entities_parameters, headers=self.headers)
+        self.__init_update_batch_properties_dict()
+        return resp
+
+    def query_entities_properties(self, entities, attributes, scope):
+        """"
+        define properties to query in a single batch operation
+        :param entities: entities list
+        :param attributes: attributes list
+        :param scopes: a list of scopes to restrict the result of the query
+        """
+        if len(entities) > 0:
+            for ent in entities:
+                entities = {}
+                items_split = ent.split(",")         # | entities   | type>>>house,id>>>room1 |
+                for items in items_split:
+                    item_split = items.split(">>>")
+                    entities[item_split[0]] = item_split[1]
+                if "entities" not in self.query_batch_dict:
+                    self.query_batch_dict["entities"] = []
+                self.query_batch_dict["entities"].append(entities)
+        if len(attributes) > 0:
+            self.query_batch_dict["attributes"] = attributes.split(",")
+        #scope fields still are pendind to define
+
+    def batch_query(self, parameters):
+        """
+        returns an Array containing one object per matching entity
+        :request -> POST /v2/op/query
+        :payload --> Yes
+        :query parameters --> Yes
+        :param parameters: queries parameters
+        :return http response
+        """
+        self.entities_parameters = parameters
+
+        payload = convert_dict_to_str(self.query_batch_dict, JSON)
+        if self.update_batch_dict != {}:
+            resp = self.__send_request(POST, "%s/query" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
+        else:
+            resp = self.__send_request(POST, "%s/query" % V2_BATCH, parameters=self.entities_parameters, headers=self.headers)
+        return resp
+
 
     #  --------- Fuctions that return values from library ---------
-
     def get_headers(self):
         """
         return headers
@@ -1850,3 +2142,32 @@ class CB:
         return a string with request and another one to response
         """
         return self.request_string, self.response_string
+
+    def get_update_batch_context(self):
+        """
+        get update batch properties
+        :return dict (see "constructor" method by dict fields)
+        """
+        return self.update_batch_dict
+
+    def get_query_batch_context(self):
+        """
+        get query batch properties
+        :return dict (see "constructor" method by dict fields)
+        """
+        return self.query_batch_dict
+
+    def get_action_type(self):
+        """
+        get action type, used to notification special metadata "actionType"
+        """
+        return self.action_type
+
+    def get_previous_value(self):
+        """
+        get previous value and previous type in the attributes before the update, used to notification special metadata "previousValue". Ex:
+        self.previous_value = {"name": None,
+                               "type": None,
+                               "value": None}
+        """
+        return self.previous_value

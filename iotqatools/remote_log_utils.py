@@ -102,7 +102,7 @@ class Remote_Log:
         :param text: text to find
         :return: line found or None
         """
-        __logger__.debug("label: \"%s\" and text: \"%s\" seeked in the log" % (label, text))
+        __logger__.debug("label: \"%s\" and text: \"%s\" seeked in the log file: %s" % (label, text, self.file))
         label_list = []
         log_lines = self.fabric.read_file(self.file)
         log_lines_list = convert_str_to_list(log_lines, "\n")
