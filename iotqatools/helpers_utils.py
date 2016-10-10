@@ -316,12 +316,14 @@ def find_list_in_string (chars_list, text):
             return temp
     return -1
 
+
 def get_ip():
     """
     get the preferred local ip address
     return: string
     """
     return socket.gethostbyname(socket.gethostname())
+
 
 def list_swap(l, init_pos, end_pos):
     """
@@ -336,3 +338,33 @@ def list_swap(l, init_pos, end_pos):
     except Exception, e:
         raise "ERROR - trying to swap items in a list: \n      - %s" % e
     return l
+
+
+def get_type_value(value):
+    """
+    get a value with a given type
+    :param value: value in string
+    :return: typed value, type
+    """
+    if (value.lower() == "true") or (value.lower() == "false"):
+        return bool(convert_str_to_bool(value)), "bool"
+    elif value.find(u'{') >= 0:
+        return json.loads(value), "dict"
+    elif value.find(u'[') >= 0:
+        return json.loads(value), "list"
+    else:
+        try:
+            temp = float(value)
+            numeric = True
+        except Exception:
+            numeric = False
+        if numeric:
+            if temp.is_integer():
+                return int(temp), "int"
+            else:
+                return temp, "float"
+        else:
+            if isinstance(value, unicode):
+                return value, "unicode"
+            else:
+                return value, "string"

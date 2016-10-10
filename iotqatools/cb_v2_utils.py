@@ -900,7 +900,7 @@ class CB:
         # metadata field
         if self.subscription_context[NOTIFICATION_METADATA] == u'array is empty':
             notification[METADATA] = []
-        if self.subscription_context[NOTIFICATION_METADATA] is not None:
+        elif self.subscription_context[NOTIFICATION_METADATA] is not None:
             notification[METADATA] = self.subscription_context[NOTIFICATION_METADATA].split(",")
         return notification
 

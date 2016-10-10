@@ -1162,7 +1162,7 @@ class CbNgsi10Utils(object):
         :param attribute:
         :return:
         """
-
+        self.remove_content_type_header()
         if entity_id is not None:
             url = self.path_context_entities
             if entity_type is not None:
