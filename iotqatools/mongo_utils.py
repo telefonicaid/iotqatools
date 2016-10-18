@@ -209,6 +209,79 @@ class Mongo:
         except Exception, e:
             assert False, " ERROR - Deleting a database %s in MongoDB...\n %s" % (self.current_collection, str(e))
 
+    def get_all_databases(self):
+        """
+        Get all databases in mongo
+        :return: Database array found
+        """
+        arr_dbs = self.client.database_names()
+        return arr_dbs
+
+    def get_all_databases_with_prefix(self, l_prefix):
+        """
+        Get all databases that starts with the prefix
+        :param l_prefix: Database prefix expected
+        :return: array with databases found
+        """
+        l_dbs = []
+        arr_dbs = self.client.database_names()
+        for x_db in arr_dbs:
+            for prefix in l_prefix:
+                if x_db.startswith(prefix):
+                    l_dbs.append(x_db)
+        return l_dbs
+
+    def match_prefix_with_list(x_db, l_prefix):
+        """
+        Check if the database starts with any prefix contained in the prefix list
+        :param x_db: database name
+        :param l_prefix:
+        :return: True od False depends on if some prefix matches
+        """
+        for prefix in l_prefix:
+            if x_db.startswith(prefix):
+                return True
+        return False
+
+    def get_all_databases_without_prefix(self, l_prefix):
+        """
+        Get all databases that not start with the prefix
+        :param l_prefix: Database prefix to exclude
+        :return: array with databases found
+        """
+        l_dbs = []
+        arr_dbs = self.client.database_names()
+        for x_db in arr_dbs:
+            if not self.match_prefix_with_list(x_db, l_prefix):
+                l_dbs.append(x_db)
+        return l_dbs
+
+    def get_collections_by_db(self, name_db):
+        """
+        Get all collection in a mongo database
+        :param name_db: Database to search
+        :return: array with the collections
+        """
+        l_collections = []
+        collections = self.client[name_db].collection_names()
+        for collect in collections:
+            l_collections.append(collect)
+        return l_collections
+
+    def get_all_documents_in_collection(self, db, collection, pattern={}):
+        """
+        Get all documents from the collection
+        :param db: mongo database
+        :param collection: collection database
+        :param pattern: Search pattern -dict-
+        :return: All documents in collection
+        """
+        l_items = []
+        self.client[db].choice_collection(collection)
+        items = self.find_with_retry(pattern)
+        l_items = items
+        return l_items
+
     def disconnect(self):
         """
         disconnect to mongo
