@@ -347,11 +347,11 @@ def get_type_value(value):
     :return: typed value, type
     """
     if (value.lower() == "true") or (value.lower() == "false"):
-        return bool(convert_str_to_bool(value)), "bool"
+        return bool(convert_str_to_bool(value)), "Bool"
     elif value.find(u'{') >= 0:
-        return json.loads(value), "dict"
+        return json.loads(value), "Dict"
     elif value.find(u'[') >= 0:
-        return json.loads(value), "list"
+        return json.loads(value), "List"
     else:
         try:
             temp = float(value)
@@ -360,11 +360,11 @@ def get_type_value(value):
             numeric = False
         if numeric:
             if temp.is_integer():
-                return int(temp), "int"
+                return int(temp), "Int"
             else:
-                return temp, "float"
+                return temp, "Float"
         else:
             if isinstance(value, unicode):
-                return value, "unicode"
+                return value, "Unicode"
             else:
-                return value, "string"
+                return value, "String"

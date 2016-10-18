@@ -944,9 +944,12 @@ class CbNgsi10Utils(object):
         if verify is not None:
             parameters.update({'verify': verify})
 
-        # filter the content-type if it is a GET verb
-        if method is "GET" or method is "get":
-            parameters["headers"].pop("content-type", None)
+        # Remove the content-type header if it is a GET or DELETE method
+        if method.lower() in ("get", "delete"):
+            if "content-type" in parameters["headers"]:
+                parameters["headers"].pop("content-type", None)
+            elif "Content-Type" in parameters["headers"]:  # used in Requests library version 2.11.1 or higher
+                parameters["headers"].pop("Content-Type", None)
 
         # Send the requests
         try:
