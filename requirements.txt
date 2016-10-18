@@ -1,4 +1,3 @@
-git+https://github.com/eliben/pycparser.git@release_v2.14
 pystache==0.5.4
 requests==2.10.0
 nose==1.3.4
