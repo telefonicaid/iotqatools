@@ -153,18 +153,6 @@ class Mongo:
         except Exception, e:
             assert False, " ERROR - Updating data in a collection %s in MongoDB...\n %s" % (self.current_collection, str(e))
 
-    def find_one(self, query={}):
-                """
-                find a set of data in the current collection using a collection
-                :param query: query to find
-                :return: cursor
-                """
-                try:
-                    return self.current_collection.find(query)
-                except Exception, e:
-                    assert False, " ERROR - Searching data from a collection %s in MongoDB...\n %s" % (
-                    self.current_collection, str(e))
-
     def find_data(self, query={}):
         """
         find a set of data in the current collection using a collection
