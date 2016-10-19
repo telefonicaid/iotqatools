@@ -333,6 +333,10 @@ class CEP:
            - meta_op: attribute metadata operation used (> | < | >= | <= | = | <>)
            - id: entity id or idPattern
            - type: entity type or typePattern
+           geo-location:
+             - location_x: UTM easting coordinates are referenced to the center line of the zone known as the central meridian
+             - location_y: UTM northing coordinates are measured relative to the equator                                                |
+             - location_ratio: circle size (distance)
           actions:
            - update_name: mandatory, attribute name to set
            - update_value: mandatory, attribute value to set
@@ -358,13 +362,19 @@ class CEP:
         :hint  some methods come from iotqatools.helpers_utils.py library
         """
         # text - epl
-        text = u'select *, \"%s\" as ruleName, *, ev.%s? as %s, ev.id? as id from pattern [every ev=iotEvent(' % (name, rule_properties["attr_name"], rule_properties["attr_name"])
+        text = u'select *, \"%s\" as ruleName, *, ev.%s? as %s, ev.id? as id from pattern [every ev=iotEvent(' % \
+               (name, rule_properties["attr_name"], rule_properties["attr_name"])
         if "attr_value" in rule_properties:
-            value, data_type = get_type_value(rule_properties["attr_value"])
-            text = u'%s cast(cast(%s?,String),%s)%s%s and' % (text, rule_properties["attr_name"], data_type, rule_properties["attr_op"], rule_properties["attr_value"])
+            value, data_type = get_type_value(str(rule_properties["attr_value"]))
+            text = u'%s cast(cast(%s?,String),%s)%s%s and' % \
+                   (text, rule_properties["attr_name"], data_type, rule_properties["attr_op"], rule_properties["attr_value"])
+        if "location_x" in rule_properties:  # geo-location
+            text = u'%s Math.pow((cast(cast(%s__x?,String),float) - %s), 2) + Math.pow((cast(cast(%s__y?,String),float) - %s), 2) %s Math.pow(%s,2) and' % \
+                   (text, rule_properties["attr_name"], rule_properties["location_x"], rule_properties["attr_name"], rule_properties["location_y"], rule_properties["attr_op"], rule_properties["location_ratio"])
         if "meta_value" in rule_properties:
-            value, data_type = get_type_value(rule_properties["meta_value"])
-            text = u'%s cast(cast(%s?,String),%s)%s%s and' % (text, rule_properties["meta_name"], data_type, rule_properties["meta_op"], rule_properties["meta_value"])
+            value, data_type = get_type_value(str(rule_properties["meta_value"]))
+            text = u'%s cast(cast(%s?,String),%s)%s%s and' % \
+                   (text, rule_properties["meta_name"], data_type, rule_properties["meta_op"], rule_properties["meta_value"])
         if "type" in rule_properties:
             text = u'%s type=\"%s\" and' % (text, rule_properties["type"])
         if "id" in rule_properties:
@@ -400,7 +410,8 @@ class CEP:
             if "http_json" in rule_properties:
                 action_dict["parameters"]["json"] = convert_str_to_dict(rule_properties["http_json"], "json")
             else:
-                action_dict["template"] = rule_properties["template"]
+                if "template" in rule_properties:
+                    action_dict["template"] = rule_properties["template"]
             if "http_method" in rule_properties:
                 action_dict["parameters"]["method"] = rule_properties["http_method"]
             if "http_headers" in rule_properties:
@@ -481,6 +492,3 @@ class CEP:
         __logger__.debug("code: %s" % response.status_code)
         __logger__.debug("payload: %s" % response.text)
         return response
-
-
-

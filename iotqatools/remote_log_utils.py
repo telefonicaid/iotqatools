@@ -105,11 +105,17 @@ class Remote_Log:
         __logger__.debug("label: \"%s\" and text: \"%s\" seeked in the log file: %s" % (label, text, self.file))
         label_list = []
         log_lines = self.fabric.read_file(self.file)
+
         log_lines_list = convert_str_to_list(log_lines, "\n")
         for line in log_lines_list:  # find all lines with the label
-            if line.find("lvl=%s" % label)>= 0:
-                label_list.append(line)
+            try:
+                if line.find("lvl=%s" % label)>= 0:
+                    label_list.append(line)
+            except Exception, e:
+                __logger__.debug("error message: %s" % e)
+                __logger__.debug("log line: %s" % line)
         label_list.reverse() # list reverse because looking for the last occurrence
+
         for line in label_list:
             if line.find(text) >= 0:
                 return line
