@@ -1051,6 +1051,7 @@ class CB:
               - if we wanted an empty payload in a second request, use:
                       | parameter          |
                       | without_properties |
+              - if "attr_value" has "timestamp in last minutes" as value is generate a timestamp with N last minutes of current timestamp
         :param context: context variable with properties to entities
         """
         # store previous entities context dict temporally (used in update request)
@@ -1080,6 +1081,12 @@ class CB:
         # Random values
         self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
         self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
+
+        # timestamp on last minutes ex: "timestamp in last minutes=20"
+        if self.entity_context[ATTRIBUTES_VALUE].find("timestamp in last minutes") >= 0:
+            ts_split = remove_quote(self.entity_context[ATTRIBUTES_VALUE]).split("=")
+            last_minutes = int(ts_split[1])*60
+            self.entity_context[ATTRIBUTES_VALUE] = '"%s"' % generate_date_zulu(generate_timestamp() - last_minutes)
 
         if self.entity_context[ATTRIBUTES_NAME] is not None and self.entity_context[ATTRIBUTES_NUMBER] == 0:
             self.entity_context[ATTRIBUTES_NUMBER] = 1
