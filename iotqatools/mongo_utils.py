@@ -135,6 +135,35 @@ class Mongo:
         except Exception, e:
             assert False, " ERROR - Accessing to collection %s in MongoDB...\n %s" % (name, str(e))
 
+    def get_all_databases(self):
+        """
+        Get all databases in mongo
+        :return: list (databases)
+        """
+        try:
+            dbs = self.client.database_names()
+            return self.get_cursor_value(dbs)
+        except Exception, e:
+             assert False, " ERROR - Get all databases in mongo...\n %s" % str(e)
+
+    def get_all_collections_by_db(self, **kwargs):
+        """
+        Get all collections in a database
+        :param db_name: Database to search, but default is used the current Database
+        :param system_collections: if False list will not include system collections (e.g system.indexes)
+        :return: list (collections)
+        """
+        db_name = kwargs.get("db_name", EMPTY)
+        system_collections = kwargs.get("system_collections", False)
+        try:
+            if db_name is EMPTY:
+                colls = self.current_database.collection_names(include_system_collections=system_collections)
+            else:
+                colls = self.client[db_name].collection_names(include_system_collections=system_collections)
+            return self.get_cursor_value(colls)
+        except Exception, e:
+             assert False, " ERROR - Get all colections in a databases in mongo...\n %s" % str(e)
+
     def insert_data(self, data):
         """
         Insert a new document in a collection
