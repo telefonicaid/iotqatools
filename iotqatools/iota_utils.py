@@ -130,6 +130,12 @@ class Rest_Utils_IoTA(object):
         res = None
 
         try:
+            # clean content_type in not allowed requests
+            if "content-type" in headers:
+                params["headers"].pop("content-type", None)
+            elif "Content-Type" in headers:  # used in Requests library version 2.11.1 or higher
+                params["headers"].pop("Content-Type", None)
+
             res = requests.get(url=path,
                                headers=headers,
                                params=params)
@@ -244,6 +250,12 @@ class Rest_Utils_IoTA(object):
     def api_delete(self, path, headers={}, params={}):
         res = None
         try:
+            # clean content_type in not allowed requests
+            if "content-type" in headers:
+                params["headers"].pop("content-type", None)
+            elif "Content-Type" in headers:  # used in Requests library version 2.11.1 or higher
+                params["headers"].pop("Content-Type", None)
+
             res = requests.delete(url=path,
                                   headers=headers,
                                   params=params)
