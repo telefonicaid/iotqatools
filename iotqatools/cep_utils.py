@@ -337,6 +337,8 @@ class CEP:
              - location_x: UTM easting coordinates are referenced to the center line of the zone known as the central meridian
              - location_y: UTM northing coordinates are measured relative to the equator                                                |
              - location_ratio: circle size (distance)
+           timestamp:
+             - timestamp_last_minutes: determine if the given timestamp is into the given last minutes
           actions:
            - update_name: mandatory, attribute name to set
            - update_value: mandatory, attribute value to set
@@ -368,6 +370,9 @@ class CEP:
             value, data_type = get_type_value(str(rule_properties["attr_value"]))
             text = u'%s cast(cast(%s?,String),%s)%s%s and' % \
                    (text, rule_properties["attr_name"], data_type, rule_properties["attr_op"], rule_properties["attr_value"])
+        if "timestamp_last_minutes" in rule_properties: #timestamp
+            text = u'%s cast(cast(%s__ts?,String),float) > current_timestamp - %s*60*1000 and' % \
+                   (text, rule_properties["attr_name"], rule_properties["timestamp_last_minutes"])
         if "location_x" in rule_properties:  # geo-location
             text = u'%s Math.pow((cast(cast(%s__x?,String),float) - %s), 2) + Math.pow((cast(cast(%s__y?,String),float) - %s), 2) %s Math.pow(%s,2) and' % \
                    (text, rule_properties["attr_name"], rule_properties["location_x"], rule_properties["attr_name"], rule_properties["location_y"], rule_properties["attr_op"], rule_properties["location_ratio"])
