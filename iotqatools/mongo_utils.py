@@ -114,6 +114,16 @@ class Mongo:
         """
         return self.current_collection
 
+    def choice_database(self, name):
+        """
+        Access to another database
+        :param name: database name
+        """
+        try:
+            self.current_database = self.client.get_database(name)
+        except Exception, e:
+            assert False, " ERROR - Accessing to database %s in MongoDB...\n %s" % (name, str(e))
+
     def choice_collection(self, name):
         """
         Access to another collection in the current database
