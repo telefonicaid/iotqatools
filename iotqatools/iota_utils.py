@@ -510,7 +510,7 @@ class Rest_Utils_IoTA(object):
         return req
 
     def delete_service_with_params(self, service_name, service_path={}, resource={}, apikey={}, device={},
-                                   keystone_token={}):
+                                   keystone_token={}, protocol={}):
         params = {}
         headers = {}
         if not service_name == 'void':
@@ -523,6 +523,8 @@ class Rest_Utils_IoTA(object):
             params['device'] = device
         if keystone_token:
             self.token = keystone_token
+        if protocol:
+            params['protocol'] = protocol
         if service_path:
             if not service_path == 'void':
                 headers[self.srv_path_header] = str(service_path)
