@@ -80,6 +80,8 @@ class Mongo:
             self.current_database = self.client.get_default_database()
             if self.collection_name != EMPTY:
                 self.current_collection = self.current_database[self.collection_name]
+            else:
+                self.current_collection = self.current_database
         except Exception, e:
             assert False, " ERROR - Connecting to MongoDB...\n %s " % (str(e))
 
@@ -121,6 +123,7 @@ class Mongo:
         """
         try:
             self.current_database = self.client.get_database(name)
+            self.current_collection = self.current_database
         except Exception, e:
             assert False, " ERROR - Accessing to database %s in MongoDB...\n %s" % (name, str(e))
 
@@ -238,11 +241,14 @@ class Mongo:
         except Exception, e:
             assert False, " ERROR - Deleting a collection %s in MongoDB...\n %s" % (self.current_collection, str(e))
 
-    def drop_database(self):
+    def drop_database(self, db_name=EMPTY):
         """
         remove the current database
+        :param db_name:database name to remove
         """
         try:
+            if db_name != EMPTY:
+                self.database_name = db_name
             __logger__.debug("database to delete: %s" % self.database_name)
             self.client.drop_database(self.database_name)
         except Exception, e:

@@ -23,22 +23,23 @@ please contact with::[iot_support@tid.es]
 """
 __author__ = 'Iván Arias León (ivan dot ariasleon at telefonica dot com)'
 
-
 import os
+import re
 
 from iotqatools.helpers_utils import *
 
 __logger__ = logging.getLogger("utils")
 
 # constants
-FILE                  = u'file'
-FILE_DEFAULT          = u'file.log'
-FABRIC                = u'fabric'
-OWNER_GROUP_DEFAULT   = u'root'
-OWNER                 = u'owner'
-GROUP                 = u'group'
-MOD                   = u'mod'
-MOD_DEFAULT           = u'777'
+FILE = u'file'
+FILE_DEFAULT = u'file.log'
+FABRIC = u'fabric'
+OWNER_GROUP_DEFAULT = u'root'
+OWNER = u'owner'
+GROUP = u'group'
+MOD = u'mod'
+MOD_DEFAULT = u'777'
+
 
 class Remote_Log:
     """
@@ -58,7 +59,7 @@ class Remote_Log:
                                       hide=True,
                                       sudo=sudo_cygnus)
         """
-        file_path   = kwargs.get(FILE, FILE_DEFAULT)
+        file_path = kwargs.get(FILE, FILE_DEFAULT)
         self.fabric = kwargs.get(FABRIC, None)
 
         try:
@@ -85,13 +86,13 @@ class Remote_Log:
         """
         owner = kwargs.get(OWNER, OWNER_GROUP_DEFAULT)
         group = kwargs.get(GROUP, OWNER_GROUP_DEFAULT)
-        mod   = kwargs.get(MOD, MOD_DEFAULT)
+        mod = kwargs.get(MOD, MOD_DEFAULT)
 
         self.fabric.run("echo '' > %s" % self.file)
         self.fabric.run("chown %s:%s %s" % (owner, group, self.file))
         self.fabric.run("chmod %s %s" % (mod, self.file))
 
-    def find_line(self, label, text):
+    def find_line(self, label, text, msg_header="msg"):
         """
         find the last occurrence in log with a label and a text
         steps:
@@ -99,7 +100,8 @@ class Remote_Log:
            - second, invest the lines list (first lines last)
            - third, return the last line with the text expected
         :param label: label to find
-        :param text: text to find
+        :param text: text to find (regexp is allowed)
+        :param msg_header: msg field header name
         :return: line found or None
         """
         __logger__.debug("label: \"%s\" and text: \"%s\" seeked in the log file: %s" % (label, text, self.file))
@@ -109,15 +111,20 @@ class Remote_Log:
         log_lines_list = convert_str_to_list(log_lines, "\n")
         for line in log_lines_list:  # find all lines with the label
             try:
-                if line.find("lvl=%s" % label)>= 0:
+                if line.find("lvl=%s" % label) >= 0:
                     label_list.append(line)
             except Exception, e:
                 __logger__.debug("error message: %s" % e)
                 __logger__.debug("log line: %s" % line)
-        label_list.reverse() # list reverse because looking for the last occurrence
+        label_list.reverse()  # list reverse because looking for the last occurrence
 
+        regexp = re.compile(text)
         for line in label_list:
-            if line.find(text) >= 0:
+            msg = line.split("%s=" % msg_header)
+            result = regexp.match(msg[1])
+            if result is not None:  # if a regular expression is used, only seeks in the msg field
+                return line
+            elif line.find(text) >= 0:  # if a substring is used
                 return line
         return None
 
@@ -133,12 +140,8 @@ class Remote_Log:
         ls = line.split("|")
         for param in ls:
             if param.find("%s=" % trace) >= 0:
-                d = param.split("=")[1][:-1] # the string has an empty character on the end
+                d = param.split("=")[1][:-1]  # the string has an empty character on the end
                 __logger__.debug(u'the "%s" trace has "%s" as value' % (trace, d))
                 return d
         __logger__.warn(trace_error)
         return trace_error
-
-
-
-
