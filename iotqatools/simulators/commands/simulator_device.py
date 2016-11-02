@@ -28,6 +28,7 @@ __author__ = 'developer'
 from flask import Flask, request, Response
 from sys import argv
 import time
+import json
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -80,6 +81,36 @@ def treat_client_ul20_cmd_error():
         cmd_resp = command_fields[0] + "|" + cmd_name[1] + " ERROR, Command error"
         app.logger.debug('Data responded: {}'.format(cmd_resp))
         return Response(response=cmd_resp, status=500, content_type='text/plain;charset=UTF-8')
+    else:
+        error_message = 'No data provided in the command'
+        app.logger.error(error_message)
+        return Response(response=error_message, status=400, content_type='text/plain;charset=UTF-8')
+
+
+@app.route('/simulaClient/jsonCommand', methods=['GET', 'POST'])
+def treat_client_json_cmd():
+    app.logger.info('Received json command to {}'.format(request.url))
+
+    # Extraxt delay parameter if exists. Simulator waits the delay before it responds
+    if request.args.get('delay'):
+        delay = int(request.args.get('delay'))
+        app.logger.debug('Waiting {} seconds ...'.format(delay))
+        time.sleep(delay)
+    else:
+        app.logger.info('No delay provided as parameter')
+
+    # Check if command is sent and compose response
+    if (request.data is not None) and (len(request.data) != 0):
+        try:
+            my_data = json.loads(request.data)
+        except ValueError, e:
+            return Response(response="Json decode error: {}".format(e.message), status=500, content_type='text/plain;charset=UTF-8')
+        app.logger.debug('Data received: {}'.format(my_data))
+        cmd_name = my_data.keys()[0]
+        app.logger.debug('Command name: {}'.format(cmd_name))
+        cmd_resp = {cmd_name: '{} OK'.format(cmd_name)}
+        app.logger.debug('Data responded: {}'.format(json.dumps(cmd_resp)))
+        return Response(response=json.dumps(cmd_resp), status=200, content_type='application/json;charset=UTF-8')
     else:
         error_message = 'No data provided in the command'
         app.logger.error(error_message)
