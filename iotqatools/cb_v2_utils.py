@@ -1693,7 +1693,7 @@ class CB:
 
     #  -----------  subscriptions -------------------
 
-    def properties_to_subcription(self, context):
+    def properties_to_subcription(self, context, listener):
         """
         definition of properties to entities
           | parameter                      | value                   |
@@ -1744,6 +1744,7 @@ class CB:
                      `| condition_expression | q>>>temperature>40&georel>>>near&geometry>>>point&coords>>>40.6391 |`
               - If notification_http_url has `replace_host` value, ex: http://replace_host:1234/notify, it string is replaced by the hostname (used to notifications).
         :param context: context variable with properties to entities
+        :param listener: listener host from properties.json
         """
         # store previous subsciption context dict temporally (used in update request)
         self.subsc_dict_temp = {}
@@ -1766,11 +1767,11 @@ class CB:
             if self.subscription_context[item] == THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
                 self.subscription_context[item] = self.subsc_dict_temp[item]
 
-        # replace_host (used in notifications)
+        # replace_host string in url is replaced to the listener property (used in notification field)
         if (self.subscription_context[NOTIFICATION_HTTP_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_URL].find(REPLACE_HOST) >= 0):
-            self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_HOST, get_ip()) # get_ip in helper_utils.py library
+            self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_HOST, listener)
         if (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].find(REPLACE_HOST) >= 0):
-            self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] = self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].replace(REPLACE_HOST, get_ip()) # get_ip in helper_utils.py library
+            self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] = self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].replace(REPLACE_HOST, listener)
 
         # Random values
         self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
