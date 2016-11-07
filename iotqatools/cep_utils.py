@@ -389,19 +389,19 @@ class CEP:
         # action
         action_dict = {"type": action}
         action_dict["parameters"] = {}
+
         if action == "email":
             action_dict["template"] = rule_properties["template"]
             action_dict["parameters"]["to"] = rule_properties["to"]
             action_dict["parameters"]["from"] = rule_properties["from"]
             action_dict["parameters"]["subject"] = rule_properties["subject"]
+
         elif action == "sms":
             action_dict["template"] = rule_properties["template"]
             action_dict["parameters"]["to"] = rule_properties["to"]
+
+        # it is possible to updates one or more attributes of a given entity
         elif action == "update":
-            action_dict["parameters"]["name"] = rule_properties["update_name"]
-            action_dict["parameters"]["value"] = rule_properties["update_value"]
-            if "update_attr_type" in rule_properties:
-                action_dict["parameters"]["attrType"] = rule_properties["update_attr_type"]
             if "update_id" in rule_properties:
                 action_dict["parameters"]["id"] = rule_properties["update_id"]
             if "update_type" in rule_properties:
@@ -410,6 +410,24 @@ class CEP:
                 action_dict["parameters"]["isPattern"] = rule_properties["update_ispattern"]
             if "update_trust" in rule_properties:
                 action_dict["parameters"]["trust"] = rule_properties["update_trust"]
+            # one or more attributes
+            action_dict["parameters"]["attributes"] = []
+            attrs_name_list = rule_properties["update_name"].split("&")
+            attrs_value_list = rule_properties["update_value"].split("&")
+            attrs_type_list = []
+            #_attribute type is optional
+            if "update_attr_type" in rule_properties:
+                while rule_properties["update_attr_type"].find("&&") >= 0:
+                    rule_properties["update_attr_type"] = rule_properties["update_attr_type"].replace("&&", '&none&')
+                attrs_type_list = convert_str_to_list(rule_properties["update_attr_type"],"&")
+            for i in range(len(attrs_name_list)):
+                attr = {}
+                attr["name"] = attrs_name_list[i]
+                attr["value"] = attrs_value_list[i]
+                if (len(attrs_type_list) > i) and (attrs_type_list[i] != "none"):
+                    attr["type"] = attrs_type_list[i]
+                action_dict["parameters"]["attributes"].append(attr)
+
         elif action == "post":
             action_dict["parameters"]["url"] = rule_properties["http_url"]
             if "http_json" in rule_properties:
@@ -423,6 +441,7 @@ class CEP:
                 action_dict["parameters"]["headers"] = convert_str_to_dict(rule_properties["http_headers"], "json")
             if "http_qs" in rule_properties:
                 action_dict["parameters"]["qs"] = convert_str_to_dict(rule_properties["http_qs"], "json")
+
         elif action == "twitter":
             action_dict["template"] = rule_properties["template"]
             action_dict["consumer_key"] = rule_properties["consumer_key"]
