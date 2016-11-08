@@ -1269,6 +1269,7 @@ class CbNgsi10Utils(object):
         if self.check_json:
             payload = check_valid_json(payload)
             check_minimal_attrs_payload(["attributes"], payload, self.log)
+        self.headers['content-type'] = "application/json"
         return self.__send_request('put', url, self.headers, payload)
 
     def convenience_entity_update_payload_method(self, payload):
