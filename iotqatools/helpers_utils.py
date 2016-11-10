@@ -35,7 +35,7 @@ import math
 from decimal import Decimal
 import operator
 import socket
-
+import os
 
 
 # general constants
@@ -258,11 +258,12 @@ def read_file_to_json(file_name):
     :param file_name: file to read (path included)
     :return: dict
     """
+    path = os.getcwd()
     try:
         with open(file_name) as config_file:
             return json.load(config_file)
     except Exception, e:
-        raise Exception("\n ERROR - parsing the %s file\n     msg= %s" % (file_name, str(e)))
+        raise Exception("\n ERROR - parsing the %s/%s file \n     msg= %s" % (path, file_name, str(e)))
 
 
 def get_operator_fn(op):
