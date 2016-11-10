@@ -1083,7 +1083,7 @@ class CB:
         self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
 
         # timestamp on last minutes ex: "timestamp in last minutes=20"
-        if self.entity_context[ATTRIBUTES_VALUE].find("timestamp in last minutes") >= 0:
+        if (self.entity_context[ATTRIBUTES_VALUE] is not None) and (self.entity_context[ATTRIBUTES_VALUE].find("timestamp in last minutes") >= 0):
             ts_split = remove_quote(self.entity_context[ATTRIBUTES_VALUE]).split("=")
             last_minutes = int(ts_split[1])*60
             self.entity_context[ATTRIBUTES_VALUE] = '"%s"' % generate_date_zulu(generate_timestamp() - last_minutes)
