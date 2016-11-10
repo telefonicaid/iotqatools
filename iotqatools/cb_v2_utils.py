@@ -199,8 +199,8 @@ class CB:
         """
         self.entity_context = {ENTITIES_NUMBER: 1,
                                ENTITIES_TYPE: THING,      # entity type prefix.
-                               ENTITIES_ID: None,        # entity id prefix.
-                               ENTITIES_PREFIX: EMPTY,   # allowed values(id | type)  -->  pending to modify in another PR, because it is used in all features
+                               ENTITIES_ID: None,         # entity id prefix.
+                               ENTITIES_PREFIX: {ID: False, TYPE: False},
                                ATTRIBUTES_NUMBER: 0,
                                ATTRIBUTES_NAME: None,
                                ATTRIBUTES_VALUE: None,
@@ -1131,19 +1131,17 @@ class CB:
         :return responses list
         """
         resp_list = []
-        self.prefixes = {ID: False,
-                         TYPE: False}
         # prefixes
         if context.table is not None:
             for row in context.table:
-                if row[ENTITY] in self.prefixes:
-                    self.prefixes[row[ENTITY]] = row[PREFIX]
+                if row[ENTITY] in self.entity_context[ENTITIES_PREFIX]:
+                    self.entity_context[ENTITIES_PREFIX][row[ENTITY]] = row[PREFIX]
+
         self.entity_context[ENTITIES_NUMBER] = int(entities_number)
-        self.entity_context[ENTITIES_PREFIX] = self.prefixes
 
         # log id and type prefixes
-        __logger__.debug("id prefix  : %s" % self.prefixes[ID])
-        __logger__.debug("type prefix: %s" % self.prefixes[TYPE])
+        __logger__.debug("id prefix  : %s" % self.entity_context[ENTITIES_PREFIX][ID])
+        __logger__.debug("type prefix: %s" % self.entity_context[ENTITIES_PREFIX][TYPE])
 
         # create attributes with entity context
         entity = self.__create_attributes(self.entity_context, mode)
@@ -1162,13 +1160,13 @@ class CB:
         # create N consecutive entities with prefixes or not
         for e in range(self.entity_context[ENTITIES_NUMBER]):
             if self.entity_context[ENTITIES_ID] is not None:
-                if self.prefixes[ID] and self.entity_context[ENTITIES_NUMBER] > 1:
+                if self.entity_context[ENTITIES_PREFIX][ID] and self.entity_context[ENTITIES_NUMBER] > 1:
                     entity_id = "%s_%s" % (self.entity_context[ENTITIES_ID], str(e))
                 else:
                     entity_id = self.entity_context[ENTITIES_ID]
                 entity[ID] = entity_id
             if self.entity_context[ENTITIES_TYPE] != THING:
-                if self.prefixes[TYPE] and self.entity_context[ENTITIES_NUMBER] > 1:
+                if self.entity_context[ENTITIES_PREFIX][TYPE] and self.entity_context[ENTITIES_NUMBER] > 1:
                     entity_type = "%s_%s" % (self.entity_context[ENTITIES_TYPE], str(e))
                 else:
                     entity_type = self.entity_context[ENTITIES_TYPE]
@@ -1982,18 +1980,25 @@ class CB:
 
     #  --------- Batch operations ---------
 
-    def append_an_entity_properties(self, entity, mode):
+    def batch_op_entities_properties(self, entities, mode):
         """
-        define a entity to update in a single batch operation
-        :param entity: entity properties to append
-        :param mode: format used, ex: normalized or keyValues (defined in "options" query param)
+        define a entity to update in a single batch operations
+        :param entities: entities properties to append
+        :param mode: format used, ex: normalized or keyValues (defined in "options" query param). By default is normalized.
         """
         entity_dict = {}
         self.__init_entity_context_dict()
 
-        for item in entity:
+        for item in entities:
             if item in self.entity_context:
-                self.entity_context[item] = entity[item]
+                self.entity_context[item] = entities[item]
+
+            # entity prefixes
+            PREFIX_STR = u'entities_prefix_'
+            ent_prefix = []
+            if item.find(PREFIX_STR) >= 0:
+                ent_prefix = item.split(PREFIX_STR)
+                self.entity_context[ENTITIES_PREFIX][ent_prefix[1]] = entities[item]
 
         # The same value from create request (used in update request)
         for item in self.entity_context:
@@ -2008,17 +2013,30 @@ class CB:
         if self.entity_context[METADATAS_NAME] is not None and self.entity_context[METADATAS_NUMBER] == 0:
             self.entity_context[METADATAS_NUMBER] = 1
 
+        __logger__.debug("entity properties:")
+        for e in self.entity_context:
+            __logger__.debug("%s: %s" % (e, self.entity_context[e]))
+
         # create attributes with entity context
-        entity = self.__create_attributes(self.entity_context, mode)
+        attributes = self.__create_attributes(self.entity_context, mode)
 
-        # id and type fields
-        if self.entity_context[ENTITIES_ID] is not None:
-            entity[ID] = self.entity_context[ENTITIES_ID]
-        if self.entity_context[ENTITIES_TYPE] != THING:
-            entity[TYPE] = self.entity_context[ENTITIES_TYPE]
+        for i in range(int(self.entity_context[ENTITIES_NUMBER])):
+            entity = {}
+            entity = attributes.copy()
+            # id and type fields
+            if self.entity_context[ENTITIES_ID] is not None:
+                if not self.entity_context[ENTITIES_PREFIX][ID]:
+                    entity[ID] = self.entity_context[ENTITIES_ID]
+                else:
+                    entity[ID] = "%s_%s" % (self.entity_context[ENTITIES_ID], str(i))
+            if self.entity_context[ENTITIES_TYPE] != THING:
+                if not self.entity_context[ENTITIES_PREFIX][TYPE]:
+                    entity[TYPE] = self.entity_context[ENTITIES_TYPE]
+                else:
+                    entity[TYPE] = "%s_%s" % (self.entity_context[ENTITIES_TYPE], str(i))
 
-        # append a new entity to the batch dict
-        self.update_batch_dict["entities"].append(entity)
+            # append a new entity to the batch dict
+            self.update_batch_dict["entities"].append(entity)
 
     def batch_update(self, parameters, op):
         """
@@ -2030,13 +2048,13 @@ class CB:
         :param op: specify the kind of update action to do (APPEND, APPEND_STRICT, UPDATE, DELETE)
         :return http response
         """
-        self.update_batch_dict["actionType"] = op
         self.entities_parameters = parameters
-
-        payload = convert_dict_to_str(self.update_batch_dict, JSON)
-        if self.update_batch_dict != {}:
+        if "payload" not in parameters:
+            self.update_batch_dict["actionType"] = op
+            payload = convert_dict_to_str(self.update_batch_dict, JSON)
             resp = self.__send_request(POST, "%s/update" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
         else:
+            del self.entities_parameters["payload"]
             resp = self.__send_request(POST, "%s/update" % V2_BATCH, parameters=self.entities_parameters, headers=self.headers)
         self.__init_update_batch_properties_dict()
         return resp
@@ -2112,7 +2130,7 @@ class CB:
         get dict with if entity id or entity type are used as prefix
         :return: dict
         """
-        return self.prefixes
+        return self.entity_context[ENTITIES_PREFIX]
 
     def get_entity_id_to_request(self):
         """
