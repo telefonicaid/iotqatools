@@ -244,7 +244,7 @@ class CB:
         """
         initialize update batch dict (used in update batch operations)
         """
-        self.update_batch_dict = {"actionType": None, "entities": []}
+        self.update_batch_dict = {"entities": []}
 
     def __init_query_batch_properties_dict(self):
         """
@@ -2050,7 +2050,8 @@ class CB:
         """
         self.entities_parameters = parameters
         if "payload" not in parameters:
-            self.update_batch_dict["actionType"] = op
+            if op != "without actionType field":
+                self.update_batch_dict["actionType"] = op
             payload = convert_dict_to_str(self.update_batch_dict, JSON)
             resp = self.__send_request(POST, "%s/update" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
         else:
