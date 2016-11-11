@@ -1980,11 +1980,10 @@ class CB:
 
     #  --------- Batch operations ---------
 
-    def batch_op_entities_properties(self, entities, mode):
+    def batch_op_entities_properties(self, entities):
         """
         define a entity to update in a single batch operations
         :param entities: entities properties to append
-        :param mode: format used, ex: normalized or keyValues (defined in "options" query param). By default is normalized.
         """
         entity_dict = {}
         self.__init_entity_context_dict()
@@ -2017,7 +2016,22 @@ class CB:
         for e in self.entity_context:
             __logger__.debug("%s: %s" % (e, self.entity_context[e]))
 
-        # create attributes with entity context
+    def batch_update(self, parameters, op):
+        """
+        allows to create, update and/or delete several entities in a single batch operation
+        :request -> POST /v2/op/update
+        :payload --> Yes
+        :query parameters --> Yes
+        :param parameters: queries parameters
+        :param op: specify the kind of update action to do (APPEND, APPEND_STRICT, UPDATE, DELETE)
+        :return http response
+        """
+        self.entities_parameters = parameters
+        mode = NORMALIZED
+        if OPTIONS in self.entities_parameters:
+            mode = self.entities_parameters[OPTIONS]
+
+        # create attributes from entity context
         attributes = self.__create_attributes(self.entity_context, mode)
 
         for i in range(int(self.entity_context[ENTITIES_NUMBER])):
@@ -2038,18 +2052,7 @@ class CB:
             # append a new entity to the batch dict
             self.update_batch_dict["entities"].append(entity)
 
-    def batch_update(self, parameters, op):
-        """
-        allows to create, update and/or delete several entities in a single batch operation
-        :request -> POST /v2/op/update
-        :payload --> Yes
-        :query parameters --> Yes
-        :param parameters: queries parameters
-        :param op: specify the kind of update action to do (APPEND, APPEND_STRICT, UPDATE, DELETE)
-        :return http response
-        """
-        self.entities_parameters = parameters
-        if "payload" not in parameters:
+        if "payload" not in self.entities_parameters:
             if op != "without actionType field":
                 self.update_batch_dict["actionType"] = op
             payload = convert_dict_to_str(self.update_batch_dict, JSON)
