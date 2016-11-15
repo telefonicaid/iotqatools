@@ -2094,7 +2094,7 @@ class CB:
             if item[ENTITIES_TYPE] != THING:
                 entity = '%s {"type": %s' % (entity, item[ENTITIES_TYPE])
             if item[ENTITIES_ID] is not None:
-                if entity != EMPTY:
+                if item[ENTITIES_TYPE] != THING:
                     entity = '%s, "id": %s' % (entity, item[ENTITIES_ID])
                 else:
                     entity = '%s {"id": %s' % (entity, item[ENTITIES_ID])
