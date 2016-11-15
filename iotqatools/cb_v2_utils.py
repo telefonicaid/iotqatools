@@ -172,8 +172,9 @@ class CB:
            - **delete_subscription_by_id**: delete a subscription by id (DELETE /v2/subscriptions/<subscriptionId>)
 
         ### Batch operations:
-           - **append_an_entity_properties**: define a entity to update in a single batch operation
+           - **batch_op_entities_properties**: define a entity to update in a single batch operation
            - **batch_update**: allows to create, update and/or delete several entities in a single batch operation
+           - **batch_update_in_raw**: allows to create, update and/or delete several entities in a single batch operation in raw mode
            - **query_entities_properties**: define properties to query in a single batch operation
            - **batch_query**: returns an Array containing one object per matching entity
 
@@ -640,22 +641,22 @@ class CB:
         meta_values_list = []
         meta_types_list = []
         # create N attributes with/without attribute type and metadatas (with/without type)
-        if self.entity_context[ATTRIBUTES_NAME] is not None:
-            name_list = convert_str_to_list(self.entity_context[ATTRIBUTES_NAME], separator)
-        if self.entity_context[ATTRIBUTES_VALUE] is not None:
-            values_list = convert_str_to_list(self.entity_context[ATTRIBUTES_VALUE], separator)
-        if self.entity_context[ATTRIBUTES_TYPE] is not None:
-            while self.entity_context[ATTRIBUTES_TYPE].find("&&") >= 0:
-                self.entity_context[ATTRIBUTES_TYPE] = self.entity_context[ATTRIBUTES_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
-            type_list = convert_str_to_list(self.entity_context[ATTRIBUTES_TYPE], separator)
-        if self.entity_context[METADATAS_NAME] is not None:
-            meta_names_list = convert_str_to_list(self.entity_context[METADATAS_NAME], separator)
-        if self.entity_context[METADATAS_VALUE] is not None:
-            meta_values_list = convert_str_to_list(self.entity_context[METADATAS_VALUE], separator)
-        if self.entity_context[METADATAS_TYPE] is not None:
-            while self.entity_context[METADATAS_TYPE].find("&&") >= 0:
-                self.entity_context[METADATAS_TYPE] = self.entity_context[METADATAS_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
-            meta_types_list = convert_str_to_list(self.entity_context[METADATAS_TYPE], separator)
+        if entity_context[ATTRIBUTES_NAME] is not None:
+            name_list = convert_str_to_list(entity_context[ATTRIBUTES_NAME], separator)
+        if entity_context[ATTRIBUTES_VALUE] is not None:
+            values_list = convert_str_to_list(entity_context[ATTRIBUTES_VALUE], separator)
+        if entity_context[ATTRIBUTES_TYPE] is not None:
+            while entity_context[ATTRIBUTES_TYPE].find("&&") >= 0:
+                entity_context[ATTRIBUTES_TYPE] = entity_context[ATTRIBUTES_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+            type_list = convert_str_to_list(entity_context[ATTRIBUTES_TYPE], separator)
+        if entity_context[METADATAS_NAME] is not None:
+            meta_names_list = convert_str_to_list(entity_context[METADATAS_NAME], separator)
+        if entity_context[METADATAS_VALUE] is not None:
+            meta_values_list = convert_str_to_list(entity_context[METADATAS_VALUE], separator)
+        if entity_context[METADATAS_TYPE] is not None:
+            while entity_context[METADATAS_TYPE].find("&&") >= 0:
+                entity_context[METADATAS_TYPE] = entity_context[METADATAS_TYPE].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+            meta_types_list = convert_str_to_list(entity_context[METADATAS_TYPE], separator)
 
         for pos in range(len(name_list)):
             attribute_str = EMPTY
@@ -1984,6 +1985,7 @@ class CB:
         """
         define a entity to update in a single batch operations
         :param entities: entities properties to append
+        :return dict (prpperties to update batch op)
         """
         entity_dict = {}
         self.__init_entity_context_dict()
@@ -2015,8 +2017,9 @@ class CB:
         __logger__.debug("entity properties:")
         for e in self.entity_context:
             __logger__.debug("%s: %s" % (e, self.entity_context[e]))
+        return self.entity_context
 
-    def batch_update(self, parameters, op):
+    def batch_update(self, parameters, accumulate, op):
         """
         allows to create, update and/or delete several entities in a single batch operation
         :request -> POST /v2/op/update
@@ -2024,6 +2027,7 @@ class CB:
         :query parameters --> Yes
         :param parameters: queries parameters
         :param op: specify the kind of update action to do (APPEND, APPEND_STRICT, UPDATE, DELETE)
+        :param accumulate: entities accumulate with different properties
         :return http response
         """
         self.entities_parameters = parameters
@@ -2031,26 +2035,27 @@ class CB:
         if OPTIONS in self.entities_parameters:
             mode = self.entities_parameters[OPTIONS]
 
-        # create attributes from entity context
-        attributes = self.__create_attributes(self.entity_context, mode)
+        for item in accumulate:
+            # create attributes from entity context
+            attributes = self.__create_attributes(item, mode)
 
-        for i in range(int(self.entity_context[ENTITIES_NUMBER])):
-            entity = {}
-            entity = attributes.copy()
-            # id and type fields
-            if self.entity_context[ENTITIES_ID] is not None:
-                if not self.entity_context[ENTITIES_PREFIX][ID]:
-                    entity[ID] = self.entity_context[ENTITIES_ID]
-                else:
-                    entity[ID] = "%s_%s" % (self.entity_context[ENTITIES_ID], str(i))
-            if self.entity_context[ENTITIES_TYPE] != THING:
-                if not self.entity_context[ENTITIES_PREFIX][TYPE]:
-                    entity[TYPE] = self.entity_context[ENTITIES_TYPE]
-                else:
-                    entity[TYPE] = "%s_%s" % (self.entity_context[ENTITIES_TYPE], str(i))
+            for i in range(int(item[ENTITIES_NUMBER])):
+                entity = {}
+                entity = attributes.copy()
+                # id and type fields
+                if item[ENTITIES_ID] is not None:
+                    if not item[ENTITIES_PREFIX][ID]:
+                        entity[ID] = item[ENTITIES_ID]
+                    else:
+                        entity[ID] = "%s_%s" % (item[ENTITIES_ID], str(i))
+                if item[ENTITIES_TYPE] != THING:
+                    if not item[ENTITIES_PREFIX][TYPE]:
+                        entity[TYPE] = item[ENTITIES_TYPE]
+                    else:
+                        entity[TYPE] = "%s_%s" % (item[ENTITIES_TYPE], str(i))
 
-            # append a new entity to the batch dict
-            self.update_batch_dict["entities"].append(entity)
+                # append a new entity to the batch dict
+                self.update_batch_dict["entities"].append(entity)
 
         if "payload" not in self.entities_parameters:
             if op != "without actionType field":
@@ -2061,6 +2066,47 @@ class CB:
             del self.entities_parameters["payload"]
             resp = self.__send_request(POST, "%s/update" % V2_BATCH, parameters=self.entities_parameters, headers=self.headers)
         self.__init_update_batch_properties_dict()
+        return resp
+
+    def batch_update_in_raw(self, parameters, accumulate, op):
+        """
+        allows to create, update and/or delete several entities in a single batch operation in raw mode
+        used mainly with data type as boolean, dict, list, null, numeric, etc
+        :request -> POST /v2/op/update
+        :payload --> Yes
+        :query parameters --> Yes
+        :param parameters: queries parameters
+        :param op: specify the kind of update action to do (APPEND, APPEND_STRICT, UPDATE, DELETE)
+        :param accumulate: entities accumulate with different properties
+        :return http response
+        """
+        entity = '"entities": ['
+        self.entities_parameters = parameters
+        mode = NORMALIZED
+
+        if OPTIONS in self.entities_parameters:
+            mode = self.entities_parameters[OPTIONS]
+
+        for item in accumulate:
+            # create attributes from entity context in raw mode
+            attributes = self.__create_attribute_raw(item, mode)
+            # create entity in raw mode
+            if item[ENTITIES_TYPE] != THING:
+                entity = '%s {"type": %s' % (entity, item[ENTITIES_TYPE])
+            if item[ENTITIES_ID] is not None:
+                if entity != EMPTY:
+                    entity = '%s, "id": %s' % (entity, item[ENTITIES_ID])
+                else:
+                    entity = '%s {"id": %s' % (entity, item[ENTITIES_ID])
+            if attributes != EMPTY:
+                entity = u'%s, %s},' % (entity, attributes)
+            else:
+                entity = u'%s},' % entity
+
+        payload = u'{"actionType": %s, %s]}' % (mapping_quotes(op), entity[:-1]) # mapping_quote from helpers_utils.py
+        __logger__.debug("payload: %s" % payload)
+
+        resp = self.__send_request(POST, "%s/update" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
         return resp
 
     def query_entities_properties(self, entities, attributes, scope):
