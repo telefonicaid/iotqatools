@@ -112,7 +112,7 @@ class Mysql:
         """
         try:
             self.database = EMPTY
-            self.conn = MySQLdb.connect(self.host, self.user, self.password, self.database)
+            self.conn = MySQLdb.connect(self.host, self.user, self.password, self.database, charset='utf8',use_unicode=True)
         except Exception, e:
             return self.__error_assertion('DB exception: %s' % (e))
 
@@ -160,7 +160,7 @@ class Mysql:
         :param name:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
-        self.__query("%s `%s`;" % (MYSQL_CREATE_DATABASE, self.database))
+        self.__query("%s `%s` %s;" % (MYSQL_CREATE_DATABASE, self.database, "DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci"))
 
     def drop_database(self, name):
         """
