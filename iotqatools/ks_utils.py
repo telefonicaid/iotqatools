@@ -49,7 +49,7 @@ ENDPOINTS = {
 
 class RequestUtils(object):
     @staticmethod
-    def send(endpoint, method, headers={}, payload={}, url_parameters_list=[], query={}):
+    def send(endpoint, method, headers={}, payload={}, url_parameters_list=[], query={}, verify=False):
         """
         Send a request to a specific endpoint in a specifig type of http request
         """
@@ -77,6 +77,9 @@ class RequestUtils(object):
         if query != {}:
             parameters.update({'params': query})
             log.debug('\tQuery:\n %s' % query)
+        if headers != {}:
+            parameters.update({'verify': verify})
+            log.debug('\t*Verify:\n %s' % verify)
         log.debug('End Sending\n**************************************************************************************')
         response = requests.request(**parameters)
         PqaTools.log_fullRequest(comp='ORC', response=response, params=parameters)
@@ -498,10 +501,11 @@ class KeystoneCrud(object):
     Class to manage any kind of keystone action
     """
 
-    def __init__(self, username, password, domain, ip, port='5000'):
+    def __init__(self, username, password, domain, ip, port='5000', protocol='http', verify=False):
         self.ip = ip
         self.port = port
-        self.url = 'http://%s:%s' % (self.ip, self.port)
+        self.protocol = protocol
+        self.url = '%s://%s:%s' % (self.protocol, self.ip, self.port)
         self.username = username
         self.password = password
         self.domain = domain
@@ -514,6 +518,7 @@ class KeystoneCrud(object):
         self.roles = None
         self.roles_scim = None
         self.users_scim = None
+        self.verify = verify
 
     def __check_instance(self, instance):
         """
@@ -592,7 +597,7 @@ class KeystoneCrud(object):
             # Overwrite scope
             payload['auth']['scope'] = { "OS-TRUST:trust": { "id": trust_id } }
 
-        return self.r.send(self.url + ENDPOINTS['tokens'], 'post', headers, payload)
+        return self.r.send(self.url + ENDPOINTS['tokens'], 'post', headers, payload, verify=self.verify)
 
     def get_token(self, project=None):
         """
