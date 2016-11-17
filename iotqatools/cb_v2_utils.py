@@ -519,7 +519,7 @@ class CB:
             __logger__.debug("-----------------------------------------------------------")
         url = "%s/%s" % (self.cb_url, path)
         try:
-            resp = requests.request(method=method, url=url, headers=headers, data=payload, params=parameters)
+            resp = requests.request(method=method, url=url, headers=headers, data=payload, params=parameters, verify=False)
         except Exception, e:
             assert False, "ERROR  - send request \n     - url: %s\n    - %s" % (url, str(e))
         if show:
