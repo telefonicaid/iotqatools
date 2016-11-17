@@ -948,8 +948,12 @@ class CbNgsi10Utils(object):
         if query is not None:
             parameters.update({'params': query})
 
+        if self.verify is not None:
+             parameters.update({'verify': self.verify})
+
         if verify is not None:
             parameters.update({'verify': verify})
+
 
         # Remove the content-type header if it is a GET or DELETE method
         if method.lower() in ("get", "delete"):
