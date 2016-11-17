@@ -875,7 +875,8 @@ class CbNgsi10Utils(object):
                  log_instance=None,
                  log_verbosity='DEBUG',
                  default_headers={"Accept": "application/json", 'content-type': 'application/json'},
-                 check_json=True):
+                 check_json=True,
+                 verify=None):
         """
         CB Utils constructor
         :param instance:
@@ -897,6 +898,7 @@ class CbNgsi10Utils(object):
         :param log_verbosity:
         :param default_headers:
         :param check_json:
+        :param verify: ssl check
         """
         # initialize logger
         if log_instance is not None:
@@ -918,6 +920,11 @@ class CbNgsi10Utils(object):
         self.path_context_subscriptions = self.default_endpoint + path_context_subscriptions
         self.path_version = path_version
         self.check_json = check_json
+        if verify is not None:
+            if verify == True or verify == "True":
+                self.verify = True
+            else:
+                self.verify = False
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
@@ -941,8 +948,12 @@ class CbNgsi10Utils(object):
         if query is not None:
             parameters.update({'params': query})
 
+        if self.verify is not None:
+             parameters.update({'verify': self.verify})
+
         if verify is not None:
             parameters.update({'verify': verify})
+
 
         # Remove the content-type header if it is a GET or DELETE method
         if method.lower() in ("get", "delete"):
@@ -1058,7 +1069,7 @@ class CbNgsi10Utils(object):
                     self.log.warn("The action of the creation is not \"APPEND\"")
         return self.__send_request('post', self.path_update_context, self.headers, payload)
 
-    def convenience_entity_creation_url_method(self, entity_id, payload, entity_type=None):
+    def convenience_entity_creation_url_method(self, entity_id, payload, entity_type=None, verify=None):
         """
         Create an entity in Context Broker with the convenience entity creation.
         There are two ways to create:
@@ -1096,9 +1107,9 @@ class CbNgsi10Utils(object):
         if self.check_json:
             payload = check_valid_json(payload)
             check_minimal_attrs_payload(["attributes"], payload, self.log)
-        return self.__send_request('post', url, self.headers, payload)
+        return self.__send_request('post', url, self.headers, payload, verify=verify)
 
-    def convenience_entity_creation_payload_method(self, payload):
+    def convenience_entity_creation_payload_method(self, payload, verify=None):
         """
         Create an entity in Context Broker with the convenience entity creation.
         The entity and his type is indicated in the payload
@@ -1128,7 +1139,7 @@ class CbNgsi10Utils(object):
         if self.check_json:
             payload = check_valid_json(payload)
             check_minimal_attrs_payload(["attributes", "id", "type"], payload, self.log)
-        return self.__send_request('post', self.path_context_entities, self.headers, payload)
+        return self.__send_request('post', self.path_context_entities, self.headers, payload, verify=verify)
 
     def standard_query_context(self, payload):
         """
@@ -1159,7 +1170,7 @@ class CbNgsi10Utils(object):
             check_minimal_attrs_payload(["entities"], payload, self.log)
         return self.__send_request('post', self.path_query_context, self.headers, payload)
 
-    def convenience_query_context(self, entity_id=None, entity_type=None, attribute=None):
+    def convenience_query_context(self, entity_id=None, entity_type=None, attribute=None, verify=None):
         """
         Query an entity with the possibility of filtering for the attribute, and the posiibility
         of not send entity retrieving all entities
@@ -1188,7 +1199,8 @@ class CbNgsi10Utils(object):
             else:
                 # Retrieve all entities with all attributes
                 url = self.path_context_entities
-        return self.__send_request('get', url, self.headers)
+
+        return self.__send_request('get', url, self.headers, verify=verify)
 
     def standard_entity_update(self, payload):
         """
