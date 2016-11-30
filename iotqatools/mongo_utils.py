@@ -2,20 +2,20 @@
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
-This file is part of telefonica-iot-qa-tools
+This file is part of telefonica-iotqatools
 
-orchestrator is free software: you can redistribute it and/or
+iotqatools is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-orchestrator is distributed in the hope that it will be useful,
+iotqatools is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
-License along with orchestrator.
+License along with iotqatools.
 If not, seehttp://www.gnu.org/licenses/.
 
 For those usages not covered by the GNU Affero General Public License
@@ -80,6 +80,8 @@ class Mongo:
             self.current_database = self.client.get_default_database()
             if self.collection_name != EMPTY:
                 self.current_collection = self.current_database[self.collection_name]
+            else:
+                self.current_collection = self.current_database
         except Exception, e:
             assert False, " ERROR - Connecting to MongoDB...\n %s " % (str(e))
 
@@ -114,6 +116,17 @@ class Mongo:
         """
         return self.current_collection
 
+    def choice_database(self, name):
+        """
+        Access to another database
+        :param name: database name
+        """
+        try:
+            self.current_database = self.client.get_database(name)
+            self.current_collection = self.current_database
+        except Exception, e:
+            assert False, " ERROR - Accessing to database %s in MongoDB...\n %s" % (name, str(e))
+
     def choice_collection(self, name):
         """
         Access to another collection in the current database
@@ -124,6 +137,35 @@ class Mongo:
             self.current_collection = self.current_database[name]
         except Exception, e:
             assert False, " ERROR - Accessing to collection %s in MongoDB...\n %s" % (name, str(e))
+
+    def get_all_databases(self):
+        """
+        Get all databases in mongo
+        :return: list (databases)
+        """
+        try:
+            dbs = self.client.database_names()
+            return self.get_cursor_value(dbs)
+        except Exception, e:
+             assert False, " ERROR - Get all databases in mongo...\n %s" % str(e)
+
+    def get_all_collections_by_db(self, **kwargs):
+        """
+        Get all collections in a database
+        :param db_name: Database to search, but default is used the current Database
+        :param system_collections: if False list will not include system collections (e.g system.indexes)
+        :return: list (collections)
+        """
+        db_name = kwargs.get("db_name", EMPTY)
+        system_collections = kwargs.get("system_collections", False)
+        try:
+            if db_name is EMPTY:
+                colls = self.current_database.collection_names(include_system_collections=system_collections)
+            else:
+                colls = self.client[db_name].collection_names(include_system_collections=system_collections)
+            return self.get_cursor_value(colls)
+        except Exception, e:
+             assert False, " ERROR - Get all colections in a databases in mongo...\n %s" % str(e)
 
     def insert_data(self, data):
         """
@@ -199,11 +241,14 @@ class Mongo:
         except Exception, e:
             assert False, " ERROR - Deleting a collection %s in MongoDB...\n %s" % (self.current_collection, str(e))
 
-    def drop_database(self):
+    def drop_database(self, db_name=EMPTY):
         """
         remove the current database
+        :param db_name:database name to remove
         """
         try:
+            if db_name != EMPTY:
+                self.database_name = db_name
             __logger__.debug("database to delete: %s" % self.database_name)
             self.client.drop_database(self.database_name)
         except Exception, e:

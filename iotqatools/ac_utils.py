@@ -2,20 +2,20 @@
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
-This file is part of telefonica-iot-qa-tools
+This file is part of telefonica-iotqatools
 
-orchestrator is free software: you can redistribute it and/or
+iotqatools is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-orchestrator is distributed in the hope that it will be useful,
+iotqatools is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
-License along with orchestrator.
+License along with iotqatools.
 If not, seehttp://www.gnu.org/licenses/.
 
 For those usages not covered by the GNU Affero General Public License
@@ -27,6 +27,7 @@ import pystache
 
 from iotqatools.templates.ac_templates import *
 from iotqatools.iot_logger import get_logger
+from iotqatools.iot_tools import PqaTools
 
 
 def generate_url(host, tenant, subject):
@@ -78,10 +79,8 @@ class AC(object):
         if query is not None:
             request_parms.update({'params': query})
         response = requests.request(method, url, **request_parms)
-        self.log.debug('Response: -->')
-        self.log.debug('Return code: %s' % response.status_code)
-        self.log.debug('Resturn headers: %s' % response.headers)
-        self.log.debug('Return data: %s' % response.text)
+        PqaTools.log_fullRequest(comp='ORC', response=response, params=request_parms)
+
         return response
 
     def create_policy(self, tenant, role, policy_name, entity, action):

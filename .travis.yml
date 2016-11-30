@@ -5,12 +5,18 @@ python:
 install:
   - python setup.py install
 #  - pip install -r requirements.txt
+  - pip install coveralls
+
 # command to run tests
 script:
 #python setup.py test
-  - python iotqatools/tests/cb_utils_tests.py
+  nosetests --with-coverage --cover-package=./ --exe
+
+after_success:
+  coveralls
 
 branches:
   only:
     - develop
     - master
+

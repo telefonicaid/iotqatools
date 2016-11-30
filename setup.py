@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
-This file is part of fiware-orion-pep
-orchestrator is free software: you can redistribute it and/or
+This file is part of telefonica-iotqatools
+iotqatools is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
-orchestrator is distributed in the hope that it will be useful,
+iotqatools is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public
-License along with orchestrator.
+License along with iotqatools.
 If not, seehttp://www.gnu.org/licenses/.
 For those usages not covered by the GNU Affero General Public License
 please contact with::[iot_support@tid.es]
@@ -64,9 +64,9 @@ req_dev = get_requirements('requirements.txt')
 
 setup(
     name='iotqatools',
-    version='0.1.1',
+    version='0.5.0',
     description='Iot QA Tools',
-    url='https://github.com/telefonicaid/iot-qa-tools',
+    url='https://github.com/telefonicaid/iotqatools',
     author='Telefonica I+D',
     zip_safe=False,
     long_description='\n'.join(readme),
@@ -82,23 +82,29 @@ setup(
         'Programming Language :: Python :: 2.7'
     ],
     py_modules=[
-        'iotqatools.iot_logger',
         'iotqatools.ac_utils',
         'iotqatools.cb_utils',
+        'iotqatools.cb_ngsiv2_utils',
         'iotqatools.cb_v2_utils',
         'iotqatools.cep_utils',
+        'iotqatools.ckan_utils',
         'iotqatools.fabric_utils',
         'iotqatools.helpers_utils',
+        'iotqatools.iot_logger',
         'iotqatools.iot_tools',
         'iotqatools.iota_utils',
         'iotqatools.ks_utils',
+        'iotqatools.iota_measures',
         'iotqatools.mongo_utils',
+        'iotqatools.mysql_utils',
         'iotqatools.orchestator_utils',
         'iotqatools.pep_utils',
-        'iotqatools.sth_utils'  
+        'iotqatools.remote_log_utils',
+        'iotqatools.sth_utils'
     ],
     packages=[
         'iotqatools',
-        'iotqatools.templates'
+        'iotqatools.templates',
+        'iotqatools.simulators'
     ],
 )

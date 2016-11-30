@@ -2,20 +2,20 @@
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
-This file is part of telefonica-iot-qa-tools
+This file is part of telefonica-iotqatools
 
-orchestrator is free software: you can redistribute it and/or
+iotqatools is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-orchestrator is distributed in the hope that it will be useful,
+iotqatools is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
-License along with orchestrator.
+License along with iotqatools.
 If not, seehttp://www.gnu.org/licenses/.
 
 For those usages not covered by the GNU Affero General Public License
@@ -29,6 +29,8 @@ from fabric.api import env, run, get
 from fabric.context_managers import hide, cd
 from fabric.operations import sudo, local, put
 from StringIO import StringIO
+
+from helpers_utils import *
 
 
 #constants
@@ -71,8 +73,8 @@ class FabricSupport:
         """
         self.host = kwargs.get(HOST, HOST_DEFAULT)
         self.port = kwargs.get(PORT, PORT_DEFAULT)
-        self.hide = kwargs.get(HIDE, True)
-        self.sudo = kwargs.get(SUDO, False)
+        self.hide = convert_str_to_bool(kwargs.get(HIDE, True))
+        self.sudo = convert_str_to_bool(kwargs.get(SUDO, False))
         env.host_string = "%s:%s" % (self.host, self.port)
         env.user = kwargs.get(USER, USER_DEFAULT)
         env.password = kwargs.get(PASSWORD, EMPTY)
@@ -85,6 +87,8 @@ class FabricSupport:
             self.localhost = True
         else:
             self.localhost = False
+        __logger__.debug(" is it localhost? %s" % self.localhost)
+        __logger__.debug(" is it sudo used? %s" % str(self.sudo))
 
     def warn_only(self, value):
         """
@@ -101,7 +105,6 @@ class FabricSupport:
         :param sudo_run: with superuser privileges (True | False)
         """
         with cd(path):
-            __logger__.debug(" is it localhost?: %s" % self.localhost)
             if self.localhost:
                 if sudo_run:
                     return local("sudo %s" % command)
@@ -173,14 +176,17 @@ class FabricSupport:
         :param file: file name to read
         :param sudo_run: with superuser privileges (True | False)
         """
-        if self.localhost:
-            with open(file) as config_file:
-                return config_file.readlines()
-        else:
-            fd = StringIO()
-            get(file, use_sudo=sudo_run)
-            get(file, fd)
-            return fd.getvalue()
+        try:
+            if self.localhost:
+                with open(file) as config_file:
+                    return config_file.readlines()
+            else:
+                fd = StringIO()
+                get(file, fd, use_sudo=sudo_run)
+                return fd.getvalue()
+        except Exception, e:
+            __logger__.error("ERROR - reading %s file\n %s" % (file, e))
+
 
     def read_file(self, file, **kwargs):
         """

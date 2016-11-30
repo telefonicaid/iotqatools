@@ -2,20 +2,20 @@
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
-This file is part of telefonica-iot-qa-tools
+This file is part of telefonica-iotqatools
 
-orchestrator is free software: you can redistribute it and/or
+iotqatools is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-orchestrator is distributed in the hope that it will be useful,
+iotqatools is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
-License along with orchestrator.
+License along with iotqatools.
 If not, seehttp://www.gnu.org/licenses/.
 
 For those usages not covered by the GNU Affero General Public License
@@ -28,6 +28,7 @@ import pystache
 import requests
 import json
 
+import  copy
 from iotqatools.templates.cb_templates import *
 from iotqatools.iot_logger import get_logger
 from requests.exceptions import RequestException
@@ -874,7 +875,8 @@ class CbNgsi10Utils(object):
                  log_instance=None,
                  log_verbosity='DEBUG',
                  default_headers={"Accept": "application/json", 'content-type': 'application/json'},
-                 check_json=True):
+                 check_json=True,
+                 verify=None):
         """
         CB Utils constructor
         :param instance:
@@ -896,6 +898,7 @@ class CbNgsi10Utils(object):
         :param log_verbosity:
         :param default_headers:
         :param check_json:
+        :param verify: ssl check
         """
         # initialize logger
         if log_instance is not None:
@@ -917,6 +920,11 @@ class CbNgsi10Utils(object):
         self.path_context_subscriptions = self.default_endpoint + path_context_subscriptions
         self.path_version = path_version
         self.check_json = check_json
+        if verify is not None:
+            if verify == True or verify == "True":
+                self.verify = True
+            else:
+                self.verify = False
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
@@ -933,7 +941,7 @@ class CbNgsi10Utils(object):
 
         if payload is not None:
             if self.check_json:
-                parameters.update({'data': json.dumps(payload)})
+                parameters.update({'data': json.dumps(payload, ensure_ascii=False).encode('utf-8')})
             else:
                 parameters.update({'data': payload})
 
@@ -942,12 +950,23 @@ class CbNgsi10Utils(object):
 
         if verify is not None:
             parameters.update({'verify': verify})
+        else:
+            parameters.update({'verify': False})
+            
+
+
+        # Remove the content-type header if it is a GET or DELETE method
+        if method.lower() in ("get", "delete"):
+            if "content-type" in parameters["headers"]:
+                parameters["headers"].pop("content-type", None)
+            elif "Content-Type" in parameters["headers"]:  # used in Requests library version 2.11.1 or higher
+                parameters["headers"].pop("Content-Type", None)
 
         # Send the requests
         try:
             response = requests.request(**parameters)
         except RequestException, e:
-            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB')
+            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 
         # Log data
@@ -977,6 +996,18 @@ class CbNgsi10Utils(object):
 
     def set_auth_token(self, auth_token):
         self.headers['x-auth-token'] = auth_token
+
+    def remove_content_type_header(self):
+        """
+        This method is used when sending get or delete actions through pep
+        Yes, I know this is not the more suitable way to do that, but probably is the less disruptive way
+        :return: True if header has been removed | False if header has not been removed
+        """
+        if 'content-type' in self.headers:
+            del self.headers['content-type']
+            return True
+        else:
+            return False
 
     def version(self):
         """
@@ -1038,7 +1069,7 @@ class CbNgsi10Utils(object):
                     self.log.warn("The action of the creation is not \"APPEND\"")
         return self.__send_request('post', self.path_update_context, self.headers, payload)
 
-    def convenience_entity_creation_url_method(self, entity_id, payload, entity_type=None):
+    def convenience_entity_creation_url_method(self, entity_id, payload, entity_type=None, verify=None):
         """
         Create an entity in Context Broker with the convenience entity creation.
         There are two ways to create:
@@ -1076,9 +1107,9 @@ class CbNgsi10Utils(object):
         if self.check_json:
             payload = check_valid_json(payload)
             check_minimal_attrs_payload(["attributes"], payload, self.log)
-        return self.__send_request('post', url, self.headers, payload)
+        return self.__send_request('post', url, self.headers, payload, verify=verify)
 
-    def convenience_entity_creation_payload_method(self, payload):
+    def convenience_entity_creation_payload_method(self, payload, verify=None):
         """
         Create an entity in Context Broker with the convenience entity creation.
         The entity and his type is indicated in the payload
@@ -1108,7 +1139,7 @@ class CbNgsi10Utils(object):
         if self.check_json:
             payload = check_valid_json(payload)
             check_minimal_attrs_payload(["attributes", "id", "type"], payload, self.log)
-        return self.__send_request('post', self.path_context_entities, self.headers, payload)
+        return self.__send_request('post', self.path_context_entities, self.headers, payload, verify=verify)
 
     def standard_query_context(self, payload):
         """
@@ -1139,7 +1170,7 @@ class CbNgsi10Utils(object):
             check_minimal_attrs_payload(["entities"], payload, self.log)
         return self.__send_request('post', self.path_query_context, self.headers, payload)
 
-    def convenience_query_context(self, entity_id=None, entity_type=None, attribute=None):
+    def convenience_query_context(self, entity_id=None, entity_type=None, attribute=None, verify=None):
         """
         Query an entity with the possibility of filtering for the attribute, and the posiibility
         of not send entity retrieving all entities
@@ -1149,15 +1180,15 @@ class CbNgsi10Utils(object):
         :param attribute:
         :return:
         """
-
+        self.remove_content_type_header()
         if entity_id is not None:
             url = self.path_context_entities
             if entity_type is not None:
-                url += '/type/{entity_type}/id/{entity_id}'.format(entity_type=entity_type, entity_id=entity_id)
+                url += u'/type/{entity_type}/id/{entity_id}'.format(entity_type=entity_type, entity_id=entity_id)
             else:
-                url += '/{entity_id}'.format(entity_type=entity_type, entity_id=entity_id)
+                url += u'/{entity_id}'.format(entity_type=entity_type, entity_id=entity_id)
             if attribute is not None:
-                url += '/attributes/{attribute}'.format(attribute=attribute)
+                url += u'/attributes/{attribute}'.format(attribute=attribute)
         else:
             if entity_type is not None:
                 url = self.path_context_entity_types
@@ -1168,7 +1199,8 @@ class CbNgsi10Utils(object):
             else:
                 # Retrieve all entities with all attributes
                 url = self.path_context_entities
-        return self.__send_request('get', url, self.headers)
+
+        return self.__send_request('get', url, self.headers, verify=verify)
 
     def standard_entity_update(self, payload):
         """
@@ -1249,6 +1281,7 @@ class CbNgsi10Utils(object):
         if self.check_json:
             payload = check_valid_json(payload)
             check_minimal_attrs_payload(["attributes"], payload, self.log)
+        self.headers['content-type'] = "application/json"
         return self.__send_request('put', url, self.headers, payload)
 
     def convenience_entity_update_payload_method(self, payload):
@@ -1321,7 +1354,7 @@ class CbNgsi10Utils(object):
                         updateaction=payload['updateSction']))
         return self.__send_request('post', self.path_update_context, self.headers, payload)
 
-    def convenience_entity_delete_url_method(self, entity_id, entity_type=None):
+    def convenience_entity_delete_url_method(self, entity_id, entity_type=None, service='', service_path=''):
         """
         Delete an entity in Context Broker with the convenience entity deletion.
         There are two ways to create:
@@ -1337,7 +1370,14 @@ class CbNgsi10Utils(object):
         else:
             url = self.path_context_entities + '/type/{entity_type}/id/{entity_id}'.format(entity_type=entity_type,
                                                                                            entity_id=entity_id)
-        return self.__send_request('delete', url, self.headers)
+
+        myheaders = copy.deepcopy(self.headers)
+        if service:
+            myheaders["Fiware-Service"]= service
+        if service_path:
+            myheaders["Fiware-ServicePath"]= service_path
+
+        return self.__send_request('delete', url, myheaders)
 
     # **
 
@@ -1679,7 +1719,7 @@ class CbNgsi9Utils():
         try:
             response = requests.request(**parameters)
         except RequestException, e:
-            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB')
+            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
         print response
 
@@ -2129,7 +2169,7 @@ class CBUtils(object):
         try:
             response = requests.request(**parameters)
         except RequestException, e:
-            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB')
+            PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 
         # Log data
@@ -2353,6 +2393,9 @@ class CBUtils(object):
             return resp
         except KeyError:
             return resp
+
+    def set_auth_token(self, auth_token):
+        self.default_headers['x-auth-token'] = auth_token
 
 
 if __name__ == '__main__':

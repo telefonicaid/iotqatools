@@ -2,20 +2,20 @@
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
-This file is part of telefonica-iot-qa-tools
+This file is part of telefonica-iotqatools
 
-orchestrator is free software: you can redistribute it and/or
+iotqatools is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-orchestrator is distributed in the hope that it will be useful,
+iotqatools is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
-License along with orchestrator.
+License along with iotqatools.
 If not, seehttp://www.gnu.org/licenses/.
 
 For those usages not covered by the GNU Affero General Public License
@@ -29,7 +29,11 @@ import json
 
 from iotqatools.iot_logger import get_logger
 from iotqatools.templates.cep_templates import *
+from iotqatools.helpers_utils import *
 
+from iotqatools.iot_logger import get_logger
+
+__logger__ = get_logger("cep_steps", 'DEBUG', True)
 
 class CEP:
     """
@@ -64,6 +68,35 @@ class CEP:
         self.port = port
         self.path = path
         self.version = cep_version
+
+    def __create_headers(self, service, subservice='', token=''):
+        """
+        create the header for different requests
+        :param service: name of the service
+        :param subservice: name of the subservice
+        :return: headers dictionary
+        """
+        headers = dict(self.default_headers)
+        headers.update({"Fiware-Service": service})
+        headers.update({"Fiware-ServicePath": '/' + subservice})
+        headers.update({"x-auth-token": token})
+        return headers
+
+    def set_auth_token(self, auth_token):
+        self.headers['x-auth-token'] = auth_token
+
+    def remove_content_type_header(self):
+        """
+        This method is used when sending get or delete actions through pep
+        Yes, I know this is not the more suitable way to do that, but probably is the less disruptive way
+        :return: True if header has been removed | False if header has not been removed
+        """
+        if 'content-type' in self.headers:
+            del self.headers['content-type']
+            return True
+        else:
+            return False
+
 
     # -------------------------- CARDS ------------------------------------------------------------
     def create_type_sensor_card(self, sc_id_card, parameter_value, operator, connected_to):
@@ -160,7 +193,7 @@ class CEP:
         action_card = action_card.replace("'", '"')
         return yaml.load(action_card)
 
-    def create_visual_rule(self, rule_name, service, sensor_card_list, action_card_list, subservice='', active=1):
+    def create_visual_rule(self, rule_name, service, sensor_card_list, action_card_list, subservice='', active=1, token=''):
         """
         create a new card rule
         :param service: name of the service
@@ -185,7 +218,7 @@ class CEP:
                                       {'rule_name': rule_name,
                                        'active': active,
                                        'cards': cards})
-        headers = self.__create_headers(service, str(subservice))
+        headers = self.__create_headers(service, str(subservice), token)
 
         cep_payload = cep_payload.replace("'", '"')
         url = self.default_endpoint + self.path
@@ -197,7 +230,7 @@ class CEP:
                                                                                                  response.text)
         return response
 
-    def delete_visual_rule(self, rule_name, service, subservice=''):
+    def delete_visual_rule(self, rule_name, service, subservice='', token=''):
         """
         Delete a visual rule given the name, the service and the subservice
         :param rule_name: name of the rule
@@ -205,7 +238,8 @@ class CEP:
         :param subservice: name of the subservice
         :return: response object
         """
-        headers = self.__create_headers(service, str(subservice))
+        headers = self.__create_headers(service, str(subservice), token)
+
         url = self.default_endpoint + self.path + '/' + rule_name
         response = requests.delete(url, headers=headers, verify=False)
         assert response.status_code == 204, 'ERROR {}, the rule {}, cannot be deleted. {}'.format(response.status_code,
@@ -255,4 +289,230 @@ class CEP:
         rule_payload = parameter_list
         response = requests.put(url, headers=headers, data=rule_payload, verify=False)
         assert response.status_code == 200, 'ERROR, the rule {} cannot be updated'.format(rule_name)
+        return response
+
+    # -------------------------- Plain rules ------------------------------------------------------------
+    def __append_headers(self, **kwargs):
+        """
+        append headers for different requests
+        kwargs fields:
+        :param service: name of the service
+        :param service_path: name of the subservice
+        :param token:  token for getting access from Auth Server which can be used to get to a CEP behind a PEP.
+        :return: headers dict
+        """
+        headers = self.default_headers
+        service = kwargs.get("service", None)
+        service_path = kwargs.get("service_path", None)
+        token = kwargs.get("token", None)
+        if service is not None:
+            headers["Fiware-Service"] = service
+        if service_path is not None:
+            headers["Fiware-ServicePath"] = service_path
+        if token is not None:
+            headers["X-Auth-Token"] = token
+        return headers
+
+    def create_plain_rule(self, name, action, rule_properties):
+        """
+        create a plain rule using EPL statement used by the Esper engine inside perseo-core.
+
+        :param name: name of the rule, used as identifier
+        :param action: action to be performed by perseo if the rule is fired from the core
+        :param rule_properties: rule properties. See below labels used:
+          headers:
+           - service: service used
+           - service_path: service_path used
+           - token: token for getting access from Auth Server which can be used to get to a CEP behind a PEP.
+          epl:
+           - attr_name: attribute name
+           - attr_value: attribute value
+           - attr_op: attribute operation used (> | < | >= | <= | = | <>)
+           - meta_name: attribute metadata name or suffixes
+           - meta_value: attribute metadata value
+           - meta_op: attribute metadata operation used (> | < | >= | <= | = | <>)
+           - id: entity id or idPattern
+           - type: entity type or typePattern
+           geo-location:
+             - location_x: UTM easting coordinates are referenced to the center line of the zone known as the central meridian
+             - location_y: UTM northing coordinates are measured relative to the equator                                                |
+             - location_ratio: circle size (distance)
+           timestamp:
+             - timestamp_last_minutes: determine if the given timestamp is into the given last minutes
+          actions:
+           - update_name: mandatory, attribute name to set
+           - update_value: mandatory, attribute value to set
+           - update_id: optional, the id of the entity which attribute is to be updated (by default the id of the entity that triggers the rule is used, i.e. ${id})
+           - update_type: optional, the type of the entity which attribute is to be updated (by default the type of the entity that triggers the rule is usedi.e. ${type})
+           - update_ispattern: optional, false by default
+           - update_attr_type: optional, type of the attribute to set. By default, not set (in which case, only the attribute value is changed).
+           - update_trust: optional, trust token for getting an access token from Auth Server which can be used to get to a Context Broker behind a PEP.
+           - http_method: optional, HTTP method to use, POST by default
+           - http_url: mandatory, URL target of the HTTP method
+           - http_headers: optional, an object with fields and values for the HTTP header
+           - http_qs: optional, an object with fields and values to build the query string of the URL
+           - http_json: optional, an object that will be sent as JSON. String substitution will be performed in the keys and values of the object's fields. If present, it overrides template from action
+           - consumer_key: consumer key associated to the twitter user.
+           - consumer_secret: consumer secret associated to the twitter user.
+           - access_token_key: access token key associated to the twitter user.
+           - access_token_secret: access token secret associated to the twitter user.
+           - template: template used in sms, email, http and twitter actions
+           - to: set of email address or phone number to send the message to. Used in sms and email actions
+           - from: the sender email address or phone numbers. Used in sms and email actions
+           - subject: subject of the email, used in email action
+        :return http response
+        :hint  some methods come from iotqatools.helpers_utils.py library
+        """
+        # text - epl
+        text = u'select *, \"%s\" as ruleName, *, ev.%s? as %s, ev.id? as id from pattern [every ev=iotEvent(' % \
+               (name, rule_properties["attr_name"], rule_properties["attr_name"])
+        if "attr_value" in rule_properties:
+            value, data_type = get_type_value(str(rule_properties["attr_value"]))
+            text = u'%s cast(cast(%s?,String),%s)%s%s and' % \
+                   (text, rule_properties["attr_name"], data_type, rule_properties["attr_op"], rule_properties["attr_value"])
+        if "timestamp_last_minutes" in rule_properties: #timestamp
+            text = u'%s cast(cast(%s__ts?,String),float) > current_timestamp - %s*60*1000 and' % \
+                   (text, rule_properties["attr_name"], rule_properties["timestamp_last_minutes"])
+        if "location_x" in rule_properties:  # geo-location
+            text = u'%s Math.pow((cast(cast(%s__x?,String),float) - %s), 2) + Math.pow((cast(cast(%s__y?,String),float) - %s), 2) %s Math.pow(%s,2) and' % \
+                   (text, rule_properties["attr_name"], rule_properties["location_x"], rule_properties["attr_name"], rule_properties["location_y"], rule_properties["attr_op"], rule_properties["location_ratio"])
+        if "meta_value" in rule_properties:
+            value, data_type = get_type_value(str(rule_properties["meta_value"]))
+            text = u'%s cast(cast(%s?,String),%s)%s%s and' % \
+                   (text, rule_properties["meta_name"], data_type, rule_properties["meta_op"], rule_properties["meta_value"])
+        if "type" in rule_properties:
+            text = u'%s type=\"%s\" and' % (text, rule_properties["type"])
+        if "id" in rule_properties:
+            text = u'%s id=\"%s\" and' % (text, rule_properties["id"])
+        if text[-4:] == " and": text = u'%s)]' % text[:-4]  # replace the last " and" by ")]"
+
+        # action
+        action_dict = {"type": action}
+        action_dict["parameters"] = {}
+
+        if action == "email":
+            action_dict["template"] = rule_properties["template"]
+            action_dict["parameters"]["to"] = rule_properties["to"]
+            action_dict["parameters"]["from"] = rule_properties["from"]
+            action_dict["parameters"]["subject"] = rule_properties["subject"]
+
+        elif action == "sms":
+            action_dict["template"] = rule_properties["template"]
+            action_dict["parameters"]["to"] = rule_properties["to"]
+
+        # it is possible to updates one or more attributes of a given entity
+        elif action == "update":
+            if "update_id" in rule_properties:
+                action_dict["parameters"]["id"] = rule_properties["update_id"]
+            if "update_type" in rule_properties:
+                action_dict["parameters"]["type"] = rule_properties["update_type"]
+            if "update_ispattern" in rule_properties:
+                action_dict["parameters"]["isPattern"] = rule_properties["update_ispattern"]
+            if "update_trust" in rule_properties:
+                action_dict["parameters"]["trust"] = rule_properties["update_trust"]
+            # one or more attributes
+            action_dict["parameters"]["attributes"] = []
+            attrs_name_list = rule_properties["update_name"].split("&")
+            attrs_value_list = rule_properties["update_value"].split("&")
+            attrs_type_list = []
+            #_attribute type is optional
+            if "update_attr_type" in rule_properties:
+                while rule_properties["update_attr_type"].find("&&") >= 0:
+                    rule_properties["update_attr_type"] = rule_properties["update_attr_type"].replace("&&", '&none&')
+                attrs_type_list = convert_str_to_list(rule_properties["update_attr_type"],"&")
+            for i in range(len(attrs_name_list)):
+                attr = {}
+                attr["name"] = attrs_name_list[i]
+                attr["value"] = attrs_value_list[i]
+                if (len(attrs_type_list) > i) and (attrs_type_list[i] != "none"):
+                    attr["type"] = attrs_type_list[i]
+                action_dict["parameters"]["attributes"].append(attr)
+
+        elif action == "post":
+            action_dict["parameters"]["url"] = rule_properties["http_url"]
+            if "http_json" in rule_properties:
+                action_dict["parameters"]["json"] = convert_str_to_dict(rule_properties["http_json"], "json")
+            else:
+                if "template" in rule_properties:
+                    action_dict["template"] = rule_properties["template"]
+            if "http_method" in rule_properties:
+                action_dict["parameters"]["method"] = rule_properties["http_method"]
+            if "http_headers" in rule_properties:
+                action_dict["parameters"]["headers"] = convert_str_to_dict(rule_properties["http_headers"], "json")
+            if "http_qs" in rule_properties:
+                action_dict["parameters"]["qs"] = convert_str_to_dict(rule_properties["http_qs"], "json")
+
+        elif action == "twitter":
+            action_dict["template"] = rule_properties["template"]
+            action_dict["consumer_key"] = rule_properties["consumer_key"]
+            action_dict["consumer_secret"] = rule_properties["consumer_secret"]
+            action_dict["access_token_key"] = rule_properties["access_token_key"]
+            action_dict["access_token_secret"] = rule_properties["access_token_secret"]
+        else:
+            __logger__.warn("the %s action does not exist..." % action)
+
+        #rule
+        rule = {"name": name,
+                "text": text,
+                "action": action_dict}
+        payload = convert_dict_to_str(rule, "json")
+
+        # headers
+        headers = {}
+        if "service" in rule_properties:
+            headers = self.__append_headers(service=rule_properties["service"])
+        if "service_path" in rule_properties:
+            headers = self.__append_headers(service_path=rule_properties["service_path"])
+        if "token" in rule_properties:
+            headers = self.__append_headers(token=rule_properties["token"])
+
+        # url
+        url = "%s/rules" % self.default_endpoint
+
+        # request
+        __logger__.debug(" ----------- Request ----------- ")
+        __logger__.debug("url: %s" % url)
+        __logger__.debug("headers: %s" % str(headers))
+        __logger__.debug("payload: %s" % payload)
+        response = requests.post(url, data=payload, headers=headers)
+
+        #response
+        __logger__.debug(" ----------- Response ----------- ")
+        __logger__.debug("code: %s" % response.status_code)
+        __logger__.debug("payload: %s" % response.text)
+        return response
+
+    def delete_plain_rule(self, name, rule_properties):
+        """
+        delete the plain rule with a given name
+        :param name: rule name to delete
+        :param rule_properties: rule properties. See below labels used:
+          headers:
+           - service: service used
+           - service_path: service_path used
+           - token: token for getting access from Auth Server which can be used to get to a CEP behind a PEP.
+        :return http response
+        """
+        # headers
+        headers = {}
+        if "service" in rule_properties:
+            headers = self.__append_headers(service=rule_properties["service"])
+        if "service_path" in rule_properties:
+            headers = self.__append_headers(service_path=rule_properties["service_path"])
+        if "token" in rule_properties:
+            headers = self.__append_headers(token=rule_properties["token"])
+
+        # url
+        url = "%s/rules/%s" % (self.default_endpoint, name)
+
+        # request
+        __logger__.debug(" ----------- Request ----------- ")
+        __logger__.debug("url: %s" % url)
+        __logger__.debug("headers: %s" % str(headers))
+        response = requests.delete(url, headers=headers)
+
+        #response
+        __logger__.debug(" ----------- Response ----------- ")
+        __logger__.debug("code: %s" % response.status_code)
+        __logger__.debug("payload: %s" % response.text)
         return response

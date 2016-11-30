@@ -2,20 +2,20 @@
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
-This file is part of telefonica-iot-qa-tools
+This file is part of telefonica-iotqatools
 
-orchestrator is free software: you can redistribute it and/or
+iotqatools is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-orchestrator is distributed in the hope that it will be useful,
+iotqatools is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
-License along with orchestrator.
+License along with iotqatools.
 If not, seehttp://www.gnu.org/licenses/.
 
 For those usages not covered by the GNU Affero General Public License
@@ -33,6 +33,9 @@ import hashlib
 import logging
 import math
 from decimal import Decimal
+import operator
+import socket
+import os
 
 
 # general constants
@@ -61,6 +64,16 @@ def number_generator(size=5, decimals="%0.1f"):
     :return: random float
     """
     return float(decimals % (random.random() * (10**size)))
+
+
+def convert_str_to_bool(value):
+    """
+    convert string to boolean
+    :return boolean
+    """
+    if type(value) == str or type(value) == unicode:
+        return value.lower() in ("yes", "true", "t", "1", "y")
+    return value
 
 
 def convert_str_to_dict(body, content):
@@ -92,7 +105,7 @@ def convert_dict_to_str(body, content):
         if content == XML:
             return xmltodict.unparse(body)
         else:
-            return json.dumps(body)
+            return str(json.dumps(body, ensure_ascii=False).encode('utf-8'))
     except Exception, e:
         assert False,  " ERROR - converting %s dictionary to string: \n" \
                        "  %s \n" \
@@ -138,15 +151,27 @@ def show_times(init_value):
     print "**************************************************************"
 
 
-def generate_timestamp(date=EMPTY, format="%Y-%m-%dT%H:%M:%S.%fZ"):
+def generate_timestamp(**kwargs):
     """
     generate timestamp or convert from a date with a given format
     ex: 1425373697
+    :param date: date to convert to timestamp, if it does not exist, returns current time
+    :param format: date format
+    :param utc: determine whether the timestamp is in utc time or not
     :return  timestamp
     """
+    date = kwargs.get("date", EMPTY)
+    format = kwargs.get("format", "%Y-%m-%dT%H:%M:%S.%fZ")
+    utc = kwargs.get("utc", False)
+
+    UTC_OFFSET_TIMEDELTA = ((datetime.datetime.utcnow() - datetime.datetime.now()).total_seconds())
     if date == EMPTY:
-        return time.time()
-    return time.mktime(datetime.datetime.strptime(date, format).timetuple())
+        local_time = time.time()
+    else:
+        local_time = time.mktime(datetime.datetime.strptime(date, format).timetuple())
+    if utc:
+        return local_time - UTC_OFFSET_TIMEDELTA
+    return local_time
 
 
 def generate_date_zulu(timestamp=0):
@@ -215,14 +240,132 @@ def mapping_quotes(attr_value):
         return temp
 
 
+def remove_quote(text):
+    """
+    remove first and last characters if they are quote
+    :param text:
+    :return: text type
+    """
+    if isinstance(text, basestring):
+        text = text.lstrip('"')
+        text = text.rstrip('"')
+    return text
+
+
 def read_file_to_json(file_name):
     """
     read a file and return a dictionary
     :param file_name: file to read (path included)
     :return: dict
     """
+    path = os.getcwd()
     try:
         with open(file_name) as config_file:
             return json.load(config_file)
     except Exception, e:
-        raise Exception("\n-- ERROR -- parsing %s file\n     msg= %s" % (file_name, str(e)))
+        raise Exception("\n ERROR - parsing the %s/%s file \n     msg= %s" % (path, file_name, str(e)))
+
+
+def get_operator_fn(op):
+    """
+    return an operation from string
+    https://docs.python.org/2/library/operator.html#
+    :param op: operator in string
+    :return: operator
+    """
+    return {
+        '+': operator.add,
+        '-': operator.sub,
+        '*': operator.mul,
+        '/': operator.div,
+        '%': operator.mod,
+        '^': operator.xor,
+        '==':operator.eq,
+        '!=':operator.ne,
+        '>=':operator.ge,
+        '<=':operator.le,
+        '>':operator.gt,
+        '<':operator.lt
+        }[op]
+
+
+def eval_binary_expr(op1, operator, op2):
+    """
+    evaluate a binary expression
+    :param op1: value 1
+    :param operator: operator
+    :param op2: value 2
+    :return: value or boolean
+    """
+    if operator not in ['==', '!=']:
+        try:
+            op1, op2 = int(float(op1)), int(float(op2))
+        except Exception, e:
+            __logger__.warn("Some value is not a numeric format. (%s)" % str(e))
+            return False
+    return get_operator_fn(operator)(op1, op2)
+
+
+def find_list_in_string (chars_list, text):
+    """
+    find a chars list into a text. Ex: [".", "$"]
+    return int
+    """
+    for item in chars_list:
+        temp = text.find(item)
+        if temp >= 0:
+            return temp
+    return -1
+
+
+def get_ip():
+    """
+    get the preferred local ip address
+    return: string
+    """
+    return socket.gethostbyname(socket.gethostname())
+
+
+def list_swap(l, init_pos, end_pos):
+    """
+    swap an item in a list from a initial position to another position
+    :param l: list
+    :init_pos: item initial position
+    :end_pos: item end position
+    :return list (swapped)
+    """
+    try:
+      l[int(init_pos)], l[int(end_pos)] = l[int(end_pos)], l[int(init_pos)]
+    except Exception, e:
+        raise "ERROR - trying to swap items in a list: \n      - %s" % e
+    return l
+
+
+def get_type_value(value):
+    """
+    get a value with a given type
+    :param value: value in string
+    :return: typed value, type
+    """
+    if (value.lower() == "true") or (value.lower() == "false"):
+        return bool(convert_str_to_bool(value)), "Bool"
+    elif value.find(u'{') >= 0:
+        return json.loads(value), "Dict"
+    elif value.find(u'[') >= 0:
+        return json.loads(value), "List"
+    else:
+        try:
+            temp = float(value)
+            numeric = True
+        except Exception:
+            numeric = False
+        if numeric:
+            if temp.is_integer():
+                return int(temp), "Int"
+            else:
+                return temp, "Float"
+        else:
+            if isinstance(value, unicode):
+                return value, "Unicode"
+            else:
+                return value, "String"

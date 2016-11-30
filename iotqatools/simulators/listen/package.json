@@ -1,0 +1,33 @@
+{
+    "name": "listen",
+    "description": "IoT accumulator mock server",
+    "version": "0.0.4",
+    "homepage": "https://github.com/XavierVal",
+    "author": {
+        "name": "Xavier Val",
+        "email": "xavier.valcanto@telefonica.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/telefonicaid/iotqatools.git"
+    },
+    "bin": {
+        "listen": "iotqatools/simulators/listen/listen"
+    },
+    "engines": {
+        "node": ">=0.10.8"
+    },
+    "scripts": {
+        "test": "grunt test"
+    },
+    "dependencies": {
+        "moment": "*",
+        "dateformat": "*"
+    },
+    "keywords": [
+        "qa",
+        "tid",
+        "listen",
+        "iot"
+    ]
+}

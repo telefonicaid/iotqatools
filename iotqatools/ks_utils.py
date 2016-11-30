@@ -2,20 +2,20 @@
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
-This file is part of telefonica-iot-qa-tools
+This file is part of telefonica-iotqatools
 
-orchestrator is free software: you can redistribute it and/or
+iotqatools is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-orchestrator is distributed in the hope that it will be useful,
+iotqatools is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
-License along with orchestrator.
+License along with iotqatools.
 If not, seehttp://www.gnu.org/licenses/.
 
 For those usages not covered by the GNU Affero General Public License
@@ -25,6 +25,7 @@ please contact with::[iot_support@tid.es]
 import json
 import re
 import requests
+from iotqatools.iot_tools import PqaTools
 
 from iotqatools.iot_logger import get_logger
 
@@ -48,7 +49,7 @@ ENDPOINTS = {
 
 class RequestUtils(object):
     @staticmethod
-    def send(endpoint, method, headers={}, payload={}, url_parameters_list=[], query={}):
+    def send(endpoint, method, headers={}, payload={}, url_parameters_list=[], query={}, verify=False):
         """
         Send a request to a specific endpoint in a specifig type of http request
         """
@@ -76,15 +77,13 @@ class RequestUtils(object):
         if query != {}:
             parameters.update({'params': query})
             log.debug('\tQuery:\n %s' % query)
+        if headers != {}:
+            parameters.update({'verify': verify})
+            log.debug('\t*Verify:\n %s' % verify)
         log.debug('End Sending\n**************************************************************************************')
         response = requests.request(**parameters)
-        log.debug('**************************************************************************************\nResponse:')
-        try:
-            log.debug('\t*Payload:\n %s' % json.dumps(response.json(), sort_keys=True, indent=4, separators=(',', ': ')))
-        except ValueError:
-            log.debug('\t*Payload:\n %s' % response.text)
-        log.debug('\t*Headers:\n %s' % response.headers)
-        log.debug('End Response\n **************************************************************************************')
+        PqaTools.log_fullRequest(comp='ORC', response=response, params=parameters)
+
         return response
 
     @staticmethod
@@ -107,11 +106,11 @@ class RequestUtils(object):
         Get a specific header from a response
         """
         try:
-            dict_ = dict(response.headers)
+            dict_ = dict({k.lower(): v for k, v in response.headers.items()})
         except ValueError:
             raise NameError('The headers of the response are not a dict, the headers are: {header} \nThe body is: {body}'.format(header=response.headers, body=response.text))
         if value in dict_:
-            return dict_[value]
+            return dict_[value.lower()]
         else:
             raise NameError('The response headers have not the head requested "{head}", the headers are: {headers} \nThe body is: {body}'.format(head=value, headers=response.headers, body=response.text))
 
@@ -502,10 +501,11 @@ class KeystoneCrud(object):
     Class to manage any kind of keystone action
     """
 
-    def __init__(self, username, password, domain, ip, port='5000'):
+    def __init__(self, username, password, domain, ip, port='5000', protocol='http', verify=False):
         self.ip = ip
         self.port = port
-        self.url = 'http://%s:%s' % (self.ip, self.port)
+        self.protocol = protocol
+        self.url = '%s://%s:%s' % (self.protocol, self.ip, self.port)
         self.username = username
         self.password = password
         self.domain = domain
@@ -518,6 +518,7 @@ class KeystoneCrud(object):
         self.roles = None
         self.roles_scim = None
         self.users_scim = None
+        self.verify = verify
 
     def __check_instance(self, instance):
         """
@@ -596,7 +597,7 @@ class KeystoneCrud(object):
             # Overwrite scope
             payload['auth']['scope'] = { "OS-TRUST:trust": { "id": trust_id } }
 
-        return self.r.send(self.url + ENDPOINTS['tokens'], 'post', headers, payload)
+        return self.r.send(self.url + ENDPOINTS['tokens'], 'post', headers, payload, verify=self.verify)
 
     def get_token(self, project=None):
         """

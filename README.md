@@ -1,5 +1,5 @@
-# iot-qa-tools [![Build Status](https://travis-ci.org/telefonicaid/iot-qa-tools.svg?branch=master)](https://travis-ci.org/telefonicaid/iot-qa-tools)
-
+# iotqatools [![Build Status](https://travis-ci.org/telefonicaid/iotqatools.svg?branch=develop)](https://travis-ci.org/telefonicaid/iotqatools) [![Coverage Status](https://coveralls.io/repos/telefonicaid/iotqatools/badge.svg?branch=develop&service=github)](https://coveralls.io/github/telefonicaid/iotqatools?branch=develop) [![StackOverflow](http://b.repl.ca/v1/help-stackoverflow-orange.png)]  (https://stackoverflow.com/questions/tagged/iotqatools) 
+    
 Common IoT tools and libs used by QA
 
 
@@ -19,19 +19,19 @@ following command (we strongly recommend you to use virtual environments):
 *Stable version*
 
 ```
-$ pip install git+https://github.com:telefonicaid/iot-qa-tools@@master
+$ pip install git+https://github.com/telefonicaid/iotqatools@master
 ```
 
 *Last version*
 
 ```
-$ pip install git+https://github.com:telefonicaid/iot-qa-tools@develop
+$ pip install git+https://github.com/telefonicaid/iotqatools@develop
 ```
 
 *Specific version*
 
 ```
-$ pip install git+https://github.com:telefonicaid/iot-qa-tools@picked_tag
+$ pip install git+https://github.com/telefonicaid/iotqatools@picked_tag
 ```
 
 NOTES:
@@ -44,7 +44,7 @@ NOTES:
 After cloning this repository:
 
 ```
-$ git clone git@github.com:telefonicaid/iot-qa-tools.git
+$ git clone git@github.com:telefonicaid/iotqatools.git
 ```
 
 You can install the basic dependencies using the setup.py:
@@ -57,7 +57,7 @@ $ python setup.py install
 You should install the dependencies:
 
 ```
-(basic) pip install -r iotqautils/requirements.txt
+(basic) pip install -r requirements.txt
 ```
 
 And you are ready to play with it!
@@ -92,112 +92,13 @@ print cb.version()
 print cb.version().content
     {
       "orion" : {
-      "version" : "0.16.0_20141126090713",
+      "version" : "0.26.0_20141126090713",
       "uptime" : "1 d, 3 h, 0 m, 38 s",
       "git_hash" : "15153252ddf66e673987443b7f9e9e1194577d29",
       "compile_time" : "Wed Nov 26 09:09:45 CET 2014",
       "compiled_by" : "develenv",
       "compiled_in" : "ci-fiware-01"
     }
-}
-```
-
-
-* Create a entity in CB
-
-```
- data0 = dict({'ent_type': 'Sala','ent_pattern': 'false', 'ent_id': 'Sala01',
-	'attributes': "[{'name': 'temperature', 'type': 'centigrade', 'value': '99'}]"})
- cb.entity_append('x222', data0)
-     SUT: CB
-     SENT REQUEST URL: http://qa-orion-fe-02:1026/NGSI10/updateContext
-     SENT REQUEST HEADERS:
- {'Accept': 'application/json',
- 'Fiware-Service': 'x222',
- 'content-type': 'application/json'}
-     SENT REQUEST DATA: {
-        "contextElements": [
-            {
-                "type": "Sala",
-                "isPattern": "false",
-                "id": "Sala01",
-                "attributes": [{"name": "temperature", "type": "centigrade", "value": "99"}]
-            }],
-        "updateAction": "APPEND"
-    }
-     RESPONSE CODE: 200
-     RESPONSE HEADER:
- {'content-length': '402',
- 'content-type': 'application/json',
- 'date': 'Thu, 27 Nov 2014 12:13:58 GMT',
- 'width': 20}
-     RESPONSE BODY: {
-  "contextResponses" : [
-    {
-      "contextElement" : {
-        "type" : "Sala",
-        "isPattern" : "false",
-        "id" : "Sala01",
-        "attributes" : [
-          {
-            "name" : "temperature",
-            "type" : "centigrade",
-            "value" : ""
-          }
-        ]
-      },
-      "statusCode" : {
-        "code" : "200",
-        "reasonPhrase" : "OK"
-      }
-    }
-  ]
-}
-```
-
-
-* Create a subscription:
-
-```
- subs0 = dict({'ent_type': 'Sala','ent_pattern': 'false', 'ent_id': 'Sala99' ,'notify_url': 'http://localhost:5050/notify'})
- sub = cb.subscription_add('x222',templateData=subs0)
-     SUT: CB
-     SENT REQUEST URL: http://qa-orion-fe-02:1026/NGSI10/subscribeContext
-     SENT REQUEST HEADERS:
- {'Accept': 'application/json',
- 'Fiware-Service': 'x222',
- 'content-type': 'application/json'}
-     SENT REQUEST DATA: {
-        "entities": [
-            {
-                "type": "Sala",
-                "isPattern": "false",
-                "id": "Sala99"
-            }
-        ],
-        "attributes": [],
-        "reference": "http://localhost:5050/notify",
-        "duration": "PT5M",
-        "notifyConditions": [
-            {
-                "type": "ONCHANGE",
-                "condValues": [
-                    "temperature"
-                ]
-            }
-        ]
-    }
-     RESPONSE CODE: 200
-     RESPONSE HEADER:
- {'content-length': '109',
- 'content-type': 'application/json',
- 'date': 'Thu, 27 Nov 2014 12:15:13 GMT',
- 'width': 20}
-     RESPONSE BODY: {
-  "subscribeResponse" : {
-    "subscriptionId" : "547715d198e0d9b003139fa2",
-    "duration" : "PT5M"
-  }
 }
 ```
 
@@ -221,24 +122,31 @@ NOTE: You may need to set GIT_SSL_NO_VERIFY=true environment variable in your ma
 Library Summary
 ---------------
 ```
-ac_utils
-cb_utils
-cb_v2_utils
-cep_utils
-helpers_utils
-iota_utils
-orchestator_utils
-sth_utils
-ks_utils
-pep_utils
-iot_tools
-iot_logger
+sth_utils.py
+remote_log_utils.py
+pep_utils.py
+orchestator_utils.py
+mysql_utils.py
+mongo_utils.py
+ks_utils.py
+iota_utils.py
+iota_measures.py
+iot_tools.py
+iot_logger.py
+helpers_utils.py
+fabric_utils.py
+ckan_utils.py
+cep_utils.py
+cb_v2_utils.py
+cb_utils.py
+ac_utils.py
+
 ```
 
 
 License
 ---------
 
-( c ) 2013-2015 Telefónica I+D, GNU Affero General Public License
+( c ) 2013-2016 Telefónica I+D, GNU Affero General Public License
 
 

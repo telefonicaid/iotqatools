@@ -2,20 +2,20 @@
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
-This file is part of telefonica-iot-qa-tools
+This file is part of telefonica-iotqatools
 
-orchestrator is free software: you can redistribute it and/or
+iotqatools is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-orchestrator is distributed in the hope that it will be useful,
+iotqatools is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
-License along with orchestrator.
+License along with iotqatools.
 If not, seehttp://www.gnu.org/licenses/.
 
 For those usages not covered by the GNU Affero General Public License
@@ -39,7 +39,7 @@ class PqaTools(object):
     """
 
     @staticmethod
-    def log_requestAndResponse(url='', headers={}, params={}, data='', comp='', response={}):
+    def log_requestAndResponse(url='', headers={}, params={}, data='', comp='', response={}, method=''):
         """
         Print the result of a request and the response data provided in a standard view
         :param url: Endpoint where the request was sent
@@ -48,6 +48,7 @@ class PqaTools(object):
         :param data: Data sent to the component (if any)
         :param comp: IoT component under test (optional)
         :param response: response of a request (optional)
+        :param method: http method, it can be POST, GET, PUT, DELETE (optional)
         :return: Nan
         """
         log = get_logger('iot_tools')
@@ -55,6 +56,8 @@ class PqaTools(object):
         log_msg = '>>>>>>>>>>>>>\t Data sent:     \t>>>>>>>>>>>>> \n'
         if comp:
             log_msg += "\t> Comp: {} \n".format(comp)
+        if method:
+            log_msg += "\t> Method: {} \n".format(method)
         if url:
             log_msg += "\t> Url: {} \n".format(url)
         if headers:
@@ -68,7 +71,7 @@ class PqaTools(object):
             log_msg += "\t> SENT REQUEST DATA SEEMS TO BE EMPTY \n"
         log.debug(log_msg)
 
-        if response:
+        if isinstance(response, object) and hasattr(response, "status_code"):
             log_msg = '<<<<<<<<<<<<<<\t Data responded:\t<<<<<<<<<<<<<<\n'
             if isinstance(response, object) and hasattr(response, "status_code"):
                 log_msg += '\t< Response code: {}\n'.format(str(response.status_code))
@@ -77,7 +80,7 @@ class PqaTools(object):
                 if response.content:
                     log_msg += '\t< Payload received: {}\n'.format(response.content)
                 else:
-                    log_msg = '<<<<<<<<<<<<<<\t NO Data responded:\t<<<<<<<<<<<<<<\n'
+                    log_msg += '\t< Empty Payload \n'
             except ValueError:
                 log_msg += '\t< Payload received:\n %s' % response.content
 
@@ -85,7 +88,7 @@ class PqaTools(object):
         log.debug(log_msg)
 
     @staticmethod
-    def log_result(url='', headers={}, params={}, data='', comp=''):
+    def log_result(url='', headers={}, params={}, data='', comp='', method=''):
         """
         Just print the request and the response stored in world[IotComponent].response (if any)
         :param url: Endpoint where the request was sent
@@ -93,10 +96,11 @@ class PqaTools(object):
         :param params: Params sent to the component (if any)
         :param data: Data sent to the component (if any)
         :param comp: IoT component under test (needed to recover the data)
+        :param method: http method  (POST, GET, PUT, DELETE)
         :return: Nan
         """
         PqaTools.log_requestAndResponse(url=url, headers=headers, params=params,
-                                        data=data, comp=comp)
+                                        data=data, comp=comp, method=method)
 
     @staticmethod
     def log_fullRequest(comp='', response='', params=dict()):
@@ -115,8 +119,8 @@ class PqaTools(object):
             log_msg += '\t> Headers: {}\n'.format(str(params['headers']))
         if 'data' in params:
             log_msg += '\t> Payload sent: {}\n'.format(pprint.pformat(params['data'], width=20))
-        if 'query' in params:
-            log_msg += '\t> Query: %s\n' % params['query']
+        if 'params' in params:
+            log_msg += '\t> Params sent: {}\n'.format(str(params['params']))
         if 'verify' in params:
             log_msg += '\t> Verify: %s\n' % params['verify']
 

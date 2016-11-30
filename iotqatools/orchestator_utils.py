@@ -2,20 +2,20 @@
 """
 Copyright 2015 Telefonica Investigación y Desarrollo, S.A.U
 
-This file is part of telefonica-iot-qa-tools
+This file is part of telefonica-iotqatools
 
-orchestrator is free software: you can redistribute it and/or
+iotqatools is free software: you can redistribute it and/or
 modify it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-orchestrator is distributed in the hope that it will be useful,
+iotqatools is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
-License along with orchestrator.
+License along with iotqatools.
 If not, seehttp://www.gnu.org/licenses/.
 
 For those usages not covered by the GNU Affero General Public License
@@ -28,6 +28,7 @@ import json
 import requests
 
 from iotqatools.iot_tools import get_logger
+from iotqatools.iot_tools import PqaTools
 
 
 class Orchestrator(object):
@@ -51,13 +52,7 @@ class Orchestrator(object):
         :param query:
         :return: response object
         """
-        self.log.debug('Request: -->')
-        self.log.debug('Method: %s' % method)
-        self.log.debug('Url: %s' % url)
-        self.log.debug('headers: %s' % headers)
-        self.log.debug('query: %s' % query)
-        self.log.debug('payload: %s' % payload)
-        self.log.debug('--------------')
+
         request_parms = {}
         if headers is not None:
             request_parms.update({'headers': headers})
@@ -66,16 +61,14 @@ class Orchestrator(object):
         if query is not None:
             request_parms.update({'params': query})
         response = requests.request(method, url, **request_parms)
-        self.log.debug('Response: -->')
-        self.log.debug('Return code: %s' % response.status_code)
-        self.log.debug('Resturn headers: %s' % response.headers)
-        self.log.debug('Return data: %s' % response.text)
+        PqaTools.log_fullRequest(comp='ORC', response=response, params=request_parms)
+
         return response
 
     def _get_service_id(self,
                         service_name,
                         admin_domain_user='cloud_admin',
-                        admin_domain_password='password'):
+                        admin_domain_password='PA97sChqkR'):
 
         data = {
             "DOMAIN_NAME": "admin_domain",
@@ -90,6 +83,7 @@ class Orchestrator(object):
         url_to_send = self.url + self.BASE_PATH_MANAGE + 'service'
         response = self.send('get', url_to_send, headers=headers,
                              payload=json_payload)
+
         # TODO: get service_name id
         json_response = json.loads(response.content)
         for domain in json_response['domains']:
@@ -198,6 +192,7 @@ class Orchestrator(object):
         url_to_send = self.url + self.BASE_PATH_MANAGE + 'service/%s/subservice/' % service_id
         response = self.send('post', url_to_send, headers=headers,
                              payload=json_payload)
+
         return response
 
     def remove_subservice(self,
@@ -235,13 +230,13 @@ class Orchestrator(object):
 
     def create_new_service_user(self,
                                 service_name,
-                                service_id,
                                 service_admin_user,
                                 service_admin_password,
                                 new_service_user_name,
                                 new_service_user_password,
                                 new_service_user_email,
-                                new_service_user_description):
+                                new_service_user_description,
+                                service_id=None):
         """
         Create a new subservice using orchestrator
         :param service_name
@@ -373,11 +368,11 @@ class Orchestrator(object):
 
     def assign_role_service_user(self,
                                  service_name,
-                                 service_id,
                                  service_admin_user,
                                  service_admin_password,
                                  role_name,
-                                 service_user_name):
+                                 service_user_name,
+                                 service_id=None):
         """
         Assign a role to a user in a service
         :param service_name
@@ -408,12 +403,12 @@ class Orchestrator(object):
 
     def assign_role_subservice_user(self,
                                     service_name,
-                                    service_id,
                                     subservice_name,
                                     service_admin_user,
                                     service_admin_password,
                                     role_name,
                                     service_user_name,
+                                    service_id=None,
                                     inherit=False):
         """
         Assign a role to a user in a subservice
