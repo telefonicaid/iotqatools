@@ -391,14 +391,20 @@ class CEP:
         action_dict["parameters"] = {}
 
         if action == "email":
-            action_dict["template"] = rule_properties["template"]
-            action_dict["parameters"]["to"] = rule_properties["to"]
-            action_dict["parameters"]["from"] = rule_properties["from"]
-            action_dict["parameters"]["subject"] = rule_properties["subject"]
+            if "template" in rule_properties:
+                action_dict["template"] = rule_properties["template"]
+            if "to" in rule_properties:
+                action_dict["parameters"]["to"] = rule_properties["to"]
+            if "from" in rule_properties:
+                action_dict["parameters"]["from"] = rule_properties["from"]
+            if "subject" in rule_properties:
+                action_dict["parameters"]["subject"] = rule_properties["subject"]
 
         elif action == "sms":
-            action_dict["template"] = rule_properties["template"]
-            action_dict["parameters"]["to"] = rule_properties["to"]
+            if "template" in rule_properties:
+                action_dict["template"] = rule_properties["template"]
+            if "to" in rule_properties:
+                action_dict["parameters"]["to"] = rule_properties["to"]
 
         # it is possible to updates one or more attributes of a given entity
         elif action == "update":
@@ -507,7 +513,7 @@ class CEP:
 
         # request
         __logger__.debug(" ----------- Request ----------- ")
-        __logger__.debug("url: %s" % url)
+        __logger__.debug("url: DELETE %s" % url)
         __logger__.debug("headers: %s" % str(headers))
         response = requests.delete(url, headers=headers)
 
