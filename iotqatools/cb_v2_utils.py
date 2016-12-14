@@ -245,7 +245,7 @@ class CB:
         """
         initialize update batch dict (used in update batch operations)
         """
-        self.update_batch_dict = {"entities": []}
+        self.update_batch_dict = {}
 
     def __init_query_batch_properties_dict(self):
         """
@@ -2029,11 +2029,17 @@ class CB:
         :param op: specify the kind of update action to do (APPEND, APPEND_STRICT, UPDATE, DELETE)
         :param accumulate: entities accumulate with different properties
         :return http response
+        Hint: if you would like a request without entities use "APPEND without entities" and without properties
         """
         self.entities_parameters = parameters
         mode = NORMALIZED
         if OPTIONS in self.entities_parameters:
             mode = self.entities_parameters[OPTIONS]
+
+        if op != "APPEND without entities":
+            self.update_batch_dict["entities"] = []
+        else:
+            op = "APPEND"
 
         for item in accumulate:
             # create attributes from entity context
