@@ -74,7 +74,6 @@ class Mysql:
         self.retry_delay = int(kwargs.get('delay_to_retry', 10))
         self.conn = None
 
-
     def __error_assertion(self, value, error=False):
         """
         It Shows exception error or return for evaluation
@@ -265,7 +264,6 @@ class Mysql:
             return cur.fetchone()  # return one row from the table
         return False
 
-
     def table_pretty_output(self, database_name, table_name):
         cur = self.__query('SELECT * FROM `%s`.`%s` ORDER BY 1 DESC LIMIT 1;' % (database_name, table_name))
         results = cur.fetchall()
@@ -300,3 +298,14 @@ class Mysql:
         print(separator)
         print(tavnit % rows)
         print(separator)
+
+    def get_table_records(self, database_name, table_name):
+        """
+        get last row from a table and some columns
+        :param database_name:
+        :param table_name:
+        """
+        if self.table_exist(database_name, table_name) != None:
+            cur = self.__query('SELECT * FROM `%s`.`%s`;' % (database_name, table_name))
+            return cur.rowcount  # return the number of records of the table
+        return False
