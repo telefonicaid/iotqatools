@@ -44,7 +44,7 @@ class CKANUtils:
         :param port: ckan listen port
         :param url: url to include in the resources creation
         :param protocol: ckan protocol (e.g. http, https)
-        :param verbosity: verbosity level ('CRITICAL','ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET')
+        :param verbosity: verbosity level ('CRITICAL','ERROR', 'WARNING', 'INFO', 'DEBUG')
         :param default_headers: default headers for every requests to be sent to ckan
         """
         # initialize logger

@@ -369,3 +369,12 @@ def get_type_value(value):
                 return value, "Unicode"
             else:
                 return value, "String"
+
+class LogLevelConfiguration:
+    """
+    Class to hold the log level to used by the library. Maybe this is not the best approach
+    to hold just an static variable but it suffices...
+
+    In addition, not sure if this file is the best place for this class or it should be put in its own .py
+    """
+    default_log_level = 'DEBUG'
