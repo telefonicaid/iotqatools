@@ -25,12 +25,14 @@ please contact with::[iot_support@tid.es]
 __author__ = 'xvc'
 
 import logging
+from iotqatools.helpers_utils import LogLevelConfiguration
 
 
-def get_logger(name, level='DEBUG', verbose=False, file=False, filename='', formatter=None):
+def get_logger(name, level=None, verbose=False, file=False, filename='', formatter=None):
     """
     :param name: Name of the logging module
-    :param level: Verbosity level (default DEBUG). Possible values ['CRITICAL','ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET')
+    :param level: Verbosity level (default None). Possible values [None, 'CRITICAL','ERROR', 'WARNING', 'INFO', 'DEBUG'].
+        If None is used then default level (from LogLevelConfiguration class) is used.
     :param verbose: Formatter adds time and logger name to log info. True for verbose active (default False).
     :param file: Create/update the logger adding a File handler
     :param filename: If file is True, indicate the filename
@@ -41,8 +43,13 @@ def get_logger(name, level='DEBUG', verbose=False, file=False, filename='', form
     logger = logging.getLogger(name)
     # Do not pass throw parents handlers
     logger.propagate = False
+    # Set log level
+    if level is not None:
+        lvl = level
+    else:
+        lvl = LogLevelConfiguration.default_log_level
     try:
-        logger.setLevel(level)
+        logger.setLevel(lvl)
     except ValueError as e:
         get_logger(__name__, 'ERROR').error(str(e))
         return
@@ -67,7 +74,7 @@ def get_logger(name, level='DEBUG', verbose=False, file=False, filename='', form
     else:
         new_handler = logging.StreamHandler()
 
-    new_handler.setLevel(level)
+    new_handler.setLevel(lvl)
 
     # Create formatter or use one passed
     if formatter is not None and isinstance(formatter, logging.Formatter):
