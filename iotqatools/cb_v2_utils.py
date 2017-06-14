@@ -117,6 +117,7 @@ GREATER_THAN_MAX_LENGTH_ALLOWED_AND_TEN_LEVELS = u'greater than max length allow
 MAX_LENGTH_ALLOWED_AND_ELEVEN_LEVELS = u'max length allowed and eleven levels'
 THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST = u'the same value of the previous request'
 REPLACE_HOST = u'replace_host'
+REPLACE_PORT = u'replace_port'
 CHARS_ALLOWED = string.ascii_letters + string.digits + u'_'  # regular expression: [a-zA-Z0-9_]+
 SERVICE_MAX_CHARS_ALLOWED = 50
 SERVICE_PATH_LEVELS = 10
@@ -1692,7 +1693,7 @@ class CB:
 
     #  -----------  subscriptions -------------------
 
-    def properties_to_subcription(self, context, listener):
+    def properties_to_subcription(self, context, listener_host, listener_port):
         """
         definition of properties to entities
           | parameter                      | value                   |
@@ -1743,7 +1744,8 @@ class CB:
                      `| condition_expression | q>>>temperature>40&georel>>>near&geometry>>>point&coords>>>40.6391 |`
               - If notification_http_url has `replace_host` value, ex: http://replace_host:1234/notify, it string is replaced by the hostname (used to notifications).
         :param context: context variable with properties to entities
-        :param listener: listener host from properties.json
+        :param listener_host: listener host from properties.json
+        :param listener_port: listener port from properties.json
         """
         # store previous subsciption context dict temporally (used in update request)
         self.subsc_dict_temp = {}
@@ -1768,9 +1770,15 @@ class CB:
 
         # replace_host string in url is replaced to the listener property (used in notification field)
         if (self.subscription_context[NOTIFICATION_HTTP_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_URL].find(REPLACE_HOST) >= 0):
-            self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_HOST, listener)
+            self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_HOST, listener_host)
         if (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].find(REPLACE_HOST) >= 0):
-            self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] = self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].replace(REPLACE_HOST, listener)
+            self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] = self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].replace(REPLACE_HOST, listener_host)
+
+        # replace_port string in url is replaced to the listener property (used in notification field)
+        if (self.subscription_context[NOTIFICATION_HTTP_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_URL].find(REPLACE_PORT) >= 0):
+            self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_PORT, listener_port)
+        if (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].find(REPLACE_PORT) >= 0):
+            self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] = self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].replace(REPLACE_PORT, listener_port)
 
         # Random values
         self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
@@ -2109,7 +2117,7 @@ class CB:
             else:
                 entity = u'%s},' % entity
 
-        payload = u'{"actionType": %s, %s]}' % (mapping_quotes(op), entity[:-1]) # mapping_quote from helpers_utils.py
+        payload = u'{"actionType": "%s", %s]}' % (mapping_quotes(op), entity[:-1]) # mapping_quote from helpers_utils.py
         __logger__.debug("payload: %s" % payload)
 
         resp = self.__send_request(POST, "%s/update" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
@@ -2148,7 +2156,7 @@ class CB:
         self.entities_parameters = parameters
 
         payload = convert_dict_to_str(self.query_batch_dict, JSON)
-        if self.update_batch_dict != {}:
+        if self.query_batch_dict != {}:
             resp = self.__send_request(POST, "%s/query" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
         else:
             resp = self.__send_request(POST, "%s/query" % V2_BATCH, parameters=self.entities_parameters, headers=self.headers)
