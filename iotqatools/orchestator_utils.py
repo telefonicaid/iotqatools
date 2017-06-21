@@ -39,8 +39,6 @@ class Orchestrator(object):
 
     log = get_logger('Orchestrator', 'ERROR')
 
-    default_password = 'PA97sChqkR'
-
     def __init__(self, host='127.0.0.1', port='8084', protocol='http'):
         self.url = '%s://%s:%s' % (protocol, host, port)
 
@@ -69,8 +67,8 @@ class Orchestrator(object):
 
     def _get_service_id(self,
                         service_name,
-                        admin_domain_user='cloud_admin',
-                        admin_domain_password=default_password):
+                        admin_domain_user,
+                        admin_domain_password):
 
         data = {
             "DOMAIN_NAME": "admin_domain",
@@ -587,119 +585,3 @@ class Orchestrator(object):
             return json_response['id']
 
 
-if __name__ == '__main__':
-    orc = Orchestrator('localhost', '8084', 'http')
-    res = orc.create_new_service('admin_domain',
-                                 'cloud_admin',
-                                 orc.default_password,
-                                 'foocity',
-                                 'myfoocity',
-                                 'adm1',
-                                 orc.default_password,
-                                 'adm@iot.tid.com')
-    print res
-    try:
-        service_id = json.loads(res.content)['id']
-    except Exception:
-        res = orc.remove_service('foocity',
-                                 'cloud_admin',
-                                 orc.default_password)
-        exit(0)
-
-    res = orc._get_service_id('foocity',
-                              'cloud_admin',
-                              orc.default_password)
-    print res
-
-    res = orc.create_new_subservice('foocity',
-                                    service_id,
-                                    'adm1',
-                                    orc.default_password,
-                                    'jardines',
-                                    'jardines del pueblo')
-    print res
-    res = orc.create_new_service_user('foocity',
-                                      service_id,
-                                      'adm1',
-                                      orc.default_password,
-                                      'bart',
-                                      orc.default_password,
-                                      'bat@iot.tid.es',
-                                      'Mr. Bart'
-                                      )
-    print res
-    user_id = json.loads(res.content)['id']
-    res = orc.create_new_service_role('foocity',
-                                      service_id,
-                                      'adm1',
-                                      orc.default_password,
-                                      'Boss'
-                                      )
-    role_id = json.loads(res.content)['id']
-    print res
-    res = orc.assign_role_service_user('foocity',
-                                       service_id,
-                                       'adm1',
-                                       orc.default_password,
-                                       'Boss',
-                                       'bart')
-    print res
-    res = orc.unassign_role_service_user('foocity',
-                                         service_id,
-                                         'adm1',
-                                         orc.default_password,
-                                         'Boss',
-                                         'bart')
-    print res
-    res = orc.remove_service_role('foocity',
-                                  service_id,
-                                  'adm1',
-                                  orc.default_password,
-                                  'Boss',
-                                  role_id
-                                  )
-    print res
-    res = orc.assign_role_subservice_user('foocity',
-                                          service_id,
-                                          'jardines',
-                                          'adm1',
-                                          orc.default_password,
-                                          'SubServiceCustomer',
-                                          'bart')
-    print res
-    trust_id = orc.create_trust_token('foocity',
-                                      service_id,
-                                      'jardines',
-                                      'adm1',
-                                      orc.default_password,
-                                      'SubServiceAdmin',
-                                      'bart',
-                                      'adm1',
-                                      )
-    print trust_id
-    res = orc.unassign_role_subservice_user('foocity',
-                                            service_id,
-                                            'jardines',
-                                            'adm1',
-                                            orc.default_password,
-                                            'SubServiceCustomer',
-                                            'bart')
-    print res
-    res = orc.remove_service_user('foocity',
-                                  service_id,
-                                  'adm1',
-                                  orc.default_password,
-                                  'bart',
-                                  user_id
-                                  )
-    print res
-    res = orc.remove_subservice('foocity',
-                                service_id,
-                                'adm1',
-                                orc.default_password,
-                                'jardines')
-    print res
-    res = orc.remove_service('foocity',
-                             'cloud_admin',
-                             orc.default_password)
-    print res
