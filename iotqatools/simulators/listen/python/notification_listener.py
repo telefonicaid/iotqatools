@@ -26,6 +26,9 @@ __author__ = 'Iván Arias León (ivan dot ariasleon at telefonica dot com)'
 import sys
 import json
 import BaseHTTPServer
+import ssl
+import time
+import thread
 
 
 # variables
@@ -162,23 +165,57 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.end_headers()
         s.wfile.write(last_payload)
 
+def init_server(port, https):
+    """
+    Function to init the server
+
+    :param port: the port to use for the server
+    :param https: True if HTTPS has to be used, false otherwise
+
+    NOTE: This function relies in several global variables, which  probably it is not a good practise, but it suffices
+    """
+
+    server_class = BaseHTTPServer.HTTPServer
+    httpd = server_class((ip_bind, port), MyHandler)
+
+    if https:
+        # Based on https://anvileight.com/blog/2016/03/20/simple-http-server-with-python/
+        httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=key_file, certfile=cert_file, server_side=True)
+        print("HTTPS Server Started using the %d port" % port)
+    else:
+        print("HTTP Server Started using the %d port" % port)
+
+    httpd.serve_forever()
+    httpd.server_close()   # This line is never executed, but we add here for completeness ;)
 
 
 port = sys.argv[1] if (len(sys.argv) >= 2) else "1044"
 VERBOSE = sys.argv[2] if (len(sys.argv) >= 3) else "True"
+key_file = sys.argv[3] if (len(sys.argv) >= 4) else None
+cert_file = sys.argv[4] if (len(sys.argv) >= 5) else None
+
 ip_bind = "0.0.0.0"
 print "Usage:\n"\
-      "    python notification_listener.py <port> <Debug>\n" \
+      "    python notification_listener.py <port> <debug> <key_file> <cert_file>\n" \
       "      - port: server port used [OPTIONAL] (default: 1044)\n" \
-      "      - debug: show request data by console (boolean) [OPTIONAL] (default: True)\n\n"
+      "      - debug: show request data by console (boolean) [OPTIONAL] (default: True)\n" \
+      "      - key_file: path to key file (HTTPS) [OPTIONAL] (default: None)\n" \
+      "      - cert_file: path to cert file (HTTPS) [OPTIONAL] (default: None)\n\n"
 print " ******* CRTL - C to stop the server ******\n\n"
-server_class = BaseHTTPServer.HTTPServer
-httpd = server_class((ip_bind, int(port)), MyHandler)
-print("HTTP Server Started using the %s port" % port)
+
+# We have to run each server in a separate thread, see https://stackoverflow.com/questions/44651542/
+#
+# HTTPS server runs in HTTP port + 10000. Alternativelly, we could add a new parameter but that makes
+# more complex the CLI.
+thread.start_new_thread(init_server, (int(port), False, ))
+if key_file is not None and cert_file is not None:
+    thread.start_new_thread(init_server, (int(port) + 10000, True, ))
+
 try:
-   httpd.serve_forever()
+    while 1:
+        time.sleep(10)
 except KeyboardInterrupt:
+   print("Closing listener...")
    exit(0)
-   print("Closing the HTTP server...")
-httpd.server_close()
-print("HTTP Server Stopped")
+
+
