@@ -39,6 +39,8 @@ class Orchestrator(object):
 
     log = get_logger('Orchestrator', 'ERROR')
 
+    default_password = 'PA97sChqkR'
+
     def __init__(self, host='127.0.0.1', port='8084', protocol='http'):
         self.url = '%s://%s:%s' % (protocol, host, port)
 
@@ -68,7 +70,7 @@ class Orchestrator(object):
     def _get_service_id(self,
                         service_name,
                         admin_domain_user='cloud_admin',
-                        admin_domain_password='PA97sChqkR'):
+                        admin_domain_password=default_password):
 
         data = {
             "DOMAIN_NAME": "admin_domain",
@@ -176,7 +178,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SERVICE_ADMIN_USER": service_admin_user,
@@ -211,7 +215,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SUBSERVICE_NAME": subservice_name,
@@ -249,7 +255,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SERVICE_ADMIN_USER": service_admin_user,
@@ -284,7 +292,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SERVICE_ADMIN_USER": service_admin_user,
@@ -316,7 +326,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SERVICE_ADMIN_USER": service_admin_user,
@@ -348,7 +360,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SERVICE_ADMIN_USER": service_admin_user,
@@ -383,7 +397,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SERVICE_ADMIN_USER": service_admin_user,
@@ -423,7 +439,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SUBSERVICE_NAME": subservice_name,
@@ -461,7 +479,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SERVICE_ADMIN_USER": service_admin_user,
@@ -499,7 +519,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SUBSERVICE_NAME": subservice_name,
@@ -540,7 +562,9 @@ class Orchestrator(object):
         :return:
         """
         if not service_id:
-            service_id = self._get_service_id(service_name)
+            service_id = self._get_service_id(service_name,
+                                              service_admin_user,
+                                              service_admin_password)
         data = {
             "SERVICE_NAME": service_name,
             "SUBSERVICE_NAME": subservice_name,
@@ -567,11 +591,11 @@ if __name__ == '__main__':
     orc = Orchestrator('localhost', '8084', 'http')
     res = orc.create_new_service('admin_domain',
                                  'cloud_admin',
-                                 'password',
+                                 orc.default_password,
                                  'foocity',
                                  'myfoocity',
                                  'adm1',
-                                 'password',
+                                 orc.default_password,
                                  'adm@iot.tid.com')
     print res
     try:
@@ -579,25 +603,27 @@ if __name__ == '__main__':
     except Exception:
         res = orc.remove_service('foocity',
                                  'cloud_admin',
-                                 'password')
+                                 orc.default_password)
         exit(0)
 
-    res = orc._get_service_id('foocity')
+    res = orc._get_service_id('foocity',
+                              'cloud_admin',
+                              orc.default_password)
     print res
 
     res = orc.create_new_subservice('foocity',
                                     service_id,
                                     'adm1',
-                                    'password',
+                                    orc.default_password,
                                     'jardines',
                                     'jardines del pueblo')
     print res
     res = orc.create_new_service_user('foocity',
                                       service_id,
                                       'adm1',
-                                      'password',
+                                      orc.default_password,
                                       'bart',
-                                      'password',
+                                      orc.default_password,
                                       'bat@iot.tid.es',
                                       'Mr. Bart'
                                       )
@@ -606,7 +632,7 @@ if __name__ == '__main__':
     res = orc.create_new_service_role('foocity',
                                       service_id,
                                       'adm1',
-                                      'password',
+                                      orc.default_password,
                                       'Boss'
                                       )
     role_id = json.loads(res.content)['id']
@@ -614,21 +640,21 @@ if __name__ == '__main__':
     res = orc.assign_role_service_user('foocity',
                                        service_id,
                                        'adm1',
-                                       'password',
+                                       orc.default_password,
                                        'Boss',
                                        'bart')
     print res
     res = orc.unassign_role_service_user('foocity',
                                          service_id,
                                          'adm1',
-                                         'password',
+                                         orc.default_password,
                                          'Boss',
                                          'bart')
     print res
     res = orc.remove_service_role('foocity',
                                   service_id,
                                   'adm1',
-                                  'password',
+                                  orc.default_password,
                                   'Boss',
                                   role_id
                                   )
@@ -637,7 +663,7 @@ if __name__ == '__main__':
                                           service_id,
                                           'jardines',
                                           'adm1',
-                                          'password',
+                                          orc.default_password,
                                           'SubServiceCustomer',
                                           'bart')
     print res
@@ -645,7 +671,7 @@ if __name__ == '__main__':
                                       service_id,
                                       'jardines',
                                       'adm1',
-                                      'password',
+                                      orc.default_password,
                                       'SubServiceAdmin',
                                       'bart',
                                       'adm1',
@@ -655,14 +681,14 @@ if __name__ == '__main__':
                                             service_id,
                                             'jardines',
                                             'adm1',
-                                            'password',
+                                            orc.default_password,
                                             'SubServiceCustomer',
                                             'bart')
     print res
     res = orc.remove_service_user('foocity',
                                   service_id,
                                   'adm1',
-                                  'password',
+                                  orc.default_password,
                                   'bart',
                                   user_id
                                   )
@@ -670,10 +696,10 @@ if __name__ == '__main__':
     res = orc.remove_subservice('foocity',
                                 service_id,
                                 'adm1',
-                                'password',
+                                orc.default_password,
                                 'jardines')
     print res
     res = orc.remove_service('foocity',
                              'cloud_admin',
-                             'password')
+                             orc.default_password)
     print res
