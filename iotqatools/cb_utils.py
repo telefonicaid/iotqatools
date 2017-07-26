@@ -992,7 +992,8 @@ class CbNgsi10Utils(object):
         self.headers['Fiware-Service'] = service
 
     def set_subservice(self, subservice):
-        self.headers['Fiware-Servicepath'] = subservice
+        if subservice != "None" and subservice != "none" and subservice != None:
+            self.headers['Fiware-Servicepath'] = subservice
 
     def set_auth_token(self, auth_token):
         self.headers['x-auth-token'] = auth_token
