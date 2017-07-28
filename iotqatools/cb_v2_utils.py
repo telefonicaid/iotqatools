@@ -343,7 +343,7 @@ class CB:
             url = "%s/%s" % (self.cb_url, "exit/harakiri")
             resp = requests.get(url=url)
             return resp.status_code
-        except Exception, e:
+        except Exception as e:
             return -1
 
     def is_cb_started(self):
@@ -355,7 +355,7 @@ class CB:
             resp = requests.get(url=url)
             __logger__.debug("CB code returned with version request is: %s " % str(resp.status_code))
             return resp.status_code == 200
-        except Exception, e:
+        except Exception as e:
             return False
 
     def __update_headers(self):
@@ -521,7 +521,7 @@ class CB:
         url = "%s/%s" % (self.cb_url, path)
         try:
             resp = requests.request(method=method, url=url, headers=headers, data=payload, params=parameters, verify=False)
-        except Exception, e:
+        except Exception as e:
             assert False, "ERROR  - send request \n     - url: %s\n    - %s" % (url, str(e))
         if show:
             self.response_string = "http code: %s - %s" % (resp.status_code, resp.reason)

@@ -101,7 +101,7 @@ class SthUtils(object):
         # Send the requests
         try:
             response = requests.request(**parameters)
-        except RequestException, e:
+        except RequestException as e:
             PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='STH', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 

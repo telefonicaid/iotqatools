@@ -132,7 +132,7 @@ class FabricSupport:
                     return self.__sub_run(command, path, sudo_run)
             else:
                 return self.__sub_run(command, path, sudo_run)
-        except Exception, e:
+        except Exception as e:
             assert False, "ERROR  - running the command \"%s\" remotely with Fabric \n       - %s" % (command, str(e))
 
     def runs(self, ops_list, **kwargs):
@@ -184,7 +184,7 @@ class FabricSupport:
                 fd = StringIO()
                 get(file, fd, use_sudo=sudo_run)
                 return fd.getvalue()
-        except Exception, e:
+        except Exception as e:
             __logger__.error("ERROR - reading %s file\n %s" % (file, e))
 
 
@@ -205,5 +205,5 @@ class FabricSupport:
                     return self.__sub_read_file(file, sudo_run)
             else:
                 return self.__sub_read_file(file, sudo_run)
-        except Exception, e:
+        except Exception as e:
             assert False, "ERROR  -reading a File \"%s\" remotely with Fabric \n       - %s" % (file, str(e))

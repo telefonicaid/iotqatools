@@ -28,7 +28,10 @@ import json
 from nose.tools import eq_, ok_, assert_in
 from iotqatools.cb_utils import CBUtils
 import unittest
-import mock
+try:
+    from unittest import mock
+except ImportError:  # python2
+    import mock
 
 last_updateContext =""
 
@@ -129,36 +132,36 @@ class CBUtilsTest(unittest.TestCase):
    @mock.patch('requests.request', side_effect=mocked_requests_get)
    def test_version(self, mock_requests):
        version = self.cb.version()
-       print "### Test ---> Version: " + version.content
+       print("### Test ---> Version: " + version.content)
        eq_(200, version.status_code, msg="version to CB does not return 200")
        assert_in("orion", version.content, msg="bad data returned to query version to CB")
        assert_in("version", version.content, msg="bad data returned to query version to CB")
 
    @mock.patch('requests.request', side_effect=mocked_requests_get)
    def test_statistics(self, mock_requests):
-       print "### Test ---> Statistics: "
-       print self.cb.statistics().content
+       print("### Test ---> Statistics: ")
+       print(self.cb.statistics().content)
 
    @mock.patch('requests.request', side_effect=mocked_requests_get)
    def test_create_entity(self, mock_requests):
-       print "### Test ---> Create a entity: "
+       print("### Test ---> Create a entity: ")
        data0 = {'ent_type': 'Sala', 'ent_pattern': 'false', 'ent_id': 'Sala01',
          'attributes': [{'name': 'temperature', 'type': 'centigrade', 'value': '99'}]}
        self.cb.entity_append('x222', data0)
 
-       print "### Test ---> Recover the entity1 (method1): "
+       print("### Test ---> Recover the entity1 (method1): ")
        entity1 = self.cb.entity_get('x222', 'Sala01')
        eq_(200, entity1.status_code, msg="Error Code")
 
-       print "### Test ---> Recover the entity2 (method2):"
+       print("### Test ---> Recover the entity2 (method2):")
        entity2 = self.cb.entities_get('x222', 'Sala', 'Sala01', 'false')
        eq_(200, entity2.status_code, msg="Error Code")
 
-       print "### Test ---> Recover the entities wiht pattern (method3):"
+       print("### Test ---> Recover the entities wiht pattern (method3):")
        entity3 = self.cb.entities_get('x222', 'Sala', 'Sala.*', 'true')
        eq_(200, entity2.status_code, msg="Error Code")
 
-       print "### Test ---> Compare all the entities recovered: "
+       print("### Test ---> Compare all the entities recovered: ")
        jsobj_1 = json.loads(entity1.content)
        jsobj_2 = json.loads(entity2.content)
        jsobj_3 = json.loads(entity3.content)
@@ -184,7 +187,7 @@ class CBUtilsTest(unittest.TestCase):
 
    @mock.patch('requests.request', side_effect=mocked_requests_404)
    def test_missing_entities(self, mock_requests):
-        print "### Test ---> Recover missing entities: "
+        print("### Test ---> Recover missing entities: ")
         entityb1 = self.cb.entities_get('x222', 'Sala', 'S', 'false')
         eq_(200, entityb1.status_code, msg="Error Code")
         entityb2 = self.cb.entities_get('x222', 'Sal', 'Sala01', 'false')
@@ -202,26 +205,26 @@ class CBUtilsTest(unittest.TestCase):
 
    @mock.patch('requests.request', side_effect=mocked_requests_get)
    def test_update_entity(self, mock_requests):
-        print "### Test ---> Update the entity: "
+        print("### Test ---> Update the entity: ")
         data0 = {'ent_type': 'Salass', 'ent_pattern': 'false', 'ent_id': 'Sala01',
          'attributes': [{'name': 'temperature', 'type': 'centigrade', 'value': '99'}]}
         self.cb.entity_append('x222', data0)
 
-        print "### Test ---> Recover the entity1 (method1): "
+        print("### Test ---> Recover the entity1 (method1): ")
         entity1 = self.cb.entity_get('x222', 'Sala01')
 
         data1 = {'ent_type': 'Salass', 'ent_pattern': 'false', 'ent_id': 'Sala01',
                  'attributes': [{'name': 'temperature', 'type': 'centigrade', 'value': '101'}]}
         self.cb.entity_update('x222', data1)
 
-        print "### Test ---> Recover the updated entity: "
+        print("### Test ---> Recover the updated entity: ")
         entity2 = self.cb.entity_get('x222', 'Sala01')
         eq_(200, entity1.status_code, msg="Error Code")
         assert_in('101', entity2.content)
 
    @mock.patch('requests.request', side_effect=mocked_requests_get)
    def test_subscription(self, mock_requests):
-        print "### Test ---> Add Subscription: "
+        print("### Test ---> Add Subscription: ")
         data0 = {'ent_type': 'Salass', 'ent_pattern': 'false', 'ent_id': 'Sala01',
          'attributes': [{'name': 'temperature', 'type': 'centigrade', 'value': '99'}]}
         self.cb.entity_append('x222', data0)
@@ -234,9 +237,9 @@ class CBUtilsTest(unittest.TestCase):
         jssub = json.loads(sub.content)
         ok_(jssub['subscribeResponse']['subscriptionId'], msg="No subscription")
         eq_(jssub['subscribeResponse']['duration'], 'PT5M', msg="No Duration")
-        print "### Test ---> subscription added:"
-        print "Subscription id: {}".format(jssub['subscribeResponse']['subscriptionId'])
-        print "Subscription duration: {}".format(jssub['subscribeResponse']['duration'])
+        print("### Test ---> subscription added:")
+        print("Subscription id: {}".format(jssub['subscribeResponse']['subscriptionId']))
+        print("Subscription duration: {}".format(jssub['subscribeResponse']['duration']))
 
 
 if __name__ == '__main__':

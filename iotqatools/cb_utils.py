@@ -965,7 +965,7 @@ class CbNgsi10Utils(object):
         # Send the requests
         try:
             response = requests.request(**parameters)
-        except RequestException, e:
+        except RequestException as e:
             PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 
@@ -1718,10 +1718,10 @@ class CbNgsi9Utils():
         # Send the requests
         try:
             response = requests.request(**parameters)
-        except RequestException, e:
+        except RequestException as e:
             PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
-        print response
+        print(response)
 
         # Log data
         PqaTools.log_fullRequest(comp='CB', response=response, params=parameters)
@@ -2168,7 +2168,7 @@ class CBUtils(object):
         # Send the requests
         try:
             response = requests.request(**parameters)
-        except RequestException, e:
+        except RequestException as e:
             PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 
@@ -2238,6 +2238,17 @@ class CBUtils(object):
         response = self.__send_request('post', url, headers, json.loads(payload))
         return response
 
+    @staticmethod
+    def __replace_quotes(text):
+        # format avoid urlencoding due to not array inputs
+        return (
+                text
+                .replace("'", '"')
+                .replace("u&quot;", '"')
+                .replace("&quot;", '"')
+                .replace("&#x27;", '"')
+                .replace("&#x22;", '"'))
+
     def entity_append(self, service, entity_data, subservice=''):
         """
         Create if not exist a CB entity or update it
@@ -2265,10 +2276,7 @@ class CBUtils(object):
                                              'ent_attributes': entity_data['attributes'],
                                              'action_mode': 'APPEND'})
 
-        # format avoid urlencoding due to not array inputs
-        payload = payload.replace("'", '"')
-        payload = payload.replace("u&quot;", '"')
-        payload = payload.replace("&quot;", '"')
+        payload = self.__replace_quotes(payload)
 
         # send the request for the subscription
         response = self.__send_request('post', url, headers, json.loads(payload))
@@ -2301,10 +2309,7 @@ class CBUtils(object):
                                              'ent_attributes': entity_data['attributes'],
                                              'action_mode': 'APPEND'})
 
-        # format avoid urlencoding due to not array inputs
-        payload = payload.replace("'", '"')
-        payload = payload.replace("u&quot;", '"')
-        payload = payload.replace("&quot;", '"')
+        payload = self.__replace_quotes(payload)
 
         # send the request for the subscription
         response = self.__send_request('post', url, headers, json.loads(payload))
@@ -2323,7 +2328,7 @@ class CBUtils(object):
         """
         # show info received
         if self.verbosity >= 2:
-            print "###> INPUT > {}".format(template_data)
+            print("###> INPUT > {}".format(template_data))
 
         # set the service header  id
         headers = dict(self.default_headers)
@@ -2365,7 +2370,7 @@ class CBUtils(object):
                                    'subs_type': template_data['subs_type'],
                                    'ent_att_notif': template_data['ent_att_notif'],
                                    'ent_att_cond': template_data['ent_att_cond']})
-        payload = payload.replace("'", '"')
+        payload = self.__replace_quotes(payload)
         # send the request for the subscription
         return self.__send_request('post', url, headers, json.loads(payload), verifySSL)
 
@@ -2405,8 +2410,8 @@ if __name__ == '__main__':
     ce = ContextElements()
     ce.add_context_element('Room1', 'Room', attr)
     payload = PayloadUtils.build_standard_entity_creation_payload(ce)
-    print payload
+    print(payload)
     resp = cb.standard_entity_creation(payload)
-    print resp
-    print resp.text
-    print resp.headers
+    print(resp)
+    print(resp.text)
+    print(resp.headers)
