@@ -88,7 +88,7 @@ def convert_str_to_dict(body, content):
             return xmltodict.parse(body)
         else:
             return json.loads(body)
-    except Exception, e:
+    except Exception as e:
         assert False,  " ERROR - converting string to %s dictionary: \n" \
                        "  %s \n  " \
                        "  Exception error: %s" % (str(content), str(body), str(e))
@@ -106,7 +106,7 @@ def convert_dict_to_str(body, content):
             return xmltodict.unparse(body)
         else:
             return str(json.dumps(body, ensure_ascii=False).encode('utf-8'))
-    except Exception, e:
+    except Exception as e:
         assert False,  " ERROR - converting %s dictionary to string: \n" \
                        "  %s \n" \
                        "  Exception error: %s" % (str(content), str(body), str(e))
@@ -121,7 +121,7 @@ def convert_str_to_list(text, separator):
     """
     try:
         return text.split(separator)
-    except Exception, e:
+    except Exception as e:
         assert False,  " ERROR - converting %s string to list with separator: %s \n" \
                        "   Exception error:%s" % (str(text), str(separator), str(e))
 
@@ -135,7 +135,7 @@ def convert_list_to_string(list, separator):
     """
     try:
         return separator.join(list)
-    except Exception, e:
+    except Exception as e:
         assert False,  " ERROR - converting list to string with separator: %s \n" \
                        "    Exception error:%s" % (str(separator), str(e))
 
@@ -210,7 +210,7 @@ def is_an_integer_value(value):
         if dec_v == 0:
             return True
         return False
-    except Exception, e:
+    except Exception as e:
         assert False, " Error - %s is not numeric... \n %s" % (str(value), str(e))
 
 
@@ -262,7 +262,7 @@ def read_file_to_json(file_name):
     try:
         with open(file_name) as config_file:
             return json.load(config_file)
-    except Exception, e:
+    except Exception as e:
         raise Exception("\n ERROR - parsing the %s/%s file \n     msg= %s" % (path, file_name, str(e)))
 
 
@@ -300,7 +300,7 @@ def eval_binary_expr(op1, operator, op2):
     if operator not in ['==', '!=']:
         try:
             op1, op2 = int(float(op1)), int(float(op2))
-        except Exception, e:
+        except Exception as e:
             __logger__.warn("Some value is not a numeric format. (%s)" % str(e))
             return False
     return get_operator_fn(operator)(op1, op2)
@@ -336,7 +336,7 @@ def list_swap(l, init_pos, end_pos):
     """
     try:
       l[int(init_pos)], l[int(end_pos)] = l[int(end_pos)], l[int(init_pos)]
-    except Exception, e:
+    except Exception as e:
         raise "ERROR - trying to swap items in a list: \n      - %s" % e
     return l
 

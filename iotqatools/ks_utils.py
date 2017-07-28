@@ -1011,7 +1011,7 @@ class KeystoneUtils(object):
                 }
             }
             """
-            raise e
+            raise
 
     @staticmethod
     def check_environment_config(environment):

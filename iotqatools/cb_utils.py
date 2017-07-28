@@ -965,7 +965,7 @@ class CbNgsi10Utils(object):
         # Send the requests
         try:
             response = requests.request(**parameters)
-        except RequestException, e:
+        except RequestException as e:
             PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 
@@ -1718,7 +1718,7 @@ class CbNgsi9Utils():
         # Send the requests
         try:
             response = requests.request(**parameters)
-        except RequestException, e:
+        except RequestException as e:
             PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
         print response
@@ -2168,7 +2168,7 @@ class CBUtils(object):
         # Send the requests
         try:
             response = requests.request(**parameters)
-        except RequestException, e:
+        except RequestException as e:
             PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 

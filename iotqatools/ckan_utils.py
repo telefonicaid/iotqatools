@@ -106,7 +106,7 @@ class CKANUtils:
         # Send the requests
         try:
             response = requests.request(**parameters)
-        except RequestException, e:
+        except RequestException as e:
             PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CKAN')
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
 
@@ -291,7 +291,7 @@ class CKANUtils:
                 if resources['name'] == resource_name:
                     resource_id = resources['id']
                     return resource_id
-        except Exception, e:
+        except Exception as e:
             raise Exception("\n-- ERROR -- get_resource_id \n{}".format(e))
 
     def delete_resource(self, resource_name, package_name, verify_ssl=False):

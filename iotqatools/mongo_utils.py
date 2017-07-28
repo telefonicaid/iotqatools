@@ -82,7 +82,7 @@ class Mongo:
                 self.current_collection = self.current_database[self.collection_name]
             else:
                 self.current_collection = self.current_database
-        except Exception, e:
+        except Exception as e:
             assert False, " ERROR - Connecting to MongoDB...\n %s " % (str(e))
 
     def execute_command(self, command):
@@ -93,7 +93,7 @@ class Mongo:
         """
         try:
             return self.current_database.command(command)
-        except Exception, e:
+        except Exception as e:
             assert False, " ERROR - Executing command \"%s\" in MongoDB...\n %s " % (command, str(e))
 
     def eval_version(self, version=EMPTY):
@@ -124,7 +124,7 @@ class Mongo:
         try:
             self.current_database = self.client.get_database(name)
             self.current_collection = self.current_database
-        except Exception, e:
+        except Exception as e:
             assert False, " ERROR - Accessing to database %s in MongoDB...\n %s" % (name, str(e))
 
     def choice_collection(self, name):
@@ -135,7 +135,7 @@ class Mongo:
         try:
             self.collection_name = name
             self.current_collection = self.current_database[name]
-        except Exception, e:
+        except Exception as e:
             assert False, " ERROR - Accessing to collection %s in MongoDB...\n %s" % (name, str(e))
 
     def get_all_databases(self):
@@ -146,7 +146,7 @@ class Mongo:
         try:
             dbs = self.client.database_names()
             return self.get_cursor_value(dbs)
-        except Exception, e:
+        except Exception as e:
              assert False, " ERROR - Get all databases in mongo...\n %s" % str(e)
 
     def get_all_collections_by_db(self, **kwargs):
@@ -164,7 +164,7 @@ class Mongo:
             else:
                 colls = self.client[db_name].collection_names(include_system_collections=system_collections)
             return self.get_cursor_value(colls)
-        except Exception, e:
+        except Exception as e:
              assert False, " ERROR - Get all colections in a databases in mongo...\n %s" % str(e)
 
     def insert_data(self, data):
@@ -173,7 +173,7 @@ class Mongo:
         """
         try:
             self.current_collection.insert(data)
-        except Exception, e:
+        except Exception as e:
             assert False, " ERROR - Inserting data into %s in MongoDB...\n %s" % (str(self.current_collection), str(e))
 
     def update_data(self, data, query={}):
@@ -182,7 +182,7 @@ class Mongo:
         """
         try:
             self.current_collection.update(query, data)
-        except Exception, e:
+        except Exception as e:
             assert False, " ERROR - Updating data in a collection %s in MongoDB...\n %s" % (self.current_collection, str(e))
 
     def find_data(self, query={}):
@@ -193,7 +193,7 @@ class Mongo:
         """
         try:
             return self.current_collection.find(query)
-        except Exception, e:
+        except Exception as e:
             assert False, " ERROR - Searching data from a collection %s in MongoDB...\n %s" % (self.current_collection, str(e))
 
     def find_with_retry(self, query={}):
@@ -238,7 +238,7 @@ class Mongo:
         """
         try:
             self.current_database.drop_collection(self.collection_name)
-        except Exception, e:
+        except Exception as e:
             assert False, " ERROR - Deleting a collection %s in MongoDB...\n %s" % (self.current_collection, str(e))
 
     def drop_database(self, db_name=EMPTY):
@@ -251,7 +251,7 @@ class Mongo:
                 self.database_name = db_name
             __logger__.debug("database to delete: %s" % self.database_name)
             self.client.drop_database(self.database_name)
-        except Exception, e:
+        except Exception as e:
             assert False, " ERROR - Deleting a database %s in MongoDB...\n %s" % (self.current_collection, str(e))
 
     def disconnect(self):
@@ -260,6 +260,6 @@ class Mongo:
         """
         try:
             self.client.close()
-        except Exception, e:
+        except Exception as e:
              assert False, " ERROR - Disconnecting to MongoDB...\n %s\n%s " % (self.current_collection, str(e))
 

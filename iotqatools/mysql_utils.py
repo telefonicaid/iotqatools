@@ -95,7 +95,7 @@ class Mysql:
             cur = self.conn.cursor()
             cur.execute(sql)
             return cur
-        except Exception, e:
+        except Exception as e:
             return self.__error_assertion('DB exception: %s' % (e), error)
 
     def __drop_database(self):
@@ -112,7 +112,7 @@ class Mysql:
         try:
             self.database = EMPTY
             self.conn = MySQLdb.connect(self.host, self.user, self.password, self.database, charset='utf8',use_unicode=True)
-        except Exception, e:
+        except Exception as e:
             return self.__error_assertion('DB exception: %s' % (e))
 
     def set_database(self, database):
@@ -135,7 +135,7 @@ class Mysql:
         """
         try:
             self.conn = MySQLdb.connect(self.host, self.user, self.password, self.database)
-        except Exception, e:
+        except Exception as e:
             return self.__error_assertion('DB exception: %s' % (e))
         cur = self.__query(SELECT_VERSION)
         row = cur.fetchone()
