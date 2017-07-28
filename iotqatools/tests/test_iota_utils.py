@@ -29,7 +29,10 @@ from iotqatools.iot_tools import PqaTools
 from nose.tools import eq_, ok_, assert_in
 from iotqatools.iota_utils import Rest_Utils_IoTA
 import unittest
-import mock
+try:
+    from unittest import mock
+except ImportError:  # python2
+    import mock
 
 last_updateContext =""
 
