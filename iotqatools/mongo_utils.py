@@ -209,7 +209,7 @@ class Mongo:
             if cursor.count() != 0:
                 return cursor
             c += 1
-            print " WARN - Retry in find documents in Mongo. No: (%s)" % str(c)
+            print(" WARN - Retry in find documents in Mongo. No: (%s)" % str(c))
             time.sleep(self.retry_delay)
         return cursor
 
@@ -230,7 +230,7 @@ class Mongo:
         :param cursor:
         """
         for doc in cursor:
-            print str(doc)
+            print(str(doc))
 
     def drop_collection(self):
         """

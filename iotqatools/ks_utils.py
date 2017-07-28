@@ -979,8 +979,8 @@ class KeystoneUtils(object):
             else:
                 return True
         except Exception as e:
-            print "This is an example of platform config attribute"
-            print """
+            print("This is an example of platform config attribute")
+            print(""")
                 platform = {
                 'GlobalServiceAdmin': {
                     'user': 'admin',

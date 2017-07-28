@@ -103,7 +103,7 @@ class Gw_Measures_Utils(object):
             url += '&ip='
             url += field["ip"]
 
-        print 'url: ' + url
+        print('url: ' + url)
         data = self.getMeasure(measure_type, measures, field)
         res = requests.post(url,headers = {'content-type': 'text/plain'},data=data)
 
@@ -126,7 +126,7 @@ class Gw_Measures_Utils(object):
 
     def getMeasure(self, protocol, measures, field={}):
         result = ""
-        print measures
+        print(measures)
         for measure in measures:
             # Format type UL or UL2
             if protocol == "UL":
@@ -150,7 +150,7 @@ class Gw_Measures_Utils(object):
                 result = str(measure)
         if "UL" in protocol:
             result = result.rpartition("#")[0]  # delete the last "#"
-        print result
+        print(result)
         # Replace specials words and characters
         replaces = {
             "True": "1",
@@ -169,7 +169,7 @@ class Gw_Measures_Utils(object):
 
     def sendRegister(self, apikey, device, asset, model, phenomena):
         url = self.getUrl('RegLight', apikey, device)
-        print 'url: ' + url
+        print('url: ' + url)
         uom_id = 1
         result = "<rs>"
         result += "<id href=\"1:1\">" + device + "</id>"
@@ -177,7 +177,7 @@ class Gw_Measures_Utils(object):
         result += "<param name=\"ModelName\">"
         result += "<text>" + model + "</text>"
         result += "</param>"
-        print phenomena
+        print(phenomena)
         for phenom in phenomena:
             result += "<what href=\"" + str(phenom.get("href", "")) + "\" id=\"" + str(phenom.get("alias", "")) + "\"/>"
         for phenom in phenomena:
@@ -190,7 +190,7 @@ class Gw_Measures_Utils(object):
             uom_id += 1
             result += "</data>"
         result += "</rs>"
-        print result
+        print(result)
         res = requests.post(url, data=result)
 
         #log request
@@ -210,7 +210,7 @@ class Gw_Measures_Utils(object):
         url = self.getUrl(measure_type, apikey, idDevice)
         if ip:
             url += "&ip=" + ip
-        print 'url: ' + url
+        print('url: ' + url)
         res = requests.get(url)
 
         #log request
@@ -227,7 +227,7 @@ class Gw_Measures_Utils(object):
 
     def SendCmdResponse(self, measure_type, apikey, idDevice, command, response):
         url = self.getUrl(measure_type, apikey, idDevice, command)
-        print 'url: ' + url
+        print('url: ' + url)
         data = str(command) + "|" + str(response)
         res = requests.post(url, data=data)
 

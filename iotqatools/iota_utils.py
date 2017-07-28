@@ -505,7 +505,7 @@ class Rest_Utils_IoTA(object):
                 headers[self.srv_path_header] = '/'
         else:
             headers[self.srv_path_header] = '/'
-        print params
+        print(params)
         req = self.put_service('', json, headers, params)
         return req
 

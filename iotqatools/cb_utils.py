@@ -1721,7 +1721,7 @@ class CbNgsi9Utils():
         except RequestException as e:
             PqaTools.log_requestAndResponse(url=url, headers=headers, data=payload, comp='CB', method=method)
             assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
-        print response
+        print(response)
 
         # Log data
         PqaTools.log_fullRequest(comp='CB', response=response, params=parameters)
@@ -2328,7 +2328,7 @@ class CBUtils(object):
         """
         # show info received
         if self.verbosity >= 2:
-            print "###> INPUT > {}".format(template_data)
+            print("###> INPUT > {}".format(template_data))
 
         # set the service header  id
         headers = dict(self.default_headers)
@@ -2410,8 +2410,8 @@ if __name__ == '__main__':
     ce = ContextElements()
     ce.add_context_element('Room1', 'Room', attr)
     payload = PayloadUtils.build_standard_entity_creation_payload(ce)
-    print payload
+    print(payload)
     resp = cb.standard_entity_creation(payload)
-    print resp
-    print resp.text
-    print resp.headers
+    print(resp)
+    print(resp.text)
+    print(resp.headers)

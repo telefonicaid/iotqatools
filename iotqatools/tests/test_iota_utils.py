@@ -92,14 +92,14 @@ class IOTAUtilsTest(unittest.TestCase):
    def test_version(self, mock_requests):
        version="1.0.0"
        #version = self.iota.version()
-       print "### Test ---> Version: " + version
+       print("### Test ---> Version: " + version)
        #assert_in("Welcome to IoTAgents", version.content, msg="bad data returned to query version to IOTA")
        #assert_in("identifier:IoTPlatform:8080", version.content, msg="bad data returned to query version to CB")
 
    @mock.patch('requests.post', side_effect=mocked_requests_post)
    def tes_bad_create_service(self, mock_requests):
        res = self.iota.create_service(service_name="kk<xx>", protocol="bad<protoxol>" )
-       print "### Test ---> Bade service name: " + res.content
+       print("### Test ---> Bade service name: " + res.content)
        eq_(400, res.status_code, msg="version to CB does not return 200")
        assert_in("a service string must not be longer than 50 characters and may only contain underscores and alphanumeric characters", res.content, msg="bad data returned to bad sewrvice name to IOTA")
 

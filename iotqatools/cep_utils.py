@@ -222,8 +222,8 @@ class CEP:
 
         cep_payload = cep_payload.replace("'", '"')
         url = self.default_endpoint + self.path
-        print url
-        print json.dumps(yaml.load(cep_payload))
+        print(url)
+        print(json.dumps(yaml.load(cep_payload)))
         response = requests.post(url, data=json.dumps(yaml.load(cep_payload)), headers=headers, verify=False)
         assert response.status_code == 201, 'ERROR {}, the rule {} cannot be created. {}'.format(response.status_code,
                                                                                                  rule_name,

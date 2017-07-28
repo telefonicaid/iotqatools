@@ -145,10 +145,10 @@ def show_times(init_value):
     shows the time duration of the entire test
     :param init_value: initial time
     """
-    print "**************************************************************"
-    print "Initial (date & time): " + str(init_value)
-    print "Final   (date & time): " + str(time.strftime("%c"))
-    print "**************************************************************"
+    print("**************************************************************")
+    print("Initial (date & time): " + str(init_value))
+    print("Final   (date & time): " + str(time.strftime("%c")))
+    print("**************************************************************")
 
 
 def generate_timestamp(**kwargs):
