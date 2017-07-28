@@ -2238,6 +2238,17 @@ class CBUtils(object):
         response = self.__send_request('post', url, headers, json.loads(payload))
         return response
 
+    @staticmethod
+    def __replace_quotes(text):
+        # format avoid urlencoding due to not array inputs
+        return (
+                text
+                .replace("'", '"')
+                .replace("u&quot;", '"')
+                .replace("&quot;", '"')
+                .replace("&#x27;", '"')
+                .replace("&#x22;", '"'))
+
     def entity_append(self, service, entity_data, subservice=''):
         """
         Create if not exist a CB entity or update it
@@ -2265,10 +2276,7 @@ class CBUtils(object):
                                              'ent_attributes': entity_data['attributes'],
                                              'action_mode': 'APPEND'})
 
-        # format avoid urlencoding due to not array inputs
-        payload = payload.replace("'", '"')
-        payload = payload.replace("u&quot;", '"')
-        payload = payload.replace("&quot;", '"')
+        payload = self.__replace_quotes(payload)
 
         # send the request for the subscription
         response = self.__send_request('post', url, headers, json.loads(payload))
@@ -2301,10 +2309,7 @@ class CBUtils(object):
                                              'ent_attributes': entity_data['attributes'],
                                              'action_mode': 'APPEND'})
 
-        # format avoid urlencoding due to not array inputs
-        payload = payload.replace("'", '"')
-        payload = payload.replace("u&quot;", '"')
-        payload = payload.replace("&quot;", '"')
+        payload = self.__replace_quotes(payload)
 
         # send the request for the subscription
         response = self.__send_request('post', url, headers, json.loads(payload))
@@ -2365,7 +2370,7 @@ class CBUtils(object):
                                    'subs_type': template_data['subs_type'],
                                    'ent_att_notif': template_data['ent_att_notif'],
                                    'ent_att_cond': template_data['ent_att_cond']})
-        payload = payload.replace("'", '"')
+        payload = self.__replace_quotes(payload)
         # send the request for the subscription
         return self.__send_request('post', url, headers, json.loads(payload), verifySSL)
 
