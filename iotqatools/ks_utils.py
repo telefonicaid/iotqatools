@@ -951,7 +951,47 @@ class KeystoneUtils(object):
         except Exception as e:
             raise NameError('Therer is a problem with the connection with keystone: %s' % e.message)
 
+    @staticmethod
+    def get_service_id(username, password, service, ip, port='5000'):
+        """
+        Get a token of a keystone in the ip:port. the token cuold be scoped by domain or by domain + project
+        :param ip:
+        :param username:
+        :param password:
+        :param service:
+        :param subservice:
+        :param port:
+        :return: a response object
+        """
+        header = {"Content-Type": "application/json"}
+        payload = {
+            "auth": {
+                "identity": {
+                    "methods": [
+                        "password"
+                    ],
+                    "password": {
+                        "user": {
+                            "domain": {
+                                "name": service
+                            },
+                            "name": username,
+                            "password": password
+                        }
+                    }
+                }
+            }
+        }
+        try:
+            response = requests.post('http://%s:%s/v3/auth/tokens' % (ip, port), headers=header, data=json.dumps(payload))
+            if response.status_code != 201:
+                return response
+            else:
+                json_body_response = json.loads(response.content)
+                return json_body_response['token']['user']['domain']['id']
 
+        except Exception as e:
+            raise NameError('Therer is a problem with the connection with keystone: %s' % e.message)
 
     @staticmethod
     def check_platform_config(platform):

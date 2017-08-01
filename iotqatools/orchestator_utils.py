@@ -29,7 +29,7 @@ import requests
 
 from iotqatools.iot_tools import get_logger
 from iotqatools.iot_tools import PqaTools
-
+from iotqatools.ks_utils import KeystoneUtils
 
 class Orchestrator(object):
     """
@@ -41,6 +41,7 @@ class Orchestrator(object):
 
     def __init__(self, host='127.0.0.1', port='8084', protocol='http'):
         self.url = '%s://%s:%s' % (protocol, host, port)
+        self.ip = host
 
     def send(self, method, url, headers=None, payload=None, query=None):
         """
@@ -70,6 +71,7 @@ class Orchestrator(object):
                         admin_domain_user,
                         admin_domain_password):
 
+        # Try get service_id as cloud_admin
         data = {
             "DOMAIN_NAME": "admin_domain",
             "SERVICE_ADMIN_USER": admin_domain_user,
@@ -84,11 +86,21 @@ class Orchestrator(object):
         response = self.send('get', url_to_send, headers=headers,
                              payload=json_payload)
 
-        # TODO: get service_name id
         json_response = json.loads(response.content)
-        for domain in json_response['domains']:
-            if domain['name'] == service_name:
-                return domain['id']
+        if 'domains' in json_response:
+            for domain in json_response['domains']:
+                if domain['name'] == service_name:
+                    return domain['id']
+        else:
+            # Try to get service_id as service admin by token
+            service_id = KeystoneUtils.get_service_id(admin_domain_user,
+                                                      admin_domain_password,
+                                                      service_name,
+                                                      ip=self.ip,
+                                                      port=5001)
+            if not isinstance(service_id, requests.Response):
+                return service_id
+
         return None
 
     def create_new_service(self,
