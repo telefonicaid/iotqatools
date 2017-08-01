@@ -954,7 +954,7 @@ class KeystoneUtils(object):
     @staticmethod
     def get_service_id(username, password, service, ip, port='5000'):
         """
-        Get a token of a keystone in the ip:port. the token cuold be scoped by domain or by domain + project
+        Get service id  of a keystone service in the ip:port.
         :param ip:
         :param username:
         :param password:
