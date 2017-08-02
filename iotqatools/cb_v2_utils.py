@@ -163,6 +163,7 @@ class CB:
            - **update_an_attribute_by_id_and_by_name**: update an attribute or an attribute value by ID and attribute name if it exists. Queries parameters use a tabla of data.
            - **update_an_attribute_by_id_and_by_name_in_raw_mode**: update an attribute by ID and attribute name if it exists in raw mode. It is similar to "update_an_attribute_by_id_and_by_name" operation.
            - **delete_entities_by_id**: delete entities or attribute
+           - **delete_all_entities**: delete all entities in service/subservice
 
         ### Subscription:
            - **properties_to_subcription**: definition of properties to subscription
@@ -171,6 +172,7 @@ class CB:
            - **get_all_subscriptions**: get all subscriptions (GET /v2/subscriptions)
            - **get_subscription_by_id**: get a subscription by id (GET /v2/subscriptions/<subscriptionId>)
            - **delete_subscription_by_id**: delete a subscription by id (DELETE /v2/subscriptions/<subscriptionId>)
+           - **delete_all_subscriptions**: delete all subscriptions in service/subservice
 
         ### Batch operations:
            - **batch_op_entities_properties**: define a entity to update in a single batch operation
@@ -452,6 +454,7 @@ class CB:
         resp = self.__send_request(PUT, LOG_LEVEL, parameters=queries_params)
         return resp
 
+
     #  -----------------  Private methods ---------------------------
 
     # headers
@@ -519,8 +522,15 @@ class CB:
             __logger__.debug("----------------- Request ---------------------------------\n%s" % self.request_string)
             __logger__.debug("-----------------------------------------------------------")
         url = "%s/%s" % (self.cb_url, path)
+
+        _headers = dict(headers)
+        if method == GET or method == DELETE:
+            # GET and DELETE don't include payload so they must not include Content-Type headers in CB interactions.
+            # Either PEP-CB or CB itself will react badly to this header in GET/DELETE case
+            _headers.pop('Content-Type', None)
+
         try:
-            resp = requests.request(method=method, url=url, headers=headers, data=payload, params=parameters, verify=False)
+            resp = requests.request(method=method, url=url, headers=_headers, data=payload, params=parameters, verify=False)
         except Exception, e:
             assert False, "ERROR  - send request \n     - url: %s\n    - %s" % (url, str(e))
         if show:
@@ -1640,25 +1650,21 @@ class CB:
         return resp
 
     # delete entity
-    def delete_entities_by_id(self, context, entity_id, attribute_name=None):
+    def delete_entities_by_id(self, context, entity_id, entity_type=None):
         """
         delete entities or attribute
         :request -> DELETE  /v2/entities/<entity_id>
-                attribute_name == None:  DELETE  /v2/entities/<entity_id>
-                attribute_name != None:  DELETE  /v2/entities/<entity_id>/attrs/<attr_name>
         :payload --> No
         :query parameters --> No
         :param entity_id: entity id used to delete
-        :param attribute_name: attribute_name used to delete only one attribute, if it is None is not used.
+        :param entity_type: entity type to be used to delete. if it is None is not used
         :return list
         """
-        attribute_url = EMPTY
+        type_query = EMPTY
 
          # The same value from create request
         if entity_id != THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
             self.entity_context[ENTITIES_ID] = entity_id
-        if attribute_name != THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST:
-            self.entity_context[ATTRIBUTES_NAME] = attribute_name
 
         # Random values
         self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
@@ -1674,22 +1680,33 @@ class CB:
         for item in self.entities_parameters:
             __logger__.debug("Queries parameters: %s=%s" % (item, self.entities_parameters[item]))
 
-        if "type" in self.entities_parameters:
-            self.entity_type_to_request = self.entities_parameters["type"]
-
-        if attribute_name is not None:
-            attribute_url = "/attrs/%s" % self.entity_context[ATTRIBUTES_NAME]
-            # used to verify if the attribute deleted is the expected
-            self.attribute_name_to_request = mapping_quotes(self.entity_context[ATTRIBUTES_NAME])
-
+        if entity_type is not None:
+            type_query = "?type=%s" % entity_type
 
         # requests
-        resp = self.__send_request(DELETE, "%s/%s%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID], attribute_url),
+        resp = self.__send_request(DELETE, "%s/%s%s" % (V2_ENTITIES, self.entity_context[ENTITIES_ID], type_query),
                                    headers=self.headers, parameters=self.entities_parameters)
         self.action_type = ACTION_TYPE_DELETE
         return resp
 
-        # ------- get CB values ------
+
+    def delete_all_entities(self, context):
+        """
+        delete all entities in the given service/subservice, through CB NGSIv2 API (i.e. avoiding
+        direct access to MongoDB database)
+        :param: context object
+        """
+
+        resp = self.__send_request(GET, V2_ENTITIES, headers=self.headers)
+        assert resp.status_code == 200, " ERROR - status code in get all entities request. \n " \
+                                        " status code: %s \n " \
+                                        " body: %s" % (resp.status_code, resp.text)
+        __logger__.info(" -- status code is 200 OK in get all entities request")
+
+        for entity in json.loads(resp.text):
+            __logger__.info(" -- delete entity <%s>" % entity['id'])
+            self.delete_entities_by_id(context, entity['id'], entity['type'])
+
 
     #  -----------  subscriptions -------------------
 
@@ -1986,6 +2003,24 @@ class CB:
         """
         __logger__.info("subscriptionId: %s" % subscription_id)
         return self.__send_request(DELETE, "%s/%s" % (V2_SUBSCRIPTIONS, subscription_id),headers=self.headers)
+
+    def delete_all_subscriptions(self, context):
+        """
+        delete all subscriptions in the given service/subservice, through CB NGSIv2 API (i.e. avoiding
+        direct access to MongoDB database)
+        :param: context object
+        """
+
+        resp = self.__send_request(GET, V2_SUBSCRIPTIONS, headers=self.headers)
+        assert resp.status_code == 200, " ERROR - status code in get all subscriptions request. \n " \
+                                        " status code: %s \n " \
+                                        " body: %s" % (resp.status_code, resp.text)
+        __logger__.info(" -- status code is 200 OK in get all subscriptions request")
+
+        for sub in json.loads(resp.text):
+            __logger__.info(" -- delete subscription <%s>" % sub['id'])
+            self.delete_subscription_by_id(context, sub['id'])
+
 
     #  --------- Batch operations ---------
 
