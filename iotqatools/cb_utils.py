@@ -34,6 +34,12 @@ from iotqatools.iot_logger import get_logger
 from requests.exceptions import RequestException
 from iotqatools.iot_tools import PqaTools
 
+try:
+    unicode()
+except NameError:
+    unicode = str
+    str = bytes
+
 
 # Utilities
 def check_valid_json(payload):
