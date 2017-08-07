@@ -2019,7 +2019,7 @@ class CB:
 
         for sub in json.loads(resp.text):
             __logger__.info(" -- delete subscription <%s>" % sub['id'])
-            self.delete_subscription_by_id(context, sub['id'])
+            self.delete_subscription_by_id(sub['id'])
 
 
     #  --------- Batch operations ---------
