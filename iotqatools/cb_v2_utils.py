@@ -398,9 +398,10 @@ class CB:
               allowed
         :param context: context variable with headers
         """
-        for row in context.table:
-            self.headers[row[PARAMETER]] = row[VALUE]
-        self.__update_headers()
+        if context.table is not None:
+            for row in context.table:
+                self.headers[row[PARAMETER]] = row[VALUE]
+            self.__update_headers()
 
     def modification_headers(self, context, prev):
         """
