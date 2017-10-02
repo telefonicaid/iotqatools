@@ -154,13 +154,14 @@ class CB:
            - **properties_to_entities**: definition of properties to entities
            - **create_entities**: create N entities in modes diferents (POST /v2/entities/). the prefixes use a table of data.
            - **create_entity_raw**: create an entity with an attribute and raw values (compound, vector, boolean, integer, etc) in differents modes. It is similar to "create_entities" operation.
-           - **list_all_entities**: list all entities (GET /v2/entities/). Queries parameters use a tabla of data.
-           - **list_an_entity_by_id**: get an entity by ID (GET v2/entities/<entity_id>). Queries parameters use a tabla of data.
-           - **list_an_attribute_by_id**: get an attribute or an attribute value by ID. Queries parameters use a tabla of data.
-           - **get_entity_types**: get entity types (GET /v2/types). Queries parameters use a tabla of data.
-           - **update_or_append_an_attribute_by_id**: update or append an attribute by id (POST, PATCH, PUT /v2/entities/<entity_id>). Queries parameters use a tabla of data.
+           - **list_all_entities**: list all entities (GET /v2/entities/). Queries parameters use a table of data.
+           - **list_an_entity_by_id**: get an entity by ID (GET v2/entities/<entity_id>). Queries parameters use a table of data.
+           - **list_an_entity_by_id_and_type**: get an entity by ID and type (GET v2/entities/<entity_id>?type=<entity_type>). Queries parameters use a table of data.
+           - **list_an_attribute_by_id_and_type**: get an attribute or an attribute value by ID and type ((GET v2/entities/<entity_id>/attrs/{name}?type=<entity_type>)). Queries parameters use a table of data.
+           - **get_entity_types**: get entity types (GET /v2/types). Queries parameters use a table of data.
+           - **update_or_append_an_attribute_by_id**: update or append an attribute by id (POST, PATCH, PUT /v2/entities/<entity_id>). Queries parameters use a table of data.
            - **update_or_append_an_attribute_in_raw_by_id**: update or append an entity with raw value per special cases (compound, vector, boolean, integer, etc). It is similar to "update_or_append_an_attribute_by_id" operation.
-           - **update_an_attribute_by_id_and_by_name**: update an attribute or an attribute value by ID and attribute name if it exists. Queries parameters use a tabla of data.
+           - **update_an_attribute_by_id_and_by_name**: update an attribute or an attribute value by ID and attribute name if it exists. Queries parameters use a table of data.
            - **update_an_attribute_by_id_and_by_name_in_raw_mode**: update an attribute by ID and attribute name if it exists in raw mode. It is similar to "update_an_attribute_by_id_and_by_name" operation.
            - **delete_entities_by_id**: delete entities or attribute
            - **delete_all_entities**: delete all entities in service/subservice
@@ -1274,6 +1275,7 @@ class CB:
         | geometry  | circle;radius:4000    | The first token is the shape of the geometry, the rest of the tokens (if any) depends on the shape
         | coords    | 41.3763726, 2.1864475 | List of coordinates (separated by ;)
         | attrs     | temperature           | Comma-separated list of attribute names
+        | metadata  | md1,md2               | Comma-separated list of metadata names
         | options   | count                 | The total number of entities is returned (X-Total-Count)
         | options   | canonical             | The response payload uses the "canonical form"
         :return: http response list
@@ -1333,14 +1335,45 @@ class CB:
                                    parameters=self.entities_parameters)
         return resp
 
-    def list_an_attribute_by_id(self, context, attribute_name, entity_id, value=EMPTY):
+    # FIXME: lot of code duplicated in list_an_entity_by_id(...). Try to unify
+    def list_an_entity_by_id_and_type(self, context, entity_id, entity_type, attrs=EMPTY):
+        """
+        get an entity by ID or get attributes in an entity by ID
+          | parameter | value       |
+          | attrs     | temperature |
+        :requests -> GET v2/entities/<entity_id>?type=<entity_type>
+                     GET v2/entities/<entity_id>/attrs?type=<entity_type>
+        :payload --> No
+        :query parameters --> Yes
+        Hint: if we need " char, use \' and it will be replaced (mappping_quotes)
+        :return: http response
+        """
+        self.entity_id_to_request = mapping_quotes(entity_id)  # used to verify if the entity returned is the expected
+        if context.table is not None:
+            for row in context.table:
+                self.entities_parameters[row[PARAMETER]] = row[VALUE]
+
+        self.entities_parameters['type'] = entity_type
+
+        # log queries parameters
+        __logger__.debug("entity_id: %s" % self.entity_id_to_request)
+        for item in self.entities_parameters:
+            __logger__.debug("Queries parameters: %s=%s" % (item, self.entities_parameters[item]))
+
+        resp = self.__send_request(GET, "%s/%s%s" % (V2_ENTITIES, self.entity_id_to_request, attrs), headers=self.headers,
+                                   parameters=self.entities_parameters)
+        return resp
+
+
+    def list_an_attribute_by_id_and_type(self, context, attribute_name, entity_id, entity_type, value=EMPTY):
         """
         get an attribute or an attribute value by ID
-        :request --> GET v2/entities/<entity_id>/attrs/<attribute_name>/
-                 --> GET v2/entities/<entity_id>/attrs/<attribute_name>/value
+        :request --> GET v2/entities/<entity_id>/attrs/<attribute_name>/?type=<entity_type>
+                 --> GET v2/entities/<entity_id>/attrs/<attribute_name>/value?type=<entity_type>
         :payload --> No
         :query parameters --> No
         :param entity_id: entity id used to get
+        :param entity_type: entity type used to get
         :param attribute_name: attribute to get
         :value: if you would like get full attribute use default value, but if get attribute value, the value is "value"
         :return http response
@@ -1375,6 +1408,8 @@ class CB:
         # log messages
         __logger__.debug("entity_id: %s" % self.entity_id_to_request)
         __logger__.debug("attribute_name: %s" % self.attribute_name_to_request)
+
+        self.entities_parameters['type'] = entity_type
 
         resp = self.__send_request(GET, "%s/%s/attrs/%s/%s" % (
             V2_ENTITIES, self.entity_id_to_request, self.attribute_name_to_request, value),
