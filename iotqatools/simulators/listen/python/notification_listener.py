@@ -1,221 +1,260 @@
-# -*- coding: utf-8 -*-
-"""
-Copyright 2016 Telefonica Investigación y Desarrollo, S.A.U
-
-This file is part of telefonica-iot-qa-tools
-
-iot-qa-tools is free software: you can redistribute it and/or
-modify it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the License,
-or (at your option) any later version.
-
-iot-qa-tools is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public
-License along with iot-qa-tools.
-If not, seehttp://www.gnu.org/licenses/.
-
-For those usages not covered by the GNU Affero General Public License
-please contact with::[iot_support@tid.es]
-"""
-__author__ = 'Iván Arias León (ivan dot ariasleon at telefonica dot com)'
-
-import sys
-import json
-import BaseHTTPServer
-import ssl
-import time
-import thread
-
-
-# variables
-default_payload = json.dumps({"msg":"without notification received"})
-unknown_path = json.dumps({"error":"unknown path: %s"})
-last_url = ""
-last_headers = {}
-last_payload = default_payload
-
-
-def get_last_data(s):
-    """
-    Store the request data (method, url, path, headers, payload)
-    """
-    global last_url, last_headers, last_payload
-    # last url
-    last_url = "%s - %s://%s%s" % (s.command, s.request_version.lower().split("/")[0], s.headers["host"], s.path)
-
-    # last headers
-    for item in s.headers:
-        last_headers[item] = s.headers[item]
-
-    # last payload
-    length = int(s.headers["Content-Length"])
-    if length > 0:
-        last_payload = str(s.rfile.read(length))
-
-def show_last_data():
-    """
-    display all data from request in log
-    :return: string
-    """
-    global last_url, last_headers, last_payload, VERBOSE, __logger__
-    if VERBOSE.lower() == "true":
-        print("Request data received in listener:\n Url: %s\n Headers: %s\n Payload: %s\n" % (last_url, str(last_headers), last_payload))
-
-
-
-class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    """
-    HTTP server
-
-    This http server is used to store the last request of all POST (in the future PUT, DELETE, PATCH, HEAD) requests,
-    returns the url, headers, and the payload with the GET /last_notification request (used in CB to notifications)
-    """
-    def do_POST(s):
-        """
-        POST request
-        """
-        global last_headers, last_payload, last_url, get_last_data, show_last_data
-        s.send_response(200)
-        get_last_data(s)
-        headers_prefix = u'last'
-        for item in last_headers:
-            s.send_header("%s-%s" % (headers_prefix, item), last_headers[item])
-        s.send_header("%s-url" % headers_prefix, "%s" % (last_url))
-
-        show_last_data()   # verify VERBOSE global variable
-
-        s.end_headers()
-        s.wfile.write(last_payload)
-
-    def do_PUT(s):
-        """
-        PUT request
-        """
-        global last_headers, last_payload, last_url, get_last_data, show_last_data
-        s.send_response(200)
-        get_last_data(s)
-        headers_prefix = u'last'
-        for item in last_headers:
-            s.send_header("%s-%s" % (headers_prefix, item), last_headers[item])
-        s.send_header("%s-url" % headers_prefix, "%s" % (last_url))
-
-        show_last_data()   # verify VERBOSE global variable
-
-        s.end_headers()
-        s.wfile.write(last_payload)
-
-    def do_DELETE(s):
-        """
-        PUT request
-        """
-        global last_headers, last_payload, last_url, get_last_data, show_last_data
-        s.send_response(200)
-        get_last_data(s)
-        headers_prefix = u'last'
-        for item in last_headers:
-            s.send_header("%s-%s" % (headers_prefix, item), last_headers[item])
-        s.send_header("%s-url" % headers_prefix, "%s" % (last_url))
-
-        show_last_data()   # verify VERBOSE global variable
-
-        s.end_headers()
-        s.wfile.write(last_payload)
-
-    def do_PATCH(s):
-        """
-        PUT request
-        """
-        global last_headers, last_payload, last_url, get_last_data, show_last_data
-        s.send_response(200)
-        get_last_data(s)
-        headers_prefix = u'last'
-        for item in last_headers:
-            s.send_header("%s-%s" % (headers_prefix, item), last_headers[item])
-        s.send_header("%s-url" % headers_prefix, "%s" % (last_url))
-
-        show_last_data()   # verify VERBOSE global variable
-
-        s.end_headers()
-        s.wfile.write(last_payload)
-
-    def do_GET(s):
-        """
-        GET request
-        """
-        global last_headers, last_payload, unknown_path, last_url
-        s.send_response(200)
-        if s.path == "/last_notification":
-            headers_prefix = u'last'
-            for item in last_headers:
-                s.send_header("%s-%s" % (headers_prefix, item), last_headers[item])
-            s.send_header("%s-url" % headers_prefix, "%s" % last_url)
-        elif s.path == "/reset":
-            last_url = ""
-            last_headers = {}
-            last_payload = default_payload
-        else:
-             last_payload = unknown_path % s.path
-
-        show_last_data()   # verify VERBOSE global variable
-
-        s.end_headers()
-        s.wfile.write(last_payload)
-
-def init_server(port, https):
-    """
-    Function to init the server
-
-    :param port: the port to use for the server
-    :param https: True if HTTPS has to be used, false otherwise
-
-    NOTE: This function relies in several global variables, which  probably it is not a good practise, but it suffices
-    """
-
-    server_class = BaseHTTPServer.HTTPServer
-    httpd = server_class((ip_bind, port), MyHandler)
-
-    if https:
-        # Based on https://anvileight.com/blog/2016/03/20/simple-http-server-with-python/
-        httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=key_file, certfile=cert_file, server_side=True)
-        print("HTTPS Server Started using the %d port" % port)
-    else:
-        print("HTTP Server Started using the %d port" % port)
-
-    httpd.serve_forever()
-    httpd.server_close()   # This line is never executed, but we add here for completeness ;)
-
-
-port = sys.argv[1] if (len(sys.argv) >= 2) else "1044"
-VERBOSE = sys.argv[2] if (len(sys.argv) >= 3) else "True"
-key_file = sys.argv[3] if (len(sys.argv) >= 4) else None
-cert_file = sys.argv[4] if (len(sys.argv) >= 5) else None
-
-ip_bind = "0.0.0.0"
-print "Usage:\n"\
-      "    python notification_listener.py <port> <debug> <key_file> <cert_file>\n" \
-      "      - port: server port used [OPTIONAL] (default: 1044)\n" \
-      "      - debug: show request data by console (boolean) [OPTIONAL] (default: True)\n" \
-      "      - key_file: path to key file (HTTPS) [OPTIONAL] (default: None)\n" \
-      "      - cert_file: path to cert file (HTTPS) [OPTIONAL] (default: None)\n\n"
-print " ******* CRTL - C to stop the server ******\n\n"
-
-# We have to run each server in a separate thread, see https://stackoverflow.com/questions/44651542/
+#!/usr/bin/python
+# -*- coding: latin-1 -*-
+# Copyright 2017 Telefonica Investigacion y Desarrollo, S.A.U
 #
-# HTTPS server runs in HTTP port + 10000. Alternativelly, we could add a new parameter but that makes
-# more complex the CLI.
-thread.start_new_thread(init_server, (int(port), False, ))
-if key_file is not None and cert_file is not None:
-    thread.start_new_thread(init_server, (int(port) + 10000, True, ))
+# This file is part of telefonica-iot-qa-tools.
+#
+# telefonica-iot-qa-tools is free software: you can redistribute it and/or
+# modify it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# telefonica-iot-qa-tools is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+# General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with telefonica-iot-qa-tools. If not, see http://www.gnu.org/licenses/.
+#
+# For those usages not covered by this license please contact with
+# iot_support at tid dot es
+
+__author__ = 'fermin'
+
+# Food for thought: we assume that HTTP requests have always Fiware-Service and Fiware-ServicePath
+# headers. We take them without any checking, e.g.:
+#
+#   serv = request.headers['fiware-service']
+#   subserv = request.headers['fiware-servicepath']
+#
+# It seems that for the usage of this program in the context of e2e context is ok. However,
+# take note of this if used in other context where this condition can not be assured
+
+from OpenSSL import SSL
+from flask import Flask, request, Response, jsonify
+from getopt import getopt, GetoptError
+import sys
+import os
+
+def usage_and_exit(msg):
+    """
+    Print usage message and exit"
+
+    :param msg: optional error message to print
+    """
+
+    if msg != '':
+        print msg
+        print
+
+    usage()
+    sys.exit(1)
+
+
+def usage():
+    """
+    Print usage message
+    """
+
+    print 'Usage: %s --host <host> --port <port> --url <server url> -v -u' % os.path.basename(__file__)
+    print ''
+    print 'Parameters:'
+    print "  --host <host>: host to use (default is '0.0.0.0')"
+    print "  --port <port>: port to use (default is 1028)"
+    print "  --url <server url>: server URL to use (default is /accumulate)"
+    print "  --https: start in https"
+    print "  --key: key file (only used if https is enabled)"
+    print "  --cert: cert file (only used if https is enabled)"
+    print "  -v: verbose mode"
+    print "  -u: print this usage message"
+
+
+def store(d, notif, serv, subserv):
+    """
+    Stores notification into notifications dictionary, creating intermediate sub-dicts if needed
+
+    :param d: dictionary to store notification
+    :param notif: notification store
+    :param serv: service
+    :param subserv: subservice
+    """
+
+    # Check service existence in dictionary, creating if needed
+    if serv not in d:
+        d[serv] = {}
+
+    # Check subservice existence in dictionary, creating if needed
+    if subserv not in d[serv]:
+        d[serv][subserv] = []
+
+    d[serv][subserv].append(notif)
+
+
+def get_last(d, serv, subserv):
+    """
+    Return last received notification per service and subservice
+
+    :param d: dictionary whith stores notifications
+    :param serv: service
+    :param subserv: subservice
+    :return the received notification or empty string if serv/subserv is not found
+    """
+
+    if serv not in d:
+        return ''
+
+    if subserv not in d[serv]:
+        return ''
+
+    l = len(d[serv][subserv])
+
+    return d[serv][subserv][l - 1]
+
+
+def get_count(d, serv, subserv):
+    """
+    Return number of received notifications per service and subservice
+
+    :param d: dictionary whith stores notifications
+    :param serv: service
+    :param subserv: subservice
+    :return the number of received notification or 0 if serv/subserv is not found
+    """
+
+    if serv not in d:
+        return 0
+
+    if subserv not in d[serv]:
+        return 0
+
+    return len(d[serv][subserv])
+
+
+# Default arguments
+port       = 10031
+host       = '0.0.0.0'
+server_url = '/notify'
+verbose    = 0
+https      = False
+key_file   = None
+cert_file  = None
 
 try:
-    while 1:
-        time.sleep(10)
-except KeyboardInterrupt:
-   print("Closing listener...")
-   exit(0)
+    opts, args = getopt(sys.argv[1:], 'vu', ['host=', 'port=', 'url=', 'https', 'key=', 'cert=' ])
+except GetoptError:
+    usage_and_exit('wrong parameter')
 
+for opt, arg in opts:
+    if opt == '-u':
+        usage()
+        sys.exit(0)
+    elif opt == '--host':
+        host = arg
+    elif opt == '--url':
+        server_url = arg
+    elif opt == '--port':
+        try:
+            port = int(arg)
+        except ValueError:
+            usage_and_exit('port parameter must be an integer')
+    elif opt == '-v':
+        verbose = 1
+    elif opt == '--https':
+        https = True
+    elif opt == '--key':
+        key_file = arg
+    elif opt == '--cert':
+        cert_file = arg
+    else:
+        usage_and_exit()
 
+if https:
+    if key_file is None or cert_file is None:
+        print "if --https is used then you have to provide --key and --cert"
+        os.exit(1)
+
+if verbose:
+    print "verbose mode is on"
+    print "port: " + str(port)
+    print "host: " + str(host)
+    print "server_url: " + str(server_url)
+    print "https: " + str(https)
+    print "key file: " + str(key_file)
+    print "cert file: " + str(cert_file)
+
+app = Flask(__name__)
+
+@app.route(server_url, methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
+@app.route(server_url + '/<path:path>', methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
+def process_notification(path=None):
+
+    global notif_dict
+
+    serv = request.headers['fiware-service']
+    subserv = request.headers['fiware-servicepath']
+
+    notif = {
+        'verb': request.method,
+        'url': request.base_url,
+        'headers': dict(request.headers),
+        'query_string': request.query_string,
+        'payload': request.data
+    }
+
+    store(notif_dict, notif, serv, subserv)
+
+    return Response(status=200)
+
+@app.route('/last_notification', methods=['GET'])
+def last_notification():
+
+    global notif_dict
+
+    serv = request.headers['fiware-service']
+    subserv = request.headers['fiware-servicepath']
+
+    s = get_last(notif_dict, serv, subserv)
+
+    return jsonify(s)
+
+@app.route('/count', methods=['GET'])
+def count():
+    global notif_dict
+
+    serv = request.headers['fiware-service']
+    subserv = request.headers['fiware-servicepath']
+
+    return str(get_count(notif_dict, serv, subserv))
+
+@app.route('/reset', methods=['GET'])
+def reset():
+    global notif_dict
+    notif_dict = {}
+    return Response(status=200)
+
+# This is the key dictionary to store all received notifications. It is a double-key structure,
+# first key is service, second key is service which element is a notifications list. Each
+# item in this list includes the following fields:
+#
+# {
+#   "verb": "...",
+#   "url": "...",
+#   "query_string": "...",
+#   "headers: {
+#      <key-values for headers>
+#   },
+#   "payload": as text
+# }
+#
+# Note payload is not enough, given that in custom notification tests we may need to check more things
+notif_dict = {}
+
+if __name__ == '__main__':
+    if (https):
+      context = SSL.Context(SSL.SSLv23_METHOD)
+      context.use_privatekey_file(key_file)
+      context.use_certificate_file(cert_file)
+      app.run(host=host, port=port, debug=False, ssl_context=context)
+    else:
+      app.run(host=host, port=port, debug=True)

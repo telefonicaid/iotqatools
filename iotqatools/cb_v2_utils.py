@@ -118,6 +118,7 @@ MAX_LENGTH_ALLOWED_AND_ELEVEN_LEVELS = u'max length allowed and eleven levels'
 THE_SAME_VALUE_OF_THE_PREVIOUS_REQUEST = u'the same value of the previous request'
 REPLACE_HOST = u'replace_host'
 REPLACE_PORT = u'replace_port'
+REPLACE_PORT_HTTPS = u'replace_https_port'
 CHARS_ALLOWED = string.ascii_letters + string.digits + u'_'  # regular expression: [a-zA-Z0-9_]+
 SERVICE_MAX_CHARS_ALLOWED = 50
 SERVICE_PATH_LEVELS = 10
@@ -1746,7 +1747,7 @@ class CB:
 
     #  -----------  subscriptions -------------------
 
-    def properties_to_subcription(self, context, listener_host, listener_port):
+    def properties_to_subcription(self, context, listener_host, listener_port, listener_port_https):
         """
         definition of properties to entities
           | parameter                      | value                   |
@@ -1799,6 +1800,7 @@ class CB:
         :param context: context variable with properties to entities
         :param listener_host: listener host from properties.json
         :param listener_port: listener port from properties.json
+        :param listener_port_https: listener port https from properties.json
         """
         # store previous subsciption context dict temporally (used in update request)
         self.subsc_dict_temp = {}
@@ -1832,6 +1834,12 @@ class CB:
             self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_PORT, listener_port)
         if (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].find(REPLACE_PORT) >= 0):
             self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] = self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].replace(REPLACE_PORT, listener_port)
+
+        # replace_https_port string in url is replaced to the listener property (used in notification field)
+        if (self.subscription_context[NOTIFICATION_HTTP_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_URL].find(REPLACE_PORT_HTTPS) >= 0):
+            self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_PORT_HTTPS, listener_port_https)
+        if (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].find(REPLACE_PORT_HTTPS) >= 0):
+            self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] = self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].replace(REPLACE_PORT_HTTPS, listener_port_https)
 
         # Random values
         self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
