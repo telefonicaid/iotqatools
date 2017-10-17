@@ -180,7 +180,6 @@ class CB:
            - **batch_op_entities_properties**: define a entity to update in a single batch operation
            - **batch_update**: allows to create, update and/or delete several entities in a single batch operation
            - **batch_update_in_raw**: allows to create, update and/or delete several entities in a single batch operation in raw mode
-           - **query_entities_properties**: define properties to query in a single batch operation
            - **batch_query**: returns an Array containing one object per matching entity
 
         #### Get used values per the library:
@@ -2202,26 +2201,6 @@ class CB:
         resp = self.__send_request(POST, "%s/update" % V2_BATCH, headers=self.headers, parameters=self.entities_parameters, payload=payload)
         return resp
 
-    def query_entities_properties(self, entities, attributes, scope):
-        """"
-        define properties to query in a single batch operation
-        :param entities: entities list
-        :param attributes: attributes list
-        :param scopes: a list of scopes to restrict the result of the query
-        """
-        if len(entities) > 0:
-            for ent in entities:
-                entities = {}
-                items_split = ent.split(",")         # | entities   | type>>>house,id>>>room1 |
-                for items in items_split:
-                    item_split = items.split(">>>")
-                    entities[item_split[0]] = item_split[1]
-                if "entities" not in self.query_batch_dict:
-                    self.query_batch_dict["entities"] = []
-                self.query_batch_dict["entities"].append(entities)
-        if len(attributes) > 0:
-            self.query_batch_dict["attributes"] = attributes.split(",")
-        #scope fields still are pendind to define
 
     def batch_query(self, parameters):
         """
