@@ -78,7 +78,7 @@ class CEP:
         """
         headers = dict(self.default_headers)
         headers.update({"Fiware-Service": service})
-        headers.update({"Fiware-ServicePath": '/' + subservice})
+        headers.update({"Fiware-ServicePath": subservice})
         headers.update({"x-auth-token": token})
         return headers
 
