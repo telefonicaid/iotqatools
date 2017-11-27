@@ -1746,7 +1746,7 @@ class CB:
 
     #  -----------  subscriptions -------------------
 
-    def properties_to_subcription(self, context, listener_host, listener_port, listener_port_https):
+    def properties_to_subcription(self, context, listener_host, listener_port, listener_port_https, cep_url):
         """
         definition of properties to entities
           | parameter                      | value                   |
@@ -1800,6 +1800,7 @@ class CB:
         :param listener_host: listener host from properties.json
         :param listener_port: listener port from properties.json
         :param listener_port_https: listener port https from properties.json
+        :param cep_url: cep URL to replace in notification URL
         """
         # store previous subsciption context dict temporally (used in update request)
         self.subsc_dict_temp = {}
