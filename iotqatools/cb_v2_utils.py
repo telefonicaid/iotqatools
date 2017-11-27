@@ -1800,7 +1800,8 @@ class CB:
         :param listener_host: listener host from properties.json
         :param listener_port: listener port from properties.json
         :param listener_port_https: listener port https from properties.json
-        :param cep_url: cep URL to replace in notification URL
+        :param cep_url: used to replace CEP used as notify_url
+
         """
         # store previous subsciption context dict temporally (used in update request)
         self.subsc_dict_temp = {}
@@ -1840,6 +1841,12 @@ class CB:
             self.subscription_context[NOTIFICATION_HTTP_URL] = self.subscription_context[NOTIFICATION_HTTP_URL].replace(REPLACE_PORT_HTTPS, listener_port_https)
         if (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] is not None) and (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].find(REPLACE_PORT_HTTPS) >= 0):
             self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] = self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL].replace(REPLACE_PORT_HTTPS, listener_port_https)
+
+        # CEP url replacement
+        if (self.subscription_context[NOTIFICATION_HTTP_URL]) == 'CEP':
+            self.subscription_context[NOTIFICATION_HTTP_URL] = '"' + cep_url + '"'
+        if (self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL]) == 'CEP':
+            self.subscription_context[NOTIFICATION_HTTP_CUSTOM_URL] = '"' + cep_url + '"'
 
         # Random values
         self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
