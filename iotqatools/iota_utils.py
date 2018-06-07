@@ -557,8 +557,9 @@ class Rest_Utils_IoTA(object):
         else:
             return False
 
-    def create_device(self, service_name, device_name, service_path={}, endpoint={}, commands={}, entity_name={},
-                      entity_type={}, attributes={}, static_attributes={}, protocol={}, keystone_token={}):
+    def create_device(self, service_name, device_name, service_path={}, endpoint={}, transport={}, commands={},
+                      entity_name={}, entity_type={}, attributes={}, static_attributes={}, protocol={},
+                      keystone_token={}):
         headers = {}
         if not service_name == 'void':
             headers[self.srv_header] = str(service_name)
@@ -581,6 +582,8 @@ class Rest_Utils_IoTA(object):
             device['devices'][0]['commands'] = commands
         if endpoint:
             device['devices'][0]['endpoint'] = endpoint
+        if transport:
+            device['devices'][0]['transport'] = transport
         if entity_type:
             device['devices'][0]['entity_type'] = entity_type
         if entity_name:
