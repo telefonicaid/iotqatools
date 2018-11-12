@@ -366,7 +366,7 @@ class CKANUtils:
         list_fields.append(recvtime)
         list_fields.append(timeinstant)
         for field in fields:
-            list_fields.append({'id': field, 'type': 'json'})
+            list_fields.append({'id': str(field[0]), 'type': 'json'})
         datastore_structure['resource_id'] = str(resource_id)
         datastore_structure['fields'] = fields
         datastore_structure['force'] = "true"
