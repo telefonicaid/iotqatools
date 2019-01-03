@@ -126,7 +126,7 @@ class Rest_Utils_IoTA(object):
 
     # See decoratorAPI comments
     @decoratorApi
-    def api_get(self, path, headers={}, params={}):
+    def api_get(self, path, headers={}, params={}, verify=False):
         res = None
 
         try:
@@ -138,7 +138,8 @@ class Rest_Utils_IoTA(object):
 
             res = requests.get(url=path,
                                headers=headers,
-                               params=params)
+                               params=params,
+                               verify=verify)
 
         except requests.exceptions.Timeout:
             PqaTools.log_requestAndResponse(url=path,
@@ -171,13 +172,14 @@ class Rest_Utils_IoTA(object):
 
     # See decoratorAPI comments
     @decoratorApi
-    def api_post(self, path, headers={}, params={}, data={}):
+    def api_post(self, path, headers={}, params={}, data={}, verify=False):
         res = None
         try:
             res = requests.post(url=path,
                                 data=data,
                                 headers=headers,
-                                params=params)
+                                params=params,
+                                verify=verify)
 
         except requests.exceptions.Timeout:
             PqaTools.log_requestAndResponse(url=path,
@@ -210,13 +212,14 @@ class Rest_Utils_IoTA(object):
 
     # See decoratorAPI comments
     @decoratorApi
-    def api_put(self, path, headers={}, params={}, data={}):
+    def api_put(self, path, headers={}, params={}, data={}, verify=False):
         res = None
         try:
             res = requests.put(url=path,
                                data=data,
                                headers=headers,
-                               params=params)
+                               params=params,
+                               verify=verify)
 
         except requests.exceptions.Timeout:
             PqaTools.log_requestAndResponse(url=path,
@@ -247,7 +250,7 @@ class Rest_Utils_IoTA(object):
 
     # See decoratorAPI comments
     @decoratorApi
-    def api_delete(self, path, headers={}, params={}):
+    def api_delete(self, path, headers={}, params={}, verify=False):
         res = None
         try:
             # clean content_type in not allowed requests
@@ -258,7 +261,8 @@ class Rest_Utils_IoTA(object):
 
             res = requests.delete(url=path,
                                   headers=headers,
-                                  params=params)
+                                  params=params,
+                                  verify=verify)
         except requests.exceptions.Timeout:
             PqaTools.log_requestAndResponse(url=path,
                                             params=params,

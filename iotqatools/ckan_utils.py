@@ -49,7 +49,6 @@ class CKANUtils:
         """
         # initialize logger
         self.log = get_logger('ckan_utils', verbosity)
-
         self.instance = instance
         self.apikey = apikey
         self.path = path

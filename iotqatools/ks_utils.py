@@ -77,12 +77,12 @@ class RequestUtils(object):
         if query != {}:
             parameters.update({'params': query})
             log.debug('\tQuery:\n %s' % query)
-        if headers != {}:
+        if verify is not None:
             parameters.update({'verify': verify})
             log.debug('\t*Verify:\n %s' % verify)
         log.debug('End Sending\n**************************************************************************************')
         response = requests.request(**parameters)
-        PqaTools.log_fullRequest(comp='ORC', response=response, params=parameters)
+        PqaTools.log_fullRequest(comp='KS', response=response, params=parameters)
 
         return response
 

@@ -876,7 +876,7 @@ class CbNgsi10Utils(object):
                  log_verbosity='DEBUG',
                  default_headers={"Accept": "application/json", 'content-type': 'application/json'},
                  check_json=True,
-                 verify=None):
+                 verify=False):
         """
         CB Utils constructor
         :param instance:
@@ -920,11 +920,7 @@ class CbNgsi10Utils(object):
         self.path_context_subscriptions = self.default_endpoint + path_context_subscriptions
         self.path_version = path_version
         self.check_json = check_json
-        if verify is not None:
-            if verify == True or verify == "True":
-                self.verify = True
-            else:
-                self.verify = False
+        self.verify = verify
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
@@ -951,7 +947,7 @@ class CbNgsi10Utils(object):
         if verify is not None:
             parameters.update({'verify': verify})
         else:
-            parameters.update({'verify': False})
+            parameters.update({'verify': self.verify})
             
 
 
