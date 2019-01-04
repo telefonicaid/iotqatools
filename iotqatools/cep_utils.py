@@ -101,10 +101,7 @@ class CEP:
             parameters.update({'headers': headers})
 
         if payload is not None:
-            if self.check_json:
-                parameters.update({'data': json.dumps(payload, ensure_ascii=False).encode('utf-8')})
-            else:
-                parameters.update({'data': payload})
+                parameters.update({'data': payload.encode('utf-8')})
 
         if query is not None:
             parameters.update({'params': query})
