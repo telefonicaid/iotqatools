@@ -241,7 +241,7 @@ class CbNgsi10v2Utils(object):
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
-        Send a request to a specific url in a specifig type of http request
+        Send a request to a specific url in a specifying type of http request
         """
 
         parameters = {
@@ -264,7 +264,7 @@ class CbNgsi10v2Utils(object):
         if verify is not None:
             parameters.update({'verify': verify})
         else:
-            # If the method does not include the verify parameter, it takes the vale from object
+            # If the method does not include the verify parameter, it takes the value from object
             parameters.update({'verify': self.verify})
 
         # Send the requests

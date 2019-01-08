@@ -924,7 +924,7 @@ class CbNgsi10Utils(object):
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
-        Send a request to a specific url in a specifig type of http request
+        Send a request to a specific url in a specifying type of http request
         """
 
         parameters = {
@@ -948,8 +948,6 @@ class CbNgsi10Utils(object):
             parameters.update({'verify': verify})
         else:
             parameters.update({'verify': self.verify})
-            
-
 
         # Remove the content-type header if it is a GET or DELETE method
         if method.lower() in ("get", "delete"):

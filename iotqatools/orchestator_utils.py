@@ -66,9 +66,13 @@ class Orchestrator(object):
         if verify is not None:
             request_parms.update({'verify': verify})
         else:
-            # If the method does not include the verify parameter, it takes the vale from object
+            # If the method does not include the verify parameter, it takes the value from object
             request_parms.update({'verify': self.verify})
+
+        # Send the requests
         response = requests.request(method, url, **request_parms)
+
+        # Log data
         PqaTools.log_fullRequest(comp='ORC', response=response, params=request_parms)
 
         return response

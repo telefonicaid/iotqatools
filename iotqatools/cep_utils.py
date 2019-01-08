@@ -89,7 +89,7 @@ class CEP:
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
-        Send a request to a specific url in a specifig type of http request
+        Send a request to a specific url in a specifying type of http request
         """
 
         parameters = {
