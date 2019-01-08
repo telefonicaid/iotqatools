@@ -39,11 +39,12 @@ class Orchestrator(object):
 
     log = get_logger('Orchestrator', 'ERROR')
 
-    def __init__(self, host='127.0.0.1', port='8084', protocol='http'):
+    def __init__(self, host='127.0.0.1', port='8084', protocol='http', verify=False):
         self.url = '%s://%s:%s' % (protocol, host, port)
         self.ip = host
+        self.verify = verify
 
-    def send(self, method, url, headers=None, payload=None, query=None):
+    def send(self, method, url, headers=None, payload=None, query=None, verify=None):
         """
         Funtion to send requests printing data to send by log
         :param method: get, post, delete, patch, update...
@@ -51,6 +52,7 @@ class Orchestrator(object):
         :param headers:
         :param payload:
         :param query:
+        :param verify:
         :return: response object
         """
 
@@ -61,7 +63,16 @@ class Orchestrator(object):
             request_parms.update({'data': payload})
         if query is not None:
             request_parms.update({'params': query})
+        if verify is not None:
+            request_parms.update({'verify': verify})
+        else:
+            # If the method does not include the verify parameter, it takes the value from object
+            request_parms.update({'verify': self.verify})
+
+        # Send the requests
         response = requests.request(method, url, **request_parms)
+
+        # Log data
         PqaTools.log_fullRequest(comp='ORC', response=response, params=request_parms)
 
         return response

@@ -25,13 +25,13 @@ please contact with::[iot_support@tid.es]
 import yaml
 import pystache
 import requests
-import json
 
-from iotqatools.iot_logger import get_logger
 from iotqatools.templates.cep_templates import *
 from iotqatools.helpers_utils import *
-
 from iotqatools.iot_logger import get_logger
+from iotqatools.iot_tools import PqaTools
+from requests.exceptions import RequestException
+
 
 __logger__ = get_logger("cep_steps", 'DEBUG', True)
 
@@ -46,7 +46,9 @@ class CEP:
                  path='/m2m/vrules',
                  cep_version='',
                  verbosity='DEBUG',
-                 default_headers={'Accept': 'application/json', 'content-type': 'application/json'}):
+                 default_headers={'Accept': 'application/json'},
+                 verify=False,
+                 check_json=True):
         """
         constructor with values by default
         :param protocol: protocol to be used (e.g. http:// or https://)
@@ -68,6 +70,9 @@ class CEP:
         self.port = port
         self.path = path
         self.version = cep_version
+        self.headers = default_headers
+        self.verify = verify
+        self.check_json = check_json
 
     def __create_headers(self, service, subservice='', token=''):
         """
@@ -81,6 +86,44 @@ class CEP:
         headers.update({"Fiware-ServicePath": subservice})
         headers.update({"x-auth-token": token})
         return headers
+
+    def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
+        """
+        Send a request to a specific url in a specifying type of http request
+        """
+
+        parameters = {
+            'method': method,
+            'url': url,
+        }
+
+        if headers is not None:
+            parameters.update({'headers': headers})
+
+        if payload is not None:
+                parameters.update({'data': payload.encode('utf-8')})
+
+        if query is not None:
+            parameters.update({'params': query})
+
+        if verify is not None:
+            parameters.update({'verify': verify})
+        else:
+            # If the method does not include the verify parameter, it takes the value from object
+            parameters.update({'verify': self.verify})
+
+        # Send the requests
+        try:
+            response = requests.request(**parameters)
+        except RequestException, e:
+            PqaTools.log_requestAndResponse(url=url, headers=headers, params=query, data=payload, comp='CEP',
+                                            method=method)
+            assert False, 'ERROR: [NETWORK ERROR] {}'.format(e)
+
+        # Log data
+        PqaTools.log_fullRequest(comp='CEP', response=response, params=parameters)
+
+        return response
 
     def set_auth_token(self, auth_token):
         self.headers['x-auth-token'] = auth_token
@@ -219,16 +262,12 @@ class CEP:
                                        'active': active,
                                        'cards': cards})
         headers = self.__create_headers(service, str(subservice), token)
+        headers.update({'content-type': 'application/json'})
 
         cep_payload = cep_payload.replace("'", '"')
         url = self.default_endpoint + self.path
-        print url
-        print json.dumps(yaml.load(cep_payload))
-        response = requests.post(url, data=json.dumps(yaml.load(cep_payload)), headers=headers, verify=False)
-        assert response.status_code == 201, 'ERROR {}, the rule {} cannot be created. {}'.format(response.status_code,
-                                                                                                 rule_name,
-                                                                                                 response.text)
-        return response
+        return self.__send_request('post', url, payload=json.dumps(yaml.load(cep_payload)), headers=headers,
+                                   verify=self.verify)
 
     def delete_visual_rule(self, rule_name, service, subservice='', token=''):
         """
@@ -241,11 +280,7 @@ class CEP:
         headers = self.__create_headers(service, str(subservice), token)
 
         url = self.default_endpoint + self.path + '/' + rule_name
-        response = requests.delete(url, headers=headers, verify=False)
-        assert response.status_code == 204, 'ERROR {}, the rule {}, cannot be deleted. {}'.format(response.status_code,
-                                                                                                  rule_name,
-                                                                                                  response.text)
-        return response
+        return self.__send_request('delete', url, headers=headers, verify=self.verify)
 
     def get_visual_rule(self, rule_name, service, subservice=''):
         """
@@ -257,9 +292,7 @@ class CEP:
         """
         headers = self.__create_headers(service, str(subservice))
         url = self.default_endpoint + self.path + '/' + rule_name
-        response = requests.get(url, headers=headers, verify=False)
-        assert response.status_code == 200, 'ERROR, the rule {} cannot be retrieved'.format(rule_name)
-        return response
+        return self.__send_request('get', url, headers=headers, verify=self.verify)
 
     def list_visual_rules(self, service, subservice=''):
         """
@@ -270,9 +303,7 @@ class CEP:
         """
         headers = self.__create_headers(service, str(subservice))
         url = self.default_endpoint + self.path
-        response = requests.get(url, headers=headers, verify=False)
-        assert response.status_code == 200, 'ERROR, the list of rules cannot be retrieved'
-        return response
+        return self.__send_request('get', url, headers=headers, verify=self.verify)
 
     def update_visual_rule(self, rule_name, parameter_list, service, subservice=''):
         """
@@ -287,9 +318,7 @@ class CEP:
         url = self.default_endpoint + self.path + '/' + rule_name
         # TODO: device a way to map the parameters to the payload expected by the CEP
         rule_payload = parameter_list
-        response = requests.put(url, headers=headers, data=rule_payload, verify=False)
-        assert response.status_code == 200, 'ERROR, the rule {} cannot be updated'.format(rule_name)
-        return response
+        return self.__send_request('put', url, headers=headers, payload=rule_payload, verify=self.verify)
 
     # -------------------------- Plain rules ------------------------------------------------------------
     def __append_headers(self, **kwargs):
@@ -472,21 +501,13 @@ class CEP:
         if "token" in rule_properties:
             headers = self.__append_headers(token=rule_properties["token"])
 
+        headers.update({'content-type': 'application/json'})
+
         # url
         url = "%s/rules" % self.default_endpoint
 
         # request
-        __logger__.debug(" ----------- Request ----------- ")
-        __logger__.debug("url: %s" % url)
-        __logger__.debug("headers: %s" % str(headers))
-        __logger__.debug("payload: %s" % payload)
-        response = requests.post(url, data=payload, headers=headers)
-
-        #response
-        __logger__.debug(" ----------- Response ----------- ")
-        __logger__.debug("code: %s" % response.status_code)
-        __logger__.debug("payload: %s" % response.text)
-        return response
+        return self.__send_request('post', url, payload=payload, headers=headers, verify=self.verify)
 
     def delete_plain_rule(self, name, rule_properties):
         """
@@ -512,13 +533,4 @@ class CEP:
         url = "%s/rules/%s" % (self.default_endpoint, name)
 
         # request
-        __logger__.debug(" ----------- Request ----------- ")
-        __logger__.debug("url: DELETE %s" % url)
-        __logger__.debug("headers: %s" % str(headers))
-        response = requests.delete(url, headers=headers)
-
-        #response
-        __logger__.debug(" ----------- Response ----------- ")
-        __logger__.debug("code: %s" % response.status_code)
-        __logger__.debug("payload: %s" % response.text)
-        return response
+        return self.__send_request('delete', url, headers=headers, verify=self.verify)

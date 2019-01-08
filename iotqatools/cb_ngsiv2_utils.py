@@ -186,6 +186,7 @@ class CbNgsi10v2Utils(object):
                  log_instance=None,
                  log_verbosity='DEBUG',
                  default_headers={'Accept': 'application/json'},
+                 verify=False,
                  check_json=True):
         """
         CB Utils constructor
@@ -216,6 +217,7 @@ class CbNgsi10v2Utils(object):
         :param log_instance:
         :param log_verbosity:
         :param default_headers:
+        :param verify: ssl check
         :param check_json:
         """
         # initialize logger
@@ -234,11 +236,12 @@ class CbNgsi10v2Utils(object):
         self.path_context_subscriptions = "{}{}".format(self.default_endpoint, path_retrieve_subscriptions)
         self.path_context_subscriptions_by_id = "{}{}".format(self.default_endpoint, path_retrieve_subscription_by_id)
         self.path_version = path_version
+        self.verify = verify
         self.check_json = check_json
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
-        Send a request to a specific url in a specifig type of http request
+        Send a request to a specific url in a specifying type of http request
         """
 
         parameters = {
@@ -260,6 +263,9 @@ class CbNgsi10v2Utils(object):
 
         if verify is not None:
             parameters.update({'verify': verify})
+        else:
+            # If the method does not include the verify parameter, it takes the value from object
+            parameters.update({'verify': self.verify})
 
         # Send the requests
         try:

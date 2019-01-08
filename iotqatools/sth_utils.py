@@ -42,8 +42,9 @@ class SthUtils(object):
                  path_version="/version",
                  log_instance=None,
                  log_verbosity='DEBUG',
-                 default_headers={"Accept": "application/json", 'content-type': 'application/json'},
+                 default_headers={"Accept": "application/json"},
                  check_json=True,
+                 verify=False,
                  path_notify="/notify"):
         """
         STH Utils constructor
@@ -58,6 +59,7 @@ class SthUtils(object):
         :param log_verbosity:
         :param default_headers:
         :param check_json:
+        :param verify:        
         :param path_notify:
         """
         # initialize logger
@@ -72,11 +74,12 @@ class SthUtils(object):
         self.path_raw_data = self.default_endpoint + path_raw_data
         self.path_version = path_version
         self.check_json = check_json
+        self.verify = verify
         self.path_notify = path_notify
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
-        Send a request to a specific url in a specifig type of http request
+        Send a request to a specific url in a specifying type of http request
         """
 
         parameters = {
@@ -98,6 +101,10 @@ class SthUtils(object):
 
         if verify is not None:
             parameters.update({'verify': verify})
+        else:
+            # If the method does not include the verify parameter, it takes the value from object
+            parameters.update({'verify': self.verify})
+
         # Send the requests
         try:
             response = requests.request(**parameters)
@@ -210,6 +217,7 @@ class SthUtils(object):
         if subservice is not None:
             self.set_subservice(subservice)
         self.set_token(token)
+        self.headers.update({'content-type': 'application/json'})
         self.log.debug("Path: {}. Headers: {}".format(url, self.headers))
         return self.__send_request(method='post', url=url, headers=self.headers, payload=payload, verify=False)
 
