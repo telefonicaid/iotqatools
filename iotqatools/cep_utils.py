@@ -268,11 +268,6 @@ class CEP:
         url = self.default_endpoint + self.path
         return self.__send_request('post', url, payload=json.dumps(yaml.load(cep_payload)), headers=headers,
                                    verify=self.verify)
-#        response = requests.post(url, data=json.dumps(yaml.load(cep_payload)), headers=headers, verify=False)
-#        assert response.status_code == 201, 'ERROR {}, the rule {} cannot be created. {}'.format(response.status_code,
-#                                                                                                 rule_name,
-#                                                                                                 response.text)
-#        return response
 
     def delete_visual_rule(self, rule_name, service, subservice='', token=''):
         """
@@ -287,12 +282,6 @@ class CEP:
         url = self.default_endpoint + self.path + '/' + rule_name
         return self.__send_request('delete', url, headers=headers, verify=self.verify)
 
-#        response = requests.delete(url, headers=headers, verify=False)
-#        assert response.status_code == 204, 'ERROR {}, the rule {}, cannot be deleted. {}'.format(response.status_code,
-#                                                                                                  rule_name,
-#                                                                                                  response.text)
-#        return response
-
     def get_visual_rule(self, rule_name, service, subservice=''):
         """
         Retrieves a viual rules given the id, service and subservice
@@ -305,10 +294,6 @@ class CEP:
         url = self.default_endpoint + self.path + '/' + rule_name
         return self.__send_request('get', url, headers=headers, verify=self.verify)
 
-#        response = requests.get(url, headers=headers, verify=False)
-#        assert response.status_code == 200, 'ERROR, the rule {} cannot be retrieved'.format(rule_name)
-#        return response
-
     def list_visual_rules(self, service, subservice=''):
         """
         Return the list of rules for a given service/subservice
@@ -319,10 +304,6 @@ class CEP:
         headers = self.__create_headers(service, str(subservice))
         url = self.default_endpoint + self.path
         return self.__send_request('get', url, headers=headers, verify=self.verify)
-
-#        response = requests.get(url, headers=headers, verify=False)
-#        assert response.status_code == 200, 'ERROR, the list of rules cannot be retrieved'
-#        return response
 
     def update_visual_rule(self, rule_name, parameter_list, service, subservice=''):
         """
@@ -338,11 +319,6 @@ class CEP:
         # TODO: device a way to map the parameters to the payload expected by the CEP
         rule_payload = parameter_list
         return self.__send_request('put', url, headers=headers, payload=rule_payload, verify=self.verify)
-
-
-#        response = requests.put(url, headers=headers, data=rule_payload, verify=self.verify)
-#        assert response.status_code == 200, 'ERROR, the rule {} cannot be updated'.format(rule_name)
-#        return response
 
     # -------------------------- Plain rules ------------------------------------------------------------
     def __append_headers(self, **kwargs):
@@ -531,19 +507,7 @@ class CEP:
         url = "%s/rules" % self.default_endpoint
 
         # request
-#        __logger__.debug(" ----------- Request ----------- ")
-#        __logger__.debug("url: %s" % url)
-#        __logger__.debug("headers: %s" % str(headers))
-#        __logger__.debug("payload: %s" % payload)
         return self.__send_request('post', url, payload=payload, headers=headers, verify=self.verify)
-
-#        response = requests.post(url, data=payload, headers=headers, verify=self.verify)
-
-        #response
-#        __logger__.debug(" ----------- Response ----------- ")
-#        __logger__.debug("code: %s" % response.status_code)
-#        __logger__.debug("payload: %s" % response.text)
-#        return response
 
     def delete_plain_rule(self, name, rule_properties):
         """
@@ -569,14 +533,4 @@ class CEP:
         url = "%s/rules/%s" % (self.default_endpoint, name)
 
         # request
-#        __logger__.debug(" ----------- Request ----------- ")
-#        __logger__.debug("url: DELETE %s" % url)
-#        __logger__.debug("headers: %s" % str(headers))
         return self.__send_request('delete', url, headers=headers, verify=self.verify)
-#        response = requests.delete(url, headers=headers, verify=self.verify)
-
-        #response
-#        __logger__.debug(" ----------- Response ----------- ")
-#        __logger__.debug("code: %s" % response.status_code)
-#        __logger__.debug("payload: %s" % response.text)
-#        return response
