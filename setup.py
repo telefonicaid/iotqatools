@@ -18,11 +18,8 @@ For those usages not covered by the GNU Affero General Public License
 please contact with::[iot_support@tid.es]
 """
 
-import os
-import sys
 import re
-import setuptools.command.build_py
-from setuptools import setup, find_packages, Command
+from setuptools import setup
 
 
 def parse_requirements(file_name):
@@ -64,7 +61,7 @@ req_dev = get_requirements('requirements.txt')
 
 setup(
     name='iotqatools',
-    version='0.5.1',
+    version='0.6.0',
     description='Iot QA Tools',
     url='https://github.com/telefonicaid/iotqatools',
     author='Telefonica I+D',
