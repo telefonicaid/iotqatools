@@ -284,7 +284,7 @@ class Mysql:
         count = 0
         rows = tuple(rows)
         for cd in cur.description:
-            if empty_values[count] is False:
+            if count in empty_values and empty_values[count] is False:
                 width.append(max(cd[2], len(cd[0])))
                 cols.append(cd[0])
             count += 1
