@@ -275,12 +275,12 @@ class Mysql:
         rows = []
         for elements in results:
             tup = elements
-        for element in tup:
-            if element is None:
-                empty_values.append(True)
-            else:
-                empty_values.append(False)
-                rows.append(element)
+            for element in tup:
+                if element is None:
+                    empty_values.append(True)
+                else:
+                    empty_values.append(False)
+                    rows.append(element)
         count = 0
         rows = tuple(rows)
         for cd in cur.description:
