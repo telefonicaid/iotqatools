@@ -296,7 +296,7 @@ class Mysql:
         print(separator)
         print(tavnit % tuple(cols))
         print(separator)
-        # FXIME: Disable by "TypeError: not all arguments converted during string formatting"
+        # FIXME: Disable by "TypeError: not all arguments converted during string formatting"
         #print(tavnit % rows)
         #print(separator)
 
