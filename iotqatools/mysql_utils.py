@@ -281,24 +281,24 @@ class Mysql:
                 else:
                     empty_values.append(False)
                     rows.append(element)
+        count = 0
+        rows = tuple(rows)
+        for cd in cur.description:
+            if count in empty_values and empty_values[count] is False:
+                width.append(max(cd[2], len(cd[0])))
+                cols.append(cd[0])
+            count += 1
+        for w in width:
+            tavnit += " %-"+"%ss |" % (w,)
+            separator += '-'*w + '--+'
 
-            count = 0
-            rows = tuple(rows)
-            for cd in cur.description:
-                if count in empty_values and empty_values[count] is False:
-                    width.append(max(cd[2], len(cd[0])))
-                    cols.append(cd[0])
-                count += 1
-            for w in width:
-                tavnit += " %-"+"%ss |" % (w,)
-                separator += '-'*w + '--+'
-
-            ## TODO: Use the logger for this @Andrea
-            print(separator)
-            print(tavnit % tuple(cols))
-            print(separator)
-            print(tavnit % rows)
-            print(separator)
+        ## TODO: Use the logger for this @Andrea
+        print(separator)
+        print(tavnit % tuple(cols))
+        print(separator)
+        # Disable by "TypeError: not all arguments converted during string formatting"
+        #print(tavnit % rows)
+        #print(separator)
 
     def get_table_records(self, database_name, table_name):
         """
