@@ -296,8 +296,9 @@ class Mysql:
         print(separator)
         print(tavnit % tuple(cols))
         print(separator)
-        print(tavnit % rows)
-        print(separator)
+        # FIXME: Disable by "TypeError: not all arguments converted during string formatting"
+        #print(tavnit % rows)
+        #print(separator)
 
     def get_table_records(self, database_name, table_name):
         """
