@@ -261,7 +261,11 @@ class Mysql:
         """
         if self.table_exist(database_name, table_name) != None:
             cur = self.__query('SELECT %s FROM `%s`.`%s` ORDER BY 1 DESC LIMIT 1;' % (columns, database_name, table_name))
-            return cur.fetchone()  # return one row from the table
+            row = cur.fetchone()
+            if (row[0] == None):
+                cur = self.__query('SELECT attrValue FROM `%s`.`%s` WHERE attrName = \'%s\' ORDER BY 1 DESC LIMIT 1;' % (database_name, table_name, columns))
+                row = cur.fetchone()
+            return row
         return False
 
     def table_pretty_output(self, database_name, table_name):
