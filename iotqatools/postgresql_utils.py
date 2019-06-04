@@ -27,6 +27,9 @@ __author__ = 'Thinking Cities Team'
 import psycopg2
 import gc
 
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
+
 # constants
 EMPTY = u''
 WITHOUT = u'without'
@@ -113,6 +116,7 @@ class Postgresql:
         try:
             #self.database = EMPTY
             self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (self.database, self.user, self.host, self.password))
+            self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         except Exception, e:
             return self.__error_assertion('DB exception: %s' % (e))
 
@@ -136,6 +140,7 @@ class Postgresql:
         """
         try:
             self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (self.database, self.user, self.host, self.password))
+            self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         except Exception, e:
             return self.__error_assertion('DB exception: %s' % (e))
         cur = self.__query(SELECT_VERSION)
