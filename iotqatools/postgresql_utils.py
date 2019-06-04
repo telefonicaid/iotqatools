@@ -158,7 +158,7 @@ class Postgresql:
         :param name:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
-        self.__query("%s `%s` %s;" % (POSTGRESQL_CREATE_DATABASE, self.database, "DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci"))
+        self.__query("%s %s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database, "DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci"))
 
     def drop_database(self, name):
         """
