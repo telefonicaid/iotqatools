@@ -39,7 +39,7 @@ SELECT_VERSION = u'SELECT version ()'
 #POSTGRESQL_CREATE_DATABASE = u'CREATE DATABASE IF NOT EXISTS '
 POSTGRESQL_CREATE_DATABASE = u'CREATE DATABASE '
 POSTGRESQL_CREATE_TABLE = u'CREATE TABLE IF NOT EXISTS '
-POSTGRESQL_DROP_DATABASE = u'DROP SCHEMA IF EXISTS '
+POSTGRESQL_DROP_DATABASE = u'DROP DATABASE IF EXISTS '
 POSTGRESQL_DROP_TABLE = u'DROP TABLE '
 POSTGRESQL_SHOW_DATABASE = u'SHOW DATABASES'
 POSTGRESQL_SHOW_TABLES = u'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \''
@@ -163,7 +163,9 @@ class Postgresql:
         :param name:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
-        self.__query("%s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database))        
+        self.__query("%s %s;" % (POSTGRESQL_DROP_DATABASE, self.database))
+        self.__query("%s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database))
+        #self.__query("%s `%s` %s;" % (POSTGRESQL_CREATE_DATABASE, self.database, "DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci"))
 
     def drop_database(self, name):
         """
