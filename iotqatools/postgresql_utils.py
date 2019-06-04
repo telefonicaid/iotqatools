@@ -211,21 +211,18 @@ class Postgresql:
 
     def create_schema(self, schema_name):
         """
-        create a new table per column type
+        create a new schema
         :param name:
-        :param database_name:
-        :param fields:
+        :param schema_name:
         """
-        self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, database_name))
+        self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, schema_name))
 
-    def drop_schema(self, database_name):
+    def drop_schema(self, schema_name):
         """
-        create a new table per column type
-        :param name:
-        :param database_name:
-        :param fields:
+        drop a schema
+        :param schema_name:
         """
-        self.__query("%s %s;" % (POSTGRESQL_DROP_SCHEMA, database_name))
+        self.__query("%s %s;" % (POSTGRESQL_DROP_SCHEMA, schema_name))
 
     def table_exist(self, database_name, table_name):
         """
@@ -234,7 +231,7 @@ class Postgresql:
         :param table_name:
         """
         cur = self.__query(
-            'SELECT table_name FROM information_schema.tables WHERE table_schema = "%s" AND table_name = "%s" LIMIT 1;' % (
+            'SELECT table_name FROM information_schema.tables WHERE table_schema = %s AND table_name = %s LIMIT 1;' % (
                 database_name, table_name))
         return cur.fetchone()
 
