@@ -67,7 +67,7 @@ class Postgresql:
         self.password = kwargs.get("password", EMPTY)
         self.database = kwargs.get("database", EMPTY)
         self.version = kwargs.get("version", "2,2")
-        self.postgresql_verify_version = kwargs.get("postgresql_verify_version", "false")
+        self.postgresql_verify_version = kwargs.get("psql_verify_version", "false")
         self.capacity = kwargs.get("capacity", "1000")
         self.transaction_capacity = kwargs.get("transaction_capacity", "100")
         self.retries_number = int(kwargs.get('retries_number', 1))
@@ -111,7 +111,7 @@ class Postgresql:
         """
         try:
             self.database = EMPTY
-            self.conn = psycopg2.connect('dbname=%s user=%s host=%s password=%s' % (self.database, self.user, self.host, self.password))
+            self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (self.database, self.user, self.host, self.password))
         except Exception, e:
             return self.__error_assertion('DB exception: %s' % (e))
 
@@ -134,7 +134,7 @@ class Postgresql:
         :return: returns postgresql version
         """
         try:
-            self.conn = psycopg2.connect('dbname=%s user=%s host=%s password=%s' % (self.database, self.user, self.host, self.password))            
+            self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (self.database, self.user, self.host, self.password))
         except Exception, e:
             return self.__error_assertion('DB exception: %s' % (e))
         cur = self.__query(SELECT_VERSION)
