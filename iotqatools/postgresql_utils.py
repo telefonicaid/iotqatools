@@ -39,8 +39,10 @@ SELECT_VERSION = u'SELECT version ()'
 #POSTGRESQL_CREATE_DATABASE = u'CREATE DATABASE IF NOT EXISTS '
 POSTGRESQL_CREATE_DATABASE = u'CREATE DATABASE '
 POSTGRESQL_CREATE_TABLE = u'CREATE TABLE IF NOT EXISTS '
+POSTGRESQL_CREATE_SCHEMA = u'CREATE SCHEMA IF NOT EXISTS '
 POSTGRESQL_DROP_DATABASE = u'DROP DATABASE IF EXISTS '
 POSTGRESQL_DROP_TABLE = u'DROP TABLE '
+POSTGRESQL_DROP_SCHEMA = u'DROP SCHEMA IF EXISTS '
 POSTGRESQL_SHOW_DATABASE = u'SHOW DATABASES'
 POSTGRESQL_SHOW_TABLES = u'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \''
 
@@ -194,6 +196,7 @@ class Postgresql:
         :param fields:
         """
         self.table = name
+        self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, database_name));
         self.__query("%s %s.%s %s;" % (POSTGRESQL_CREATE_TABLE, database_name, self.table, fields))
 
     def drop_table(self, name, database_name):
@@ -206,6 +209,23 @@ class Postgresql:
         self.table = name
         self.__query("%s %s.%s;" % (POSTGRESQL_DROP_TABLE, database_name, self.table))
 
+    def create_schema(self, schema_name):
+        """
+        create a new table per column type
+        :param name:
+        :param database_name:
+        :param fields:
+        """
+        self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, database_name))
+
+    def drop_schema(self, database_name):
+        """
+        create a new table per column type
+        :param name:
+        :param database_name:
+        :param fields:
+        """
+        self.__query("%s %s;" % (POSTGRESQL_DROP_SCHEMA, database_name))
 
     def table_exist(self, database_name, table_name):
         """
