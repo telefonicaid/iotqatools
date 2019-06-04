@@ -106,7 +106,7 @@ class Postgresql:
         """
         delete a database
         """
-        self.__query("%s `%s`" % (POSTGRESQL_DROP_DATABASE, self.database))  # drop database
+        self.__query("%s %s" % (POSTGRESQL_DROP_DATABASE, self.database))  # drop database
 
     # public methods ------------------------------------------
     def connect(self):
@@ -171,7 +171,7 @@ class Postgresql:
         :param name:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
-        self.__query("%s `%s`;" % (POSTGRESQL_DROP_DATABASE, self.database))
+        self.__query("%s %s;" % (POSTGRESQL_DROP_DATABASE, self.database))
 
     def generate_field_datastore_to_resource(self, attributes_number, attributes_name, attribute_type, metadata_type):
         """
@@ -192,7 +192,7 @@ class Postgresql:
         :param fields:
         """
         self.table = name
-        self.__query("%s `%s`.`%s` %s;" % (POSTGRESQL_CREATE_TABLE, database_name, self.table, fields))
+        self.__query("%s %s.%s %s;" % (POSTGRESQL_CREATE_TABLE, database_name, self.table, fields))
 
     def drop_table(self, name, database_name):
         """
@@ -202,7 +202,7 @@ class Postgresql:
         :param fields:
         """
         self.table = name
-        self.__query("%s `%s`.`%s`;" % (POSTGRESQL_DROP_TABLE, database_name, self.table))
+        self.__query("%s %s.%s;" % (POSTGRESQL_DROP_TABLE, database_name, self.table))
 
 
     def table_exist(self, database_name, table_name):
@@ -223,7 +223,7 @@ class Postgresql:
         :param table_name:
         """
         if self.table_exist(database_name, table_name) != None:
-            cur = self.__query('SELECT * FROM `%s`.`%s` ORDER BY 1 DESC LIMIT 1;' % (database_name, table_name))
+            cur = self.__query('SELECT * FROM %s.%s ORDER BY 1 DESC LIMIT 1;' % (database_name, table_name))
             return cur.fetchone()  # return one row from the table
         return False
 
@@ -236,7 +236,7 @@ class Postgresql:
 
         """
         if self.table_exist(database_name, table_name) != None:
-            cur = self.__query('SELECT * FROM `%s`.`%s` ORDER BY 1 DESC LIMIT %s;' % (database_name, table_name, rows))
+            cur = self.__query('SELECT * FROM %s.%s ORDER BY 1 DESC LIMIT %s;' % (database_name, table_name, rows))
 
             return cur.fetchall()  # return several lines from the table
         return False
@@ -251,7 +251,7 @@ class Postgresql:
         """
         if self.table_exist(database_name, table_name) != None:
             cur = self.__query(
-                'SELECT `%s` FROM `%s`.`%s` ORDER BY 1 DESC LIMIT %s;' % (columns, database_name, table_name, rows))
+                'SELECT `%s` FROM %s.%s ORDER BY 1 DESC LIMIT %s;' % (columns, database_name, table_name, rows))
 
             return cur.fetchall()  # return several lines from the table
         return False
@@ -264,16 +264,16 @@ class Postgresql:
         :param columns:
         """
         if self.table_exist(database_name, table_name) != None:
-            cur = self.__query('SELECT %s FROM `%s`.`%s` ORDER BY 1 DESC LIMIT 1;' % (columns, database_name, table_name))
+            cur = self.__query('SELECT %s FROM %s.%s ORDER BY 1 DESC LIMIT 1;' % (columns, database_name, table_name))
             row = cur.fetchone()
             if (row == None or row[0] == None):
-                cur = self.__query('SELECT attrValue FROM `%s`.`%s` WHERE attrName = \'%s\' ORDER BY 1 DESC LIMIT 1;' % (database_name, table_name, columns))
+                cur = self.__query('SELECT attrValue FROM %s.%s WHERE attrName = \'%s\' ORDER BY 1 DESC LIMIT 1;' % (database_name, table_name, columns))
                 row = cur.fetchone()
             return row
         return False
 
     def table_pretty_output(self, database_name, table_name):
-        cur = self.__query('SELECT * FROM `%s`.`%s` ORDER BY 1 DESC LIMIT 1;' % (database_name, table_name))
+        cur = self.__query('SELECT * FROM %s.%s ORDER BY 1 DESC LIMIT 1;' % (database_name, table_name))
         results = cur.fetchall()
         empty_values = []
         width = []
@@ -315,6 +315,6 @@ class Postgresql:
         :param table_name:
         """
         if self.table_exist(database_name, table_name) != None:
-            cur = self.__query('SELECT * FROM `%s`.`%s`;' % (database_name, table_name))
+            cur = self.__query('SELECT * FROM %s.%s;' % (database_name, table_name))
             return cur.rowcount  # return the number of records of the table
         return False
