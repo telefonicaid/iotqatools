@@ -110,7 +110,7 @@ class Postgresql:
         Open a new postgresql connection
         """
         try:
-            self.database = EMPTY
+            #self.database = EMPTY
             self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (self.database, self.user, self.host, self.password))
         except Exception, e:
             return self.__error_assertion('DB exception: %s' % (e))
