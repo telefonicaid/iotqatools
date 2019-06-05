@@ -165,9 +165,10 @@ class Postgresql:
         :param name:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
-        self.__query("%s %s;" % (POSTGRESQL_DROP_DATABASE, self.database))
-        self.__query("%s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database))
-        #self.__query("%s `%s` %s;" % (POSTGRESQL_CREATE_DATABASE, self.database, "DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci"))
+        try:
+            self.__query("%s %s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database, "ENCODING UTF8 LC_COLLATE en_US.UTF-8 LC_CTYPE en_US.UTF-8"))
+        except Exception, e:
+            print ('DB exception: %s' % (e))
 
     def drop_database(self, name):
         """
@@ -230,10 +231,15 @@ class Postgresql:
         :param database_name:
         :param table_name:
         """
-        cur = self.__query(
-            'SELECT table_name FROM information_schema.tables WHERE table_schema = %s AND table_name = %s LIMIT 1;' % (
-                database_name, table_name))
-        return cur.fetchone()
+        try:
+            cur = self.__query(
+                'SELECT * FROM %s.%s LIMIT 1;' % (
+                    #'SELECT table_name FROM information_schema.tables WHERE table_schema = %s AND table_name = %s LIMIT 1;' % (
+                    database_name, table_name))
+            return cur.fetchone()
+        except Exception, e:
+            print ('DB exception: %s' % (e))
+            return None
 
     def table_search_one_row(self, database_name, table_name):
         """
