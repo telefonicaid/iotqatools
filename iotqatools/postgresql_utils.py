@@ -166,7 +166,7 @@ class Postgresql:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
         try:
-            self.__query("%s %s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database, "ENCODING UTF8 LC_COLLATE en_US.UTF-8 LC_CTYPE en_US.UTF-8"))
+            self.__query("%s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database))
         except Exception, e:
             print ('DB exception: %s' % (e))
 
