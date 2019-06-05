@@ -236,7 +236,8 @@ class Postgresql:
                 'SELECT * FROM %s.%s LIMIT 1;' % (
                     #'SELECT table_name FROM information_schema.tables WHERE table_schema = %s AND table_name = %s LIMIT 1;' % (
                     database_name, table_name))
-            return cur.fetchone()
+            #cur.fetchone()
+            return [table_name]
         except Exception, e:
             print ('DB exception: %s' % (e))
             return None
