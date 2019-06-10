@@ -74,10 +74,6 @@ class Postgresql:
         self.database = kwargs.get("database", EMPTY)
         self.version = kwargs.get("version", "2,2")
         self.postgresql_verify_version = kwargs.get("psql_verify_version", "false")
-        self.capacity = kwargs.get("capacity", "1000")
-        self.transaction_capacity = kwargs.get("transaction_capacity", "100")
-        self.retries_number = int(kwargs.get('retries_number', 1))
-        self.retry_delay = int(kwargs.get('delay_to_retry', 10))
         self.conn = None
 
     def __error_assertion(self, value, error=False):
@@ -102,13 +98,14 @@ class Postgresql:
             cur.execute(sql)
             return cur
         except Exception, e:
-            return self.__error_assertion('DB exception: %s' % (e), error)
+            return self.__error_assertion('DB exception (query): %s' % (e), error)
 
     def __drop_database(self):
         """
         delete a database
         """
         self.__query("%s %s" % (POSTGRESQL_DROP_DATABASE, self.database))  # drop database
+        self.conn.commit()
 
     # public methods ------------------------------------------
     def connect(self):
@@ -116,11 +113,10 @@ class Postgresql:
         Open a new postgresql connection
         """
         try:
-            #self.database = EMPTY
             self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (self.database, self.user, self.host, self.password))
             self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         except Exception, e:
-            return self.__error_assertion('DB exception: %s' % (e))
+            return self.__error_assertion('DB exception (connect): %s' % (e))
 
     def set_database(self, database):
         """
@@ -132,7 +128,7 @@ class Postgresql:
         """
         Close a postgresql connection and drop the database before
         """
-        self.__drop_database()
+        self.conn.commit()
         self.conn.close()  # close postgresql connection
         gc.collect()  # invoking the Python garbage collector
 
@@ -144,7 +140,7 @@ class Postgresql:
             self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (self.database, self.user, self.host, self.password))
             self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         except Exception, e:
-            return self.__error_assertion('DB exception: %s' % (e))
+            return self.__error_assertion('DB exception (get version): %s' % (e))
         cur = self.__query(SELECT_VERSION)
         row = cur.fetchone()
         return str(row[0])
@@ -168,7 +164,8 @@ class Postgresql:
         try:
             self.__query("%s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database))
         except Exception, e:
-            print ('DB exception: %s' % (e))
+            print ('DB exception (create database): %s' % (e))
+        self.conn.commit()
 
     def drop_database(self, name):
         """
@@ -177,6 +174,7 @@ class Postgresql:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
         self.__query("%s %s;" % (POSTGRESQL_DROP_DATABASE, self.database))
+        self.conn.commit()
 
     def generate_field_datastore_to_resource(self, attributes_number, attributes_name, attribute_type, metadata_type):
         """
@@ -199,6 +197,7 @@ class Postgresql:
         self.table = name
         self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, database_name));
         self.__query("%s %s.%s %s;" % (POSTGRESQL_CREATE_TABLE, database_name, self.table, fields))
+        self.conn.commit()
 
     def drop_table(self, name, database_name):
         """
@@ -209,6 +208,7 @@ class Postgresql:
         """
         self.table = name
         self.__query("%s %s.%s;" % (POSTGRESQL_DROP_TABLE, database_name, self.table))
+        self.conn.commit()
 
     def create_schema(self, schema_name):
         """
@@ -217,6 +217,7 @@ class Postgresql:
         :param schema_name:
         """
         self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, schema_name))
+        self.conn.commit()
 
     def drop_schema(self, schema_name):
         """
@@ -224,6 +225,7 @@ class Postgresql:
         :param schema_name:
         """
         self.__query("%s %s;" % (POSTGRESQL_DROP_SCHEMA, schema_name))
+        self.conn.commit()
 
     def table_exist(self, database_name, table_name):
         """
@@ -234,12 +236,11 @@ class Postgresql:
         try:
             cur = self.__query(
                 'SELECT * FROM %s.%s LIMIT 1;' % (
-                    #'SELECT table_name FROM information_schema.tables WHERE table_schema = %s AND table_name = %s LIMIT 1;' % (
                     database_name, table_name))
-            #cur.fetchone()
+            cur.close()
             return [table_name]
         except Exception, e:
-            print ('DB exception: %s' % (e))
+            print ('DB exception (table exists): %s' % (e))
             return None
 
     def table_search_one_row(self, database_name, table_name):
@@ -263,7 +264,6 @@ class Postgresql:
         """
         if self.table_exist(database_name, table_name) != None:
             cur = self.__query('SELECT * FROM %s.%s ORDER BY 1 DESC LIMIT %s;' % (database_name, table_name, rows))
-
             return cur.fetchall()  # return several lines from the table
         return False
 
