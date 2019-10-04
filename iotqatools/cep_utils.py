@@ -437,7 +437,6 @@ class CEP:
 
         # it is possible to updates one or more attributes of a given entity
         elif action == "update":
-            action_dict["parameters"]["version"] = 1;
             if "update_id" in rule_properties:
                 action_dict["parameters"]["id"] = rule_properties["update_id"]
             if "update_type" in rule_properties:
