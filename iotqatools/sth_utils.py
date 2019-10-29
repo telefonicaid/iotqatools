@@ -38,7 +38,7 @@ class SthUtils(object):
     def __init__(self, instance, service=None, subservice=None,
                  protocol="http",
                  port="8666",
-                 path_raw_data="/STH/v1/contextEntities",
+                 path_raw_data="/STH/v2/entities",
                  path_version="/version",
                  log_instance=None,
                  log_verbosity='DEBUG',
@@ -140,25 +140,21 @@ class SthUtils(object):
     def set_token(self, token):
         self.headers['x-auth-token'] = token
 
-    def set_path(self, ent_type, ent_id, attribute):
+    def set_path(self, ent_id, attribute):
         """
-        Build the path. It can be a path for the whole service/servicepath, the entity or certain attribute
-        :param ent_type: (optional)
-        :param ent_id:   (optional except if attribute is passed as param)
-        :param attribute: (optional)
+        Build the path.
+        :param ent_id
+        :param attribute
         :return:
         """
-        path_template = ''
-
-        if ent_id is not None:
-            path_template = '/type/{entity_type}/id/{entity_id}'
-            if attribute is not None:
-                path_template += '/attributes/{attrib}'
-        elif attribute is not None:
+        if ent_id is None:
             raise Exception("missing parameter ent_id")
+        if attribute is None:
+            raise Exception("missing parameter attribute")
+
+        path_template = '/{entity_id}/attrs/{attrib}'
 
         path = self.path_raw_data + path_template.format(
-            entity_type=ent_type,
             entity_id=ent_id,
             attrib=attribute)
 
@@ -186,8 +182,8 @@ class SthUtils(object):
 
     def request_raw_data(self, ent_type, ent_id, attribute, hLimit=None, offset=None, date_from=None,
                          date_to=None, service=None, subservice=None, lastN=None, filetype=None, token=None):
-        path = self.set_path(ent_type, ent_id, attribute)
-        query = {'lastN': lastN, 'hLimit': hLimit, 'hOffset': offset,
+        path = self.set_path(ent_id, attribute)
+        query = {'type': ent_type, 'lastN': lastN, 'hLimit': hLimit, 'hOffset': offset,
                  'dateFrom': date_from, 'dateTo': date_to, 'filetype': filetype}
         if service is not None:
             self.set_service(service)
@@ -199,8 +195,8 @@ class SthUtils(object):
 
     def request_aggregated_data(self, ent_type, ent_id, attribute, aggrMethod, aggrPeriod, date_from, date_to,
                                 service='', subservice='', token=None):
-        path = self.set_path(ent_type, ent_id, attribute)
-        query = {'aggrMethod': aggrMethod, 'aggrPeriod': aggrPeriod, 'dateFrom': date_from, 'dateTo': date_to}
+        path = self.set_path(ent_id, attribute)
+        query = {'type': ent_type, 'aggrMethod': aggrMethod, 'aggrPeriod': aggrPeriod, 'dateFrom': date_from, 'dateTo': date_to}
         self.set_service(service)
         self.set_subservice(subservice)
         self.set_token(token)
