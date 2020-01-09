@@ -155,7 +155,7 @@ class Orchestrator(object):
         }
         url_to_send = self.url + self.BASE_PATH_MANAGE + 'service'
         response = self.send('post', url_to_send, headers=headers,
-                             payload=json_payload)
+                             payload=json_payload, timeout=120)
         return response
 
     def remove_service(self,
@@ -181,7 +181,7 @@ class Orchestrator(object):
         }
         url_to_send = self.url + self.BASE_PATH_MANAGE + 'service'
         response = self.send('delete', url_to_send, headers=headers,
-                             payload=json_payload)
+                             payload=json_payload, timeout=120)
         return response
 
     def create_new_subservice(self,
