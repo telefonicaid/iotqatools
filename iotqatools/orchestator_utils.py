@@ -44,7 +44,7 @@ class Orchestrator(object):
         self.ip = host
         self.verify = verify
 
-    def send(self, method, url, headers=None, payload=None, query=None, verify=None):
+    def send(self, method, url, headers=None, payload=None, query=None, verify=None, timeout=None):
         """
         Funtion to send requests printing data to send by log
         :param method: get, post, delete, patch, update...
@@ -64,10 +64,10 @@ class Orchestrator(object):
             request_parms.update({'data': payload})
         if query is not None:
             request_parms.update({'params': query})
+        if timeout is not None:
+            request_parms.update({'timeout': timeout})
         if verify is not None:
             request_parms.update({'verify': verify})
-        if timeout is not None:
-            request_parms.update({'timeout': verify})            
         else:
             # If the method does not include the verify parameter, it takes the value from object
             request_parms.update({'verify': self.verify})
