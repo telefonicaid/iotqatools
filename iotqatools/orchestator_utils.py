@@ -53,6 +53,7 @@ class Orchestrator(object):
         :param payload:
         :param query:
         :param verify:
+        :param timeout:
         :return: response object
         """
 
@@ -65,6 +66,8 @@ class Orchestrator(object):
             request_parms.update({'params': query})
         if verify is not None:
             request_parms.update({'verify': verify})
+        if timeout is not None:
+            request_parms.update({'timeout': verify})            
         else:
             # If the method does not include the verify parameter, it takes the value from object
             request_parms.update({'verify': self.verify})
