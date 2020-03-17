@@ -43,6 +43,7 @@ class Orchestrator(object):
         self.url = '%s://%s:%s' % (protocol, host, port)
         self.ip = host
         self.verify = verify
+        self.timeout = 120 # should be greather than harakiri orc option
 
     def send(self, method, url, headers=None, payload=None, query=None, verify=None):
         """
@@ -68,6 +69,7 @@ class Orchestrator(object):
         else:
             # If the method does not include the verify parameter, it takes the value from object
             request_parms.update({'verify': self.verify})
+        request_parms.update({'timeout': self.timeout})
 
         # Send the requests
         response = requests.request(method, url, **request_parms)
