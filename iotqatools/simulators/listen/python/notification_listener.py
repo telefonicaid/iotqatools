@@ -135,7 +135,7 @@ def get_count(d, serv, subserv):
 port       = 10031
 host       = '0.0.0.0'
 server_url = '/notify'
-verbose    = 0
+verbose    = 1
 https      = False
 key_file   = None
 cert_file  = None
@@ -255,6 +255,6 @@ if __name__ == '__main__':
       context = SSL.Context(SSL.SSLv23_METHOD)
       context.use_privatekey_file(key_file)
       context.use_certificate_file(cert_file)
-      app.run(host=host, port=port, debug=False, ssl_context=context)
+      app.run(host=host, port=port, debug=True, ssl_context=context)
     else:
       app.run(host=host, port=port, debug=True)
