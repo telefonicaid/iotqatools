@@ -139,6 +139,7 @@ class Mysql:
             return self.__error_assertion('DB exception: %s' % (e))
         cur = self.__query(SELECT_VERSION)
         row = cur.fetchone()
+        cur.close()
         return str(row[0])
 
     def verify_version(self):
@@ -150,6 +151,7 @@ class Mysql:
         if self.mysql_verify_version.lower() == "true":
             cur = self.__query(SELECT_VERSION)
             row = cur.fetchone()
+            cur.close()
             assert row[0] == self.version, \
                 "Wrong version expected: %s. and version installed: %s" % (str(self.version), str(row[0]))
 
@@ -210,7 +212,9 @@ class Mysql:
         cur = self.__query(
             'SELECT table_name FROM information_schema.tables WHERE table_schema = "%s" AND table_name = "%s" LIMIT 1;' % (
                 database_name, table_name))
-        return cur.fetchone()
+        row = cur.fetchone()
+        cur.close()
+        return row
 
     def table_search_one_row(self, database_name, table_name):
         """
@@ -220,7 +224,9 @@ class Mysql:
         """
         if self.table_exist(database_name, table_name) != None:
             cur = self.__query('SELECT * FROM `%s`.`%s` ORDER BY 1 DESC LIMIT 1;' % (database_name, table_name))
-            return cur.fetchone()  # return one row from the table
+            row = cur.fetchone()
+            cur.close()
+            return row  # return one row from the table
         return False
 
     def table_search_several_rows(self, database_name, table_name, rows):
@@ -234,7 +240,9 @@ class Mysql:
         if self.table_exist(database_name, table_name) != None:
             cur = self.__query('SELECT * FROM `%s`.`%s` ORDER BY 1 DESC LIMIT %s;' % (database_name, table_name, rows))
 
-            return cur.fetchall()  # return several lines from the table
+            rows = cur.fetchall()
+            cur.close()
+            return rows  # return several lines from the table
         return False
 
     def table_search_columns_in_several_rows(self, database_name, table_name, rows, columns):
@@ -249,7 +257,9 @@ class Mysql:
             cur = self.__query(
                 'SELECT `%s` FROM `%s`.`%s` ORDER BY 1 DESC LIMIT %s;' % (columns, database_name, table_name, rows))
 
-            return cur.fetchall()  # return several lines from the table
+            rows = cur.fetchall()
+            cur.close()
+            return rows  # return several lines from the table
         return False
 
     def table_search_columns_last_row(self, database_name, table_name, columns):
@@ -262,9 +272,11 @@ class Mysql:
         if self.table_exist(database_name, table_name) != None:
             cur = self.__query('SELECT %s FROM `%s`.`%s` ORDER BY 1 DESC LIMIT 1;' % (columns, database_name, table_name))
             row = cur.fetchone()
+            cur.close()
             if (row == None or row[0] == None):
                 cur = self.__query('SELECT attrValue FROM `%s`.`%s` WHERE attrName = \'%s\' ORDER BY 1 DESC LIMIT 1;' % (database_name, table_name, columns))
                 row = cur.fetchone()
+                cur.close()
             return row
         return False
 
@@ -296,6 +308,8 @@ class Mysql:
             tavnit += " %-"+"%ss |" % (w,)
             separator += '-'*w + '--+'
 
+        cur.close()
+
         ## TODO: Use the logger for this @Andrea
         print(separator)
         print(tavnit % tuple(cols))
@@ -312,5 +326,7 @@ class Mysql:
         """
         if self.table_exist(database_name, table_name) != None:
             cur = self.__query('SELECT * FROM `%s`.`%s`;' % (database_name, table_name))
-            return cur.rowcount  # return the number of records of the table
+            rowcount = cur.rowcount
+            cur.close()
+            return rowcount  # return the number of records of the table
         return False
