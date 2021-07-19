@@ -104,7 +104,8 @@ class Postgresql:
         """
         delete a database
         """
-        self.__query("%s %s" % (POSTGRESQL_DROP_DATABASE, self.database))  # drop database
+        cur = self.__query("%s %s" % (POSTGRESQL_DROP_DATABASE, self.database))  # drop database
+        cur.close()
         self.conn.commit()
 
     # public methods ------------------------------------------
@@ -164,7 +165,8 @@ class Postgresql:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
         try:
-            self.__query("%s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database))
+            cur = self.__query("%s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database))
+            cur.close()
         except Exception, e:
             print ('DB exception (create database): %s' % (e))
         self.conn.commit()
@@ -175,7 +177,8 @@ class Postgresql:
         :param name:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
-        self.__query("%s %s;" % (POSTGRESQL_DROP_DATABASE, self.database))
+        cur = self.__query("%s %s;" % (POSTGRESQL_DROP_DATABASE, self.database))
+        cur.close()
         self.conn.commit()
 
     def generate_field_datastore_to_resource(self, attributes_number, attributes_name, attribute_type, metadata_type):
@@ -197,8 +200,10 @@ class Postgresql:
         :param fields:
         """
         self.table = name
-        self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, database_name));
-        self.__query("%s %s.%s %s;" % (POSTGRESQL_CREATE_TABLE, database_name, self.table, fields))
+        cur = self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, database_name));
+        cur.close()
+        cur = self.__query("%s %s.%s %s;" % (POSTGRESQL_CREATE_TABLE, database_name, self.table, fields))
+        cur.close()
         self.conn.commit()
 
     def drop_table(self, name, database_name):
@@ -209,7 +214,8 @@ class Postgresql:
         :param fields:
         """
         self.table = name
-        self.__query("%s %s.%s;" % (POSTGRESQL_DROP_TABLE, database_name, self.table))
+        cur = self.__query("%s %s.%s;" % (POSTGRESQL_DROP_TABLE, database_name, self.table))
+        cur.close()
         self.conn.commit()
 
     def create_schema(self, schema_name):
@@ -218,7 +224,8 @@ class Postgresql:
         :param name:
         :param schema_name:
         """
-        self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, schema_name))
+        cur = self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, schema_name))
+        cur.close()
         self.conn.commit()
 
     def drop_schema(self, schema_name):
@@ -226,7 +233,8 @@ class Postgresql:
         drop a schema
         :param schema_name:
         """
-        self.__query("%s %s;" % (POSTGRESQL_DROP_SCHEMA, schema_name))
+        cur = self.__query("%s %s;" % (POSTGRESQL_DROP_SCHEMA, schema_name))
+        cur.close()
         self.conn.commit()
 
     def table_exist(self, database_name, table_name):
