@@ -102,7 +102,8 @@ class Mysql:
         """
         delete a database
         """
-        self.__query("%s `%s`" % (MYSQL_DROP_DATABASE, self.database))  # drop database
+        cur = self.__query("%s `%s`" % (MYSQL_DROP_DATABASE, self.database))  # drop database
+        cur.close()
 
     # public methods ------------------------------------------
     def connect(self):
@@ -161,7 +162,8 @@ class Mysql:
         :param name:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
-        self.__query("%s `%s` %s;" % (MYSQL_CREATE_DATABASE, self.database, "DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci"))
+        cur = self.__query("%s `%s` %s;" % (MYSQL_CREATE_DATABASE, self.database, "DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci"))
+        cur.close()
 
     def drop_database(self, name):
         """
@@ -169,7 +171,8 @@ class Mysql:
         :param name:
         """
         self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
-        self.__query("%s `%s`;" % (MYSQL_DROP_DATABASE, self.database))
+        cur = self.__query("%s `%s`;" % (MYSQL_DROP_DATABASE, self.database))
+        cur.close()
 
     def generate_field_datastore_to_resource(self, attributes_number, attributes_name, attribute_type, metadata_type):
         """
@@ -190,7 +193,8 @@ class Mysql:
         :param fields:
         """
         self.table = name
-        self.__query("%s `%s`.`%s` %s;" % (MYSQL_CREATE_TABLE, database_name, self.table, fields))
+        cur = self.__query("%s `%s`.`%s` %s;" % (MYSQL_CREATE_TABLE, database_name, self.table, fields))
+        cur.close()
 
     def drop_table(self, name, database_name):
         """
@@ -200,7 +204,8 @@ class Mysql:
         :param fields:
         """
         self.table = name
-        self.__query("%s `%s`.`%s`;" % (MYSQL_DROP_TABLE, database_name, self.table))
+        cur = self.__query("%s `%s`.`%s`;" % (MYSQL_DROP_TABLE, database_name, self.table))
+        cur.close()
 
 
     def table_exist(self, database_name, table_name):
