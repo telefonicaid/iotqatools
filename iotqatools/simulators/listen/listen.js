@@ -25,7 +25,7 @@ please contact with::[iot_support@tid.es]
 // requirements
 var dateFormat = require('dateformat');
 var moment = require('moment');
-
+var mqtt = require('mqtt');
 
 //verbosity flag
 var vm=false;
@@ -37,26 +37,15 @@ var silence=false;
 // expected input to calculate the diff in format 2015-10-28T13:51:32+0100
 /* {
     "subscriptionId": "56309dbebc0ae94ca4f7f8ea",
-    "originator": "localhost",
-    "contextResponses": [
-        {
-            "contextElement": {
-                "type": "xxx",
-                "isPattern": "false",
-                "id": "aaa",
-                "attributes": [
-                    {
-                        "name": "TimeInstant",
-                        "type": "ISO8601",
-                        "value": "2015-10-28T13:51:32+0100"
-                    }
-                ]
-            },
-            "statusCode": {
-                "code": "200",
-                "reasonPhrase": "OK"
-            }
-        }
+    "data": [
+      {
+        "id": "aaa",
+	"type": "xxx",
+	"TimeInstant": {
+	  "value": "2015-10-28T13:51:32+0100",
+	  "type": "ISO8601"
+	}
+      }
     ]
 } */
 var timestamp=false;
@@ -92,6 +81,9 @@ var samples = 1000;
 // delayed response
 var delayedtime=2000;
 
+// mqttBroker (if -m is used)
+var mqttBroker='';
+
 //Standar CLI options
 process.argv.forEach(function (val, index, array) {
         //console.log(index + ': ' + val);
@@ -115,7 +107,8 @@ process.argv.forEach(function (val, index, array) {
                                 " '--version' : shows the version of this script \n" +
                                 " '-v' : verbose mode, by default OFF \n" +
                                 " '-t' : timestamp diff mode, by default OFF \n" +
-                                " '-a' : accumulator mode, by default OFF \n");
+                                " '-a' : accumulator mode, by default OFF \n" +
+                                " '-mX' : MQTT mode for broker at X (e.g. -mlocalhost:1883)\n");
                 process.exit(0);
         }
         if (val=="-v"){
@@ -135,6 +128,9 @@ process.argv.forEach(function (val, index, array) {
         }
         if (val.match(/^-s/)) {
                 servers=val.slice(2);
+        }
+        if (val.match(/^-m/)) {
+                mqttBroker=val.slice(2);
         }
         if (val.match(/^-ds/)) {
                 delayedServers=val.slice(3);
@@ -156,58 +152,51 @@ process.argv.forEach(function (val, index, array) {
 
 });
 
+var processData = function(data) {
+        if(timestamp) {
+                //console.log('# Notification Data: ' + data);
+                // get current time
+                var now = new Date();
+                //var current = dateFormat(now, "isoDateTime");
+                var current = dateFormat(now, "yyyy-mm-dd'T'HH:MM:ssl");
+
+                try {
+                        var context = JSON.parse(data);
+
+                        // get Data from update
+                        var received = context.data[0].TimeInstant.value;
+                        //var time = dateFormat(received, "isoDateTime");
+                        var time = dateFormat(received, "yyyy-mm-dd'T'HH:MM:ssl");
+                        console.log("# TimeInstant  NOW: "+ current + " RECEIVED: " + time);
+
+                        //calculate DIFF
+                        //var startDate = moment(time);
+                        //var endDate = moment(current);
+                        var startDate = moment(received);
+                        var endDate = moment(now);
+                        //var secondsDiff = endDate.diff(startDate, 'seconds');
+                        var secondsDiff = endDate.diff(startDate);
+                        console.log("# Diff: "+ secondsDiff);
+                                    
+                }
+                catch (e) {
+                        return console.error(e);
+                }
+
+                                
+        }
+        if (vm) {
+                console.log('# Notification Data: ' + data);
+        }
+}
+
 // Create an HTTP server
 var srv =function(){
         return http.createServer(function(req, res) {
                 'use strict';
                 requests++;
 
-                req.on('data', function(data) {
-                        if(timestamp){
-                                //console.log('# Notification Data: ' + data);
-                                // get current time
-                                var now = new Date();
-                                //var current = dateFormat(now, "isoDateTime");
-                                var current = dateFormat(now, "yyyy-mm-dd'T'HH:MM:ssl");
-                                
-                                try {
-                                    var context = JSON.parse(data);
-
-                                    // get Data from update
-                                    var atts = context.contextResponses[0].contextElement.attributes;
-                                    var received = 0;
-                                    for (var att in atts){
-                                            if (atts[att].name == "TimeInstant"){
-                                                var received = atts[att].value;
-                                                //var time = dateFormat(received, "isoDateTime");
-                                                var time = dateFormat(received, "yyyy-mm-dd'T'HH:MM:ssl");
-                                                console.log("# TimeInstant  NOW: "+ current + " RECEIVED: " + time); 
-
-                                                //calculate DIFF
-                                                //var startDate = moment(time);
-                                                //var endDate = moment(current);
-                                                var startDate = moment(received);
-                                                var endDate = moment(now);
-                                                //var secondsDiff = endDate.diff(startDate, 'seconds');
-                                                var secondsDiff = endDate.diff(startDate);
-                                                console.log("# Diff: "+ secondsDiff);
-                                            }
-                                    
-                                }
-
-
-                                  } 
-                                  catch (e) {
-                                    return console.error(e);
-                                  }
-
-                                
-                        }
-                        if (vm){
-                                console.log('# Notification Data: ' + data);
-                        }
-
-                });
+                req.on('data', processData);
                 req.on('end', function() {
                         setTimeout(function() {
                                 res.writeHead(200, {'Content-Type': 'text/plain'});
@@ -236,20 +225,36 @@ var delaySrv = function(){
         })
 };
 
-// start servers
-for (var i=0; i<servers; i++){
-        srv().listen(port[i]);
-        if (!silence){
-                console.log("### ACCUMULATOR SERVER  #"+ eval(i+1) +" STARTED at port " + port[i] +" ###", Date());}
-};
+// HTTP servers started only if MQTT mode is not being used
+if (mqttBroker == '') {
+        // start servers
+        for (var i=0; i<servers; i++){
+                srv().listen(port[i]);
+                if (!silence){
+                        console.log("### ACCUMULATOR SERVER  #"+ eval(i+1) +" STARTED at port " + port[i] +" ###", Date());}
+        };
+        // start severs with delay
+        for (var i=0; i<delayedServers; i++){
+                delaySrv().listen(delayedPort[i]);
+                if(!silence){
+                        console.log("### ACCUMULATOR Delayed SERVER #"+ eval(i+1) +" + STARTED at port " + delayedPort[i] +" ###", Date());}
+        };
+}
+else {
+        var client  = mqtt.connect("mqtt://localhost:1883");
+        client.on("connect", function(){
+                console.log("connected");
+        })
 
-// start severs with delay
-for (var i=0; i<delayedServers; i++){
-        delaySrv().listen(delayedPort[i]);
-        if(!silence){
-                console.log("### ACCUMULATOR Delayed SERVER #"+ eval(i+1) +" + STARTED at port " + delayedPort[i] +" ###", Date());}
-};
+        client.subscribe('#');
 
+        client.on('message', function(topic, message, packet){
+                //console.log("message is "+ message);
+                //console.log("topic is "+ topic);
+                requests++;
+                processData(message);
+        });
+}
 
 setInterval(function () {
         if(!silence){
