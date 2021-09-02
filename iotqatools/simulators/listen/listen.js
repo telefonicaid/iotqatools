@@ -246,7 +246,7 @@ else {
                 console.log("connected");
         })
 
-	// Just # is too broad, maybe use /orion as prefix
+        // Just # is too broad, maybe use /orion as prefix
         client.subscribe('/orion/#');
 
         client.on('message', function(topic, message, packet){
