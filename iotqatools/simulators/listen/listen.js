@@ -241,12 +241,13 @@ if (mqttBroker == '') {
         };
 }
 else {
-        var client  = mqtt.connect("mqtt://localhost:1883");
+        var client  = mqtt.connect("mqtt://" + mqttBroker);
         client.on("connect", function(){
                 console.log("connected");
         })
 
-        client.subscribe('#');
+	// Just # is too broad, maybe use /orion as prefix
+        client.subscribe('/orion/#');
 
         client.on('message', function(topic, message, packet){
                 //console.log("message is "+ message);
