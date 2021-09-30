@@ -22,8 +22,8 @@
     },
     "dependencies": {
         "moment": "*",
-        "dateformat": "*",
-        "mqtt": "*"
+        "dateformat": "4.5.1",
+        "mqtt": "4.2.8"
     },
     "keywords": [
         "qa",
