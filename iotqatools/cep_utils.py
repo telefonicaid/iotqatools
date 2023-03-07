@@ -402,8 +402,10 @@ class CEP:
         if "timestamp_last_minutes" in rule_properties: #timestamp
             #text = u'%s cast(cast(%s__ts?,String),float) > current_timestamp - %s*60*1000 and' % \
             #       (text, rule_properties["attr_name"], rule_properties["timestamp_last_minutes"])
-            text = u'%s true and' % \
-                   (text)
+            text = u'%s cast(cast(%s?,string), long, dateformat:\'iso\')) > current_timestamp - %s*60*1000 and' % \
+                   (text, rule_properties["attr_name"], rule_properties["timestamp_last_minutes"])
+            #text = u'%s true and' % \
+            #       (text)
         if "location_x" in rule_properties:  # geo-location
             #text = u'%s Math.pow((cast(cast(%s__x?,String),float) - %s), 2) + Math.pow((cast(cast(%s__y?,String),float) - %s), 2) %s Math.pow(%s,2) and' % \
             #       (text, rule_properties["attr_name"], rule_properties["location_x"], rule_properties["attr_name"], rule_properties["location_y"], rule_properties["attr_op"], rule_properties["location_ratio"])
