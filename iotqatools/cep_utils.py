@@ -410,7 +410,7 @@ class CEP:
             #text = u'%s Math.pow((cast(cast(%s__x?,String),float) - %s), 2) + Math.pow((cast(cast(%s__y?,String),float) - %s), 2) %s Math.pow(%s,2) and' % \
             #       (text, rule_properties["attr_name"], rule_properties["location_x"], rule_properties["attr_name"], rule_properties["location_y"], rule_properties["attr_op"], rule_properties["location_ratio"])
             text = u'%s Math.pow((cast(cast(%s.coordinates.0?,String),float) - %s), 2) + Math.pow((cast(cast(%s.coordinates.1?,String),float) - %s), 2) %s Math.pow(%s,2) and' % \
-                   (text, rule_properties["attr_name"], rule_properties["location"], rule_properties["attr_name"], rule_properties["location"], rule_properties["attr_op"], rule_properties["location_ratio"])
+                   (text, rule_properties["attr_name"], rule_properties["location_x"], rule_properties["attr_name"], rule_properties["location_y"], rule_properties["attr_op"], rule_properties["location_ratio"])
             #text = u'%s true and' % \
             #       (text)
         if "meta_value" in rule_properties:
