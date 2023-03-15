@@ -403,12 +403,15 @@ class CEP:
             text = u'%s cast(cast(%s?,string), long, dateformat:\'iso\') > current_timestamp - %s*60*1000 and' % \
                    (text, rule_properties["attr_name"], rule_properties["timestamp_last_minutes"])
         if "location_x" in rule_properties:  # geo-location
+            # Geo:point received in legacy notification format and expecing location expanded in notification: only w with old verions of persoe-fe < 1.27.0
             #text = u'%s Math.pow((cast(cast(%s__x?,String),float) - %s), 2) + Math.pow((cast(cast(%s__y?,String),float) - %s), 2) %s Math.pow(%s,2) and' % \
             #       (text, rule_properties["attr_name"], rule_properties["location_x"], rule_properties["attr_name"], rule_properties["location_y"], rule_properties["attr_op"], rule_properties["location_ratio"])
-            text = u'%s Math.pow((cast(cast(cast(%s?,java.util.HashMap).get("coordinates"),java.util.Collection).firstOf(),float) - %s), 2) + Math.pow((cast(cast(cast(%s?, java.util.HashMap).get("coordinates"),java.util.Collection).lastOf(),float) - %s), 2) %s Math.pow(%s,2) and' % \
-                   (text, rule_properties["attr_name"], rule_properties["location_x"], rule_properties["attr_name"], rule_properties["location_y"], rule_properties["attr_op"], rule_properties["location_ratio"])
-            #text = u'%s true and' % \
-            #       (text)
+            # Geo:jsom received in non legacy and non expanded in notification for > perseo-fe 1.26
+            #text = u'%s Math.pow((cast(cast(cast(%s?,java.util.HashMap).get("coordinates"),java.util.Collection).firstOf(),float) - %s), 2) + Math.pow((cast(cast(cast(%s?, java.util.HashMap).get("coordinates"),java.util.Collection).lastOf(),float) - %s), 2) %s Math.pow(%s,2) and' % \
+            #       (text, rule_properties["attr_name"], rule_properties["location_x"], rule_properties["attr_name"], rule_properties["location_y"], rule_properties["attr_op"], rule_properties["location_ratio"])
+            # FIXME: 008_cb2cep2_conditionbasedonlocation.feature should be update to use non legacy notifications and geo:json instead of geo:point
+            text = u'%s true and' % \
+                   (text)
         if "meta_value" in rule_properties:
             value, data_type = get_type_value(str(rule_properties["meta_value"]))
             text = u'%s cast(cast(%s?,String),%s)%s%s and' % \
