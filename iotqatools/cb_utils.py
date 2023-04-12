@@ -623,7 +623,7 @@ class PayloadUtils(object):
 
         payload = {
             'subject': subject,
-            'notification0': notification
+            'notification': notification
         }
 
         # duration should be used to set expires based on current time + duration. However, we don't have
