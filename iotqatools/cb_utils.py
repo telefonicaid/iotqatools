@@ -558,28 +558,27 @@ class PayloadUtils(object):
         Build the payload to send to subscribe to an entity and his attributes
         :return:
         {
-            "entities": [
-                {
-                    "type": "Room",
-                    "isPattern": "false",
-                    "id": "Room1"
+            "subject": {
+                "entities": [
+                    {
+                    "idPattern": ".*",
+                    "type": "Room"
+                    }
+                ],
+                "condition": {
+                    "attrs": [ "temperature" ]
                 }
-            ],
-            "attributes": [
-                "temperature"
-            ],
-            "reference": "http://localhost:1028/accumulate",
-            "duration": "P1M",
-            "notifyConditions": [
-                {
-                    "type": "ONTIMEINTERVAL",
-                    "condValues": [
-                        "PT10S"
-                    ]
-                }
-            ],
-            "throttling": ""
+            },
+            "notification": {
+                "http": {
+                    "url": "http://localhost:1234"
+                },
+                "attrs": ["temperature", "humidity"]
+            },
+            "expires": "2025-04-05T14:00:00.00Z",
+            "throttling": 5
         }
+
         """
         if not isinstance(entities, EntitiesConsults):
             raise ValueError('The entities argument has to be an instance of EntitiesConsults')
@@ -588,47 +587,53 @@ class PayloadUtils(object):
         if not isinstance(notify_conditions, NotifyConditions):
             raise ValueError('The notify_conditions has to be an instance of NotifyConditions')
 
-        payload = {
-            "entities": entities.get_entities(),
-            "attributes": attributes,
-            "reference": reference,
-            "duration": duration,
-            "notifyConditions": notify_conditions.get_notify_conditions()
-        }
-        if throttling is not None:
-            payload.update({'throttling': throttling})
-        return payload
+        # FIXME: entities.get_entities() returns the entities in NGSIv1 format, so we need to adapt.
+        # entities parameter shouldn't be in NGSIv1 (build_standard_subscribe_context_payload callers should be adapted)
+        entities_v2 = []
+        for entity in entities.get_entities():
+            entity_v2 = {
+                'type': entity['type']
+            }
+            if entity['isPattern'] == 'false':
+                entity_v2['id'] = entity['id']
+            else:
+                entity_v2['idPattern'] = entity['id']
+            entities_v2.append(entity_v2)
 
-    @staticmethod
-    def build_standard_update_subscribe_context_payload(subscription_id, duration=None, notify_conditions=None,
-                                                        throttling=None):
-        """
-        Build the payload to send to subscribe to an entity and his attributes
-        :return:
-        {
-            "subscriptionId": "51c04a21d714fb3b37d7d5a7",
-            "duration": "P1M",
-            "notifyConditions": [
-                {
-                    "type": "ONTIMEINTERVAL",
-                    "condValues": [
-                        "PT10S"
-                    ]
-                }
-            ],
-            "throttling": "PT10S"
+        # FIXME: notify_conditions.get_notify_conditions() return NGSIv1 conditions payloads, so we need to adapt
+        # this shouldn't be used (build_standard_subscribe_context_payload callers should be adapted)
+        condition_attributes = []
+        for nc in notify_conditions.get_notify_conditions():
+            if nc['type'] == 'ONCHANGE':  # ONTIMEINTERVAL shouldn't be in use in test, anyway...
+                condition_attributes.extend(nc['condValues'])
+
+        subject = {
+            'entities': entities_v2,
+            'condition': {
+                'attrs': condition_attributes
+            }
         }
-        """
-        if notify_conditions is not None:
-            if not isinstance(notify_conditions, NotifyConditions):
-                raise ValueError('The notify_conditions has to be an instance of NotifyConditions')
-        payload = {"subscriptionId": subscription_id}
-        if duration is not None:
-            payload.update({"duration": duration})
-        if notify_conditions is not None:
-            payload.update({"notifyConditions": notify_conditions.get_notify_conditions()})
-        if throttling is not None:
-            payload.update({"throttling": throttling})
+
+        notification = {
+            'http': {
+                'url': reference
+            },
+            'attrs': attributes
+        }
+
+        payload = {
+            'subject': subject,
+            'notification0': notification
+        }
+
+        # duration should be used to set expires based on current time + duration. However, we don't have
+        # any .feature checking duration expiration, so we can omit the field for permanent subscriptions
+        # FIXME: duration should be removed from function signature
+
+        # throttling should be moved from Pxx format to plain seconds. However, it is always set to None in
+        # existing .feature, so we can omit the field
+        # FIXME: throttling should be removed from function signature
+
         return payload
 
     @staticmethod
