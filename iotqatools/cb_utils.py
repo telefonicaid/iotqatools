@@ -871,11 +871,11 @@ class CbNgsi10Utils(object):
                  path_context_entity_types="/v1/contextEntityTypes",
                  path_query_context="/v1/queryContext",
                  path_statistics="/statistics",
-                 path_subscribe_context="/v1/subscribeContext",
+                 path_subscribe_context="/v2/subscriptions",
                  path_update_context="/v1/updateContext",
                  path_update_context_subscription="/v1/updateContextSubscription",
                  path_unsubscribe_context="/v1/unsubscribeContext",
-                 path_context_subscriptions="/v1/contextSubscriptions",
+                 path_context_subscriptions="/v2/subscriptions",   # FIXME: in NGSIv2 we only have a URL for this. Unify
                  path_version="/version",
                  log_instance=None,
                  log_verbosity='DEBUG',
@@ -1381,76 +1381,6 @@ class CbNgsi10Utils(object):
 
     # **
 
-    def standard_subscribe_context_ontime(self, payload):
-        """
-        Create a subscription in the context broker
-        :param payload
-        The format of the payload is:
-        {
-            "entities": [
-                {
-                    "type": "Room",
-                    "isPattern": "false",
-                    "id": "Room1"
-                }
-            ],
-            "attributes": [
-                "temperature"
-            ],
-            "reference": "http://localhost:1028/accumulate",
-            "duration": "P1M",
-            "notifyConditions": [
-                {
-                    "type": "ONTIMEINTERVAL",
-                    "condValues": [
-                        "PT10S"
-                    ]
-                }
-            ]
-        }
-        """
-        # Checks the payload to send
-        if self.check_json:
-            payload = check_valid_json(payload)
-            check_minimal_attrs_payload(["entities", "attributes", "reference", "duration", "notifyConditions"],
-                                        payload, self.log)
-        return self.__send_request('post', self.path_subscribe_context, self.headers, payload)
-
-    def convenience_subscribe_context_ontime(self, payload):
-        """
-        Create a subscription in the context broker
-        :param payload:
-        The format of the payload is:
-        {
-            "entities": [
-                {
-                    "type": "Room",
-                    "isPattern": "false",
-                    "id": "Room1"
-                }
-            ],
-            "attributes": [
-                "temperature"
-            ],
-            "reference": "http://localhost:1028/accumulate",
-            "duration": "P1M",
-            "notifyConditions": [
-                {
-                    "type": "ONTIMEINTERVAL",
-                    "condValues": [
-                        "PT10S"
-                    ]
-                }
-            ]
-        }
-        """
-        # Checks the payload to send
-        if self.check_json:
-            payload = check_valid_json(payload)
-            check_minimal_attrs_payload(["entities", "attributes", "reference", "duration", "notifyConditions"],
-                                        payload, self.log)
-        return self.__send_request('post', self.path_context_subscriptions, self.headers, payload)
-
     def standard_subscribe_context_onchange(self, payload):
         """
         Create a subscription in the context broker
@@ -1520,9 +1450,10 @@ class CbNgsi10Utils(object):
         # Checks the payload to send
         if self.check_json:
             payload = check_valid_json(payload)
-            check_minimal_attrs_payload(
-                ["entities", "attributes", "reference", "duration", "notifyConditions", "throttling"], payload,
-                self.log)
+            # FIXME: no longer needed? Eventually remove this fragment
+            #check_minimal_attrs_payload(
+            #    ["entities", "attributes", "reference", "duration", "notifyConditions", "throttling"], payload,
+            #    self.log)
         return self.__send_request('post', self.path_context_subscriptions, self.headers, payload)
 
     def standard_update_context_subscription(self, payload):
@@ -2101,7 +2032,7 @@ class CBUtils(object):
                  path_context="/v1/contextEntities",
                  path_query="/v1/queryContext",
                  path_statistics="/statistics",
-                 path_subscription="/v1/subscribeContext",
+                 path_subscription="/v2/subscriptions",
                  path_update="/v1/updateContext",
                  path_version="/version",
                  verbosity=0,
