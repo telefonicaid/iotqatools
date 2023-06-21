@@ -231,6 +231,7 @@ class CbNgsi10v2Utils(object):
         self.headers = default_headers
         self.path_list_entities = "{}{}".format(self.default_endpoint, path_list_entities)
         self.path_get_attribute_data = "{}{}".format(self.default_endpoint, path_update_attribute_data)
+        self.path_delete_entity = "{}{}".format(self.default_endpoint, path_retrieve_entity_by_id)
         self.path_statistics = path_statistics
         self.path_create_entity = "{}{}".format(self.default_endpoint, path_create_entity)
         self.path_context_subscriptions = "{}{}".format(self.default_endpoint, path_retrieve_subscriptions)
@@ -279,6 +280,28 @@ class CbNgsi10v2Utils(object):
         PqaTools.log_fullRequest(comp='CB', response=response, params=parameters)
 
         return response
+
+    def set_service(self, service):
+        self.headers['Fiware-Service'] = service
+
+    def set_subservice(self, subservice):
+        if subservice != "None" and subservice != "none" and subservice != None:
+            self.headers['Fiware-Servicepath'] = subservice
+
+    def set_auth_token(self, auth_token):
+        self.headers['x-auth-token'] = auth_token
+
+    def remove_content_type_header(self):
+        """
+        This method is used when sending get or delete actions through pep
+        Yes, I know this is not the more suitable way to do that, but probably is the less disruptive way
+        :return: True if header has been removed | False if header has not been removed
+        """
+        if 'content-type' in self.headers:
+            del self.headers['content-type']
+            return True
+        else:
+            return False
 
     def version(self):
         """
@@ -332,7 +355,7 @@ class CbNgsi10v2Utils(object):
         return self.__send_request('post', self.path_create_entity, payload=payload, headers=headers, query=params,
                                    verify=None)
 
-    def list_entities(self, headers, filters=None):
+    def list_entities(self, headers={}, filters=None):
         """
         Retrieves a list of entities which match different criteria (by id, idPattern, type or those which match a
         query or geographical query)
@@ -394,6 +417,36 @@ class CbNgsi10v2Utils(object):
 
         # Make request
         return self.__send_request('get', path, headers=headers, verify=None, query=params)
+
+    def delete_entity(self, entity_id, entity_type=None):
+        """
+        DELETE /v2/entities/{entity_id}?type={entity_type}
+
+        Parameters
+        entity_id:
+            Entity ID Example: Bcn_Welt. (String)
+        entity_type (optional):
+            Entity type, to avoid ambiguity in the case there are several entities with the same entity id. (String)
+
+        Response
+        204
+
+        :param entity_id:
+        :param entity_type:
+        :return:
+        """
+
+        # Compose path
+        path = self.path_delete_entity.replace('entityId', entity_id)
+
+        # Compose params
+        params = {}
+        if entity_type is not None:
+            params['type'] = entity_type
+
+        # Make request
+        return self.__send_request('delete', path, headers=self.headers, verify=None, query=params)
+
 
     def retrieve_subscriptions(self, headers, options=None):
         """
