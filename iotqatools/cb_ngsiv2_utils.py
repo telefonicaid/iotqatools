@@ -410,7 +410,7 @@ class CbNgsi10v2Utils(object):
 
         return self.__send_request('get', self.path_list_entities, headers=headers, verify=None, query=params)
 
-    def get_attribute_data(self, headers, entity_id, entity_type, attribute_name):
+    def get_attribute(self, headers, entity_id, entity_type, attribute_name):
         """
         GET
         http://orion.lab.fiware.org/v2/entities/entityId/attrs/attrName?type=type
