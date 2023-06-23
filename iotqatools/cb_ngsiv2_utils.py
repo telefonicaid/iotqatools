@@ -32,128 +32,6 @@ from requests.exceptions import RequestException
 from iotqatools.iot_tools import PqaTools
 
 
-# class MetadataV2(object):
-#     """
-#      - a metadata name, describing the role of the metadata at the place where it occurs;
-#     for example, the metadata name accuracy indicates that the metadata value describes how accurate a given attribute
-#      value is
-#      - a metadata type, describing the NGSI value type of the metadata value
-#      - a metadata value containing the actual metadata
-#     """
-#
-#     def __init__(self, md_name, md_value, md_type=None):
-#         # set medatada attributes
-#         self.md_name = md_name
-#         self.md_value = md_value
-#         if md_type is not None:
-#             self.md_type = md_type
-#
-#         # Compose the metadata
-#         self.metadata = {md_name: {'value': md_value}}
-#         if md_type is not None:
-#             self.metadata[md_name].update({'type': md_type})
-#
-#     def get_metadata(self):
-#         return self.metadata
-#
-#
-# class AttributeV2(object):
-#     """
-#     Class that represent the attributes to build the payload to send to a contextBroker
-#     The format created is:
-#     {
-#         "value": <...>,
-#         "type": <...>,
-#         "metadata": <...>
-#     }
-#     """
-#
-#     def __init__(self, att_name, att_value, att_type=None, metadata_list=None):
-#         # Set attributes
-#         self.metadata_list = []
-#         self.att_name = att_name
-#         self.att_value = att_value
-#
-#         # Compose the attribute
-#         self.attribute = {att_name: {'value': att_value}}
-#         if att_type is not None:
-#             self.attribute[att_name].update({'type': att_type})
-#             self.att_type = att_type
-#         if metadata_list is not None:
-#             # Check if metadata is an instance of Metadata class
-#             for metadata in metadata_list:
-#                 if not isinstance(metadata, MetadataV2):
-#                     raise ValueError('The metadata argument has to be an instance of Metadata class')
-#                 self.add_metadata(metadata)
-#
-#     def add_metadata(self, metadata):
-#         if not isinstance(metadata, MetadataV2):
-#             raise ValueError('The metadata argument has to be an instance of Metadata class')
-#         if 'metadata' in self.attribute[self.att_name]:
-#             self.attribute[self.att_name]['metadata'].update(metadata.get_metadata())
-#         else:
-#             self.attribute[self.att_name].update({'metadata': metadata.get_metadata()})
-#         self.metadata_list.append(metadata)
-#
-#     def get_attribute(self):
-#         return self.attribute
-#
-#
-# class EntityV2(object):
-#     """
-#     Class that represent the entities to build the payload to send to a contextBroker
-#     The format created is:
-#     {
-#         "id": "entityID",
-#         "type": "entityType",
-#         "attr_1": <val_1>,
-#         "attr_2": <val_2>,
-#         ...
-#         "attr_N": <val_N>
-#     }
-#     """
-#
-#     def __init__(self, entity_id, entity_type, attribute_list=None):
-#         # set class attributes
-#         self.entity_id = entity_id
-#         self.entity_type = entity_type
-#         self.attribute_list = []
-#
-#         # Compose the entity
-#         self.entity = {'id': entity_id, 'type': entity_type}
-#         if attribute_list is not None:
-#             for attribute in attribute_list:
-#                 if not isinstance(attribute, AttributeV2):
-#                     raise ValueError('The attributes argument has to be an instance of Attribute class')
-#                 self.entity.update(attribute.get_attribute())
-#
-#     def add_attribute(self, attribute):
-#         if not isinstance(attribute, AttributeV2):
-#             raise ValueError('The attributes argument has to be an instance of Attribute class')
-#         self.entity.update(attribute.get_attribute())
-#
-#     def get_entity(self):
-#         return self.entity
-#
-#
-# class PayloadUtilsV2(object):
-#     """
-#     Class who construct the payloads
-#     """
-#
-#     @staticmethod
-#     def build_create_entity_payload(entity):
-#         """
-#         Build the payload to send to context broker to create a new entity with the standard api
-#         :param entity: EntityV2 type
-#         :return: the payload in json format
-#         """
-#         if not isinstance(entity, EntityV2):
-#             raise ValueError('The entity argument has to be an instance of EntityV2')
-#         payload = entity.get_entity()
-#         return payload
-
-
 class CbNgsi10v2Utils(object):
     """
     Basic functionality for ContextBroker v2 API
@@ -162,25 +40,15 @@ class CbNgsi10v2Utils(object):
     def __init__(self, instance,
                  protocol="http",
                  port="1026",
-                 path_list_entities="/v2/entities",
-                 path_create_entity="/v2/entities",
-                 path_retrieve_entity_by_id="/v2/entities/entityId",
-                 path_retrieve_entity_attributes="/v2/entities/entityId/attrs",
-                 path_update_or_append_entity_attributes="/v2/entities/entityId/attrs",
-                 path_update_existing_entity_attributes="/v2/entities/entityId/attrs",
-                 path_replace_all_entity_attributes="/v2/entities/entityId/attrs",
-                 path_remove_entity="/v2/entities",
-                 path_get_attribute_data="/v2/entities/entityId/attrs/attrName",
-                 path_update_attribute_data="/v2/entities/entityId/attrs/attrName",
-                 path_remove_a_single_attribute="/v2/entities/entityId/attrs/attrName",
-                 path_get_attribute_value="/v2/entities/entityId/attrs/attrName/value",
-                 path_attribute_value_update="/v2/entities/entityId/attrs/attrName/value",
-                 path_retrieve_entity_types="/v2/types",
-                 path_retrieve_emtity_type="/v2/types/entityType",
-                 path_retrieve_subscriptions="/v2/subscriptions",
-                 path_retrieve_subscription_by_id="/v2/subscriptions/subscriptionId",
-                 path_update_subscription="/v2/subscriptions/subscriptionId",
-                 path_delete_subscription="/v2/subscriptions/subscriptionId",
+                 path_entities="/v2/entities",
+                 path_entities_id="/v2/entities/entityId",
+                 path_entities_id_attrs="/v2/entities/entityId/attrs",
+                 path_entities_id_attrs_attr="/v2/entities/entityId/attrs/attrName",
+                 path_entities_id_attrs_attr_value="/v2/entities/entityId/attrs/attrName/value",
+                 path_types="/v2/types",
+                 path_types_type="/v2/types/entityType",
+                 path_subscriptions="/v2/subscriptions",
+                 path_subscriptions_id="/v2/subscriptions/subscriptionId",
                  path_statistics="/statistics",
                  path_version="/version",
                  log_instance=None,
@@ -193,25 +61,15 @@ class CbNgsi10v2Utils(object):
         :param instance:
         :param protocol:
         :param port:
-        :param path_list_entities:
-        :param path_create_entity:
-        :param path_retrieve_entity_by_id:
-        :param path_retrieve_entity_attributes:
-        :param path_update_or_append_entity_attributes:
-        :param path_update_existing_entity_attributes:
-        :param path_replace_all_entity_attributes:
-        :param path_remove_entity:
-        :param path_get_attribute_data:
-        :param path_update_attribute_data:
-        :param path_remove_a_single_attribute:
-        :param path_get_attribute_value:
-        :param path_attribute_value_update:
-        :param path_retrieve_entity_types:
-        :param path_retrieve_emtity_type:
-        :param path_retrieve_subscriptions:
-        :param path_retrieve_subscription_by_id:
-        :param path_update_subscription:
-        :param path_delete_subscription:
+        :param path_entities:
+        :param path_entities_id:
+        :param path_entities_id_attrs:
+        :param path_entities_id_attrs_attr:
+        :param path_entities_id_attrs_attr_value:
+        :param path_types:
+        :param path_types_type:
+        :param path_subscriptions:
+        :param path_subscriptions_id:
         :param path_statistics:
         :param path_version:
         :param log_instance:
@@ -229,14 +87,14 @@ class CbNgsi10v2Utils(object):
         # Assign the values
         self.default_endpoint = "{}://{}:{}".format(protocol, instance, port)
         self.headers = default_headers
-        self.path_list_entities = "{}{}".format(self.default_endpoint, path_list_entities)
-        self.path_get_attribute_data = "{}{}".format(self.default_endpoint, path_update_attribute_data)
-        self.path_delete_entity = "{}{}".format(self.default_endpoint, path_retrieve_entity_by_id)
+        self.path_entities = "{}{}".format(self.default_endpoint, path_entities)
+        self.path_entities_id_attrs_attr = "{}{}".format(self.default_endpoint, path_entities_id_attrs_attr)
+        self.path_delete_entity = "{}{}".format(self.default_endpoint, path_entities_id)
         self.path_statistics = path_statistics
-        self.path_create_entity = "{}{}".format(self.default_endpoint, path_create_entity)
-        self.path_update_entity = "{}{}".format(self.default_endpoint, path_update_existing_entity_attributes)
-        self.path_context_subscriptions = "{}{}".format(self.default_endpoint, path_retrieve_subscriptions)
-        self.path_context_subscriptions_by_id = "{}{}".format(self.default_endpoint, path_retrieve_subscription_by_id)
+        self.path_entities = "{}{}".format(self.default_endpoint, path_entities)
+        self.path_update_entity = "{}{}".format(self.default_endpoint, path_entities_id_attrs)
+        self.path_context_subscriptions = "{}{}".format(self.default_endpoint, path_subscriptions)
+        self.path_context_subscriptions_by_id = "{}{}".format(self.default_endpoint, path_subscriptions_id)
         self.path_version = path_version
         self.verify = verify
         self.check_json = check_json
@@ -353,7 +211,7 @@ class CbNgsi10v2Utils(object):
         """
         headers.update(self.headers)
         headers.update({'content-type': 'application/json'})
-        return self.__send_request('post', self.path_create_entity, payload=payload, headers=headers, query=params,
+        return self.__send_request('post', self.path_entities, payload=payload, headers=headers, query=params,
                                    verify=None)
 
     def update_entity(self, payload, entity_id, headers={}, params=None):
@@ -408,7 +266,7 @@ class CbNgsi10v2Utils(object):
         else:
             params = None
 
-        return self.__send_request('get', self.path_list_entities, headers=headers, verify=None, query=params)
+        return self.__send_request('get', self.path_entities, headers=headers, verify=None, query=params)
 
     def get_attribute(self, headers, entity_id, entity_type, attribute_name):
         """
@@ -444,7 +302,7 @@ class CbNgsi10v2Utils(object):
         headers.update(self.headers)
 
         # Compose path
-        path = self.path_get_attribute_data.replace('entityId', entity_id).replace('attrName', attribute_name)
+        path = self.path_entities_id_attrs_attr.replace('entityId', entity_id).replace('attrName', attribute_name)
 
         # Compose params
         params = {'type': entity_type}
@@ -701,7 +559,7 @@ if __name__ == '__main__':
     # ===================get attribute data============
 
     # Get attribute data
-    # resp = cb.get_attribute_data(headers=headers, entity_id='Bcn-Welt25', entity_type='Room5', attribute_name='location')
+    # resp = cb.get_attribute(headers=headers, entity_id='Bcn-Welt25', entity_type='Room5', attribute_name='location')
 
 
     # ===============retrieve subscriptions============
