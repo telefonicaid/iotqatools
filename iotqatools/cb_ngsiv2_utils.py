@@ -102,6 +102,7 @@ class CbNgsi10v2Utils(object):
         self.path_statistics = path_statistics
         self.path_entities = "{}{}".format(self.default_endpoint, path_entities)
         self.path_update_entity = "{}{}".format(self.default_endpoint, path_entities_id_attrs)
+        self.path_get_entity_attrs = "{}{}".format(self.default_endpoint, path_entities_id_attrs)
         self.path_subscriptions = "{}{}".format(self.default_endpoint, path_subscriptions)
         self.path_subscriptions_by_id = "{}{}".format(self.default_endpoint, path_subscriptions_id)
         self.path_version = path_version
@@ -963,6 +964,19 @@ class CbNgsi10v2Utils(object):
         headers.update(self.headers)
 
         return self.__send_request('get', self.path_entities, headers=headers, verify=None, query=params)
+
+    def get_entity_attrs(self, entity_id, headers={}, params=None):
+        """
+        GET /v2/entities/{id}/attrs
+        """
+
+        # Add default headers to the request
+        headers.update(self.headers)
+
+        path = self.path_get_entity_attrs.replace('entityId', entity_id)
+
+        return self.__send_request('get', path, headers=headers, verify=None, query=params)
+
 
     def get_attribute(self, headers, entity_id, entity_type, attribute_name):
         """
