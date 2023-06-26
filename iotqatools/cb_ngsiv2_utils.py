@@ -949,7 +949,7 @@ class CbNgsi10v2Utils(object):
         return self.__send_request('post', path, payload=payload, headers=headers, query=params,
                                    verify=None)
 
-    def list_entities(self, headers={}, filters=None):
+    def list_entities(self, headers={}, params=None):
         """
         Retrieves a list of entities which match different criteria (by id, idPattern, type or those which match a
         query or geographical query)
@@ -961,12 +961,6 @@ class CbNgsi10v2Utils(object):
 
         # Add default headers to the request
         headers.update(self.headers)
-
-        # Set the filters of the requests as params
-        if filters is not None:
-            params = filters
-        else:
-            params = None
 
         return self.__send_request('get', self.path_entities, headers=headers, verify=None, query=params)
 
