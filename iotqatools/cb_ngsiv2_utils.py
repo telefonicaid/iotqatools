@@ -30,7 +30,16 @@ import json
 from iotqatools.iot_logger import get_logger
 from requests.exceptions import RequestException
 from iotqatools.iot_tools import PqaTools
+from helpers_utils import convert_str_to_list, remove_quote, string_generator
 
+__logger__ = get_logger("CB Utils")
+
+# Random values
+RANDOM_ENTITIES_LABEL = ['attributes_name', 'attributes_value', 'attributes_type', 'metadatas_name', 'metadatas_value',
+                         'metadatas_type', 'entities_id', 'entities_type']
+RANDOM_SUBSCRIPTION_LABEL = ['subject_type', 'subject_id', 'subject_idPattern', 'condition_attrs', 'notification_attrs',
+                             'notification_except_attrs', 'description']
+RANDOM_QUERIES_PARAMETERS_LABELS = ["options"]
 
 class CbNgsi10v2Utils(object):
     """
@@ -93,11 +102,67 @@ class CbNgsi10v2Utils(object):
         self.path_statistics = path_statistics
         self.path_entities = "{}{}".format(self.default_endpoint, path_entities)
         self.path_update_entity = "{}{}".format(self.default_endpoint, path_entities_id_attrs)
-        self.path_context_subscriptions = "{}{}".format(self.default_endpoint, path_subscriptions)
-        self.path_context_subscriptions_by_id = "{}{}".format(self.default_endpoint, path_subscriptions_id)
+        self.path_subscriptions = "{}{}".format(self.default_endpoint, path_subscriptions)
+        self.path_subscriptions_by_id = "{}{}".format(self.default_endpoint, path_subscriptions_id)
         self.path_version = path_version
         self.verify = verify
         self.check_json = check_json
+
+        # initialize context dictionaries
+        self.entities_parameters = {}
+        self.__init_entity_context_dict()
+        self.__init_subscription_context_dict()
+
+
+    def __init_entity_context_dict(self):
+        """
+        initialize entity_context dict (used in create, update or append entity)
+        """
+
+        self.entity_context = {'entities_number': 1,
+                               'entities_type': 'Thing',
+                               'entities_id': None,
+                               'entities_prefix': {'id': False, 'type': False},
+                               'attributes_number': 0,
+                               'attributes_name': None,
+                               'attributes_value': None,
+                               'attributes_type': 'none',
+                               'attributes_metadata': 'true',
+                               'metadatas_number': 0,
+                               'metadatas_name': None,
+                               'metadatas_type': 'none',
+                               'metadatas_value': None}
+
+
+    def __init_subscription_context_dict(self):
+        """
+        initialize subscription_context dict (used in create or update subcription)
+        """
+        self.subscription_context = {'description': None,
+                                     'subject_type': None,
+                                     'subject_id': None,
+                                     'subject_idPattern': None,
+                                     'subject_typePattern': None,
+                                     'subject_entities_number': 1,
+                                     'subject_entities_prefix': '', # allowed values(id | type)
+                                     'condition_attrs': None,
+                                     'condition_attrs_number': 0,
+                                     'condition_expression': None,
+                                     'notification_attrs': None,
+                                     'notification_except_attrs': None,
+                                     'notification_attrs_number': 0,
+                                     'notification_attrsFormat': None,
+                                     'notification_metadata': None,
+                                     'notification_http_url': None,
+                                     'notification_http_custom_url': None,
+                                     'notification_http_custom_headers': None,
+                                     'notification_http_custom_qs': None,
+                                     'notification_http_custom_method': None,
+                                     'notification_http_custom_payload': None,
+                                     'throttling': None,
+                                     'expires': None,
+                                     'status': None}
+
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
@@ -140,6 +205,249 @@ class CbNgsi10v2Utils(object):
 
         return response
 
+
+    def __create_attribute_raw(self, entity_context, mode):
+        """
+        create an attribute with entity context in raw mode
+        :return (string)
+        Hint: to create N attributes use & as separator. Ev:
+                  | parameter           | value                                 |
+                  | entities_type       | "house"                               |
+                  | entities_id         | "room_2"                              |
+                  | attributes_name     | "temperature"&"pressure"&"humidity"   |
+                  | attributes_value    | 34&"high"&"random=3"                  |
+                  | attributes_type     | "celsius"&&"porcent"                  |
+                  | attributes_metadata | true&false                            |
+                  | metadatas_name      | "very_hot"                            |
+                  | metadatas_type      | "alarm"                               |
+                  | metadatas_value     | "default"                             |
+        """
+        attributes_final = ''
+        separator = "&"
+        name_list = []
+        values_list = []
+        type_list = []
+        meta_names_list = []
+        meta_values_list = []
+        meta_types_list = []
+        # create N attributes with/without attribute type and metadatas (with/without type)
+        if entity_context['attributes_name'] is not None:
+            name_list = convert_str_to_list(entity_context['attributes_name'], separator)
+        if entity_context['attributes_value'] is not None:
+            values_list = convert_str_to_list(entity_context['attributes_value'], separator)
+        if entity_context['attributes_type'] is not None:
+            while entity_context['attributes_type'].find("&&") >= 0:
+                entity_context['attributes_type'] = entity_context['attributes_type'].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+            type_list = convert_str_to_list(entity_context['attributes_type'], separator)
+        if entity_context['metadatas_name'] is not None:
+            meta_names_list = convert_str_to_list(entity_context['metadatas_name'], separator)
+        if entity_context['metadatas_value'] is not None:
+            meta_values_list = convert_str_to_list(entity_context['metadatas_value'], separator)
+        if entity_context['metadatas_type'] is not None:
+            while entity_context['metadatas_type'].find("&&") >= 0:
+                entity_context['metadatas_type'] = entity_context['metadatas_type'].replace("%s%s" % (separator, separator), '%s"none"%s' % (separator, separator))
+            meta_types_list = convert_str_to_list(entity_context['metadatas_type'], separator)
+
+        for pos in range(len(name_list)):
+            attribute_str = ''
+            # create a entity with N attributes in normalized mode
+            if mode == 'normalized':
+                # append attribute type if it does exist
+                if (len(type_list) > pos) and (remove_quote(type_list[pos]) != 'none'):
+                    attribute_str = '"type": %s' % type_list[pos]
+
+                # append metadata if it does exist
+                if (len(meta_names_list) > pos) and meta_names_list[pos] != None:
+                    if (len(meta_types_list) > pos) and remove_quote(meta_types_list[pos]) != 'none':
+                        metadata = '"metadata": {%s: {"value": %s, "type": %s}}' % (meta_names_list[pos],
+                                                                                    meta_values_list[pos],
+                                                                                    meta_types_list[pos])
+                    else:
+                        metadata = '"metadata": {%s: {"value": %s}}' % (meta_names_list[pos],
+                                                                        meta_values_list[pos])
+                    if attribute_str != '':
+                        attribute_str = '%s, %s' % (attribute_str, metadata)
+                    else:
+                        attribute_str = metadata
+
+                # append attribute value if it exist
+                if values_list[pos] is not None:
+                    if attribute_str != '':
+                        attribute_str = '%s, "value": %s' % (attribute_str, values_list[pos])
+                    else:
+                        attribute_str = '"value": %s' % values_list[pos]
+
+                # append attribute name
+                if name_list[pos] is not None:
+                    attribute_str = u'%s:{%s},' % (name_list[pos], attribute_str)
+                attributes_final = "%s %s" % (attributes_final, attribute_str)
+
+            # create a entity with N attributes in keyValues mode
+            elif mode == KEY_VALUES and entity_context['attributes_name'] is not None:
+                attribute_str = u'%s: %s,' % (name_list[pos], values_list[pos])
+                attributes_final = "%s %s" % (attributes_final, attribute_str)
+
+        __logger__.debug("Atribute with raw values: %s" % attributes_final[:-1])
+        return attributes_final[:-1]
+
+
+    def __create_subsc_subject_raw(self, subscription_context):
+        """
+        create subject field (entities and condition) to subscriptions in raw mode
+        :return string
+        """
+        # entities fields
+        entities = u'"entities": [{'
+        # type or typePattern field
+        if subscription_context['subject_type'] is not None:
+            entities = u'%s"type": %s,' % (entities, subscription_context['subject_type'])
+        elif subscription_context['subject_typePattern'] is not None:
+            entities = u'%s"typePattern": %s,' % (entities, subscription_context['subject_typePattern'])
+        # id or idPattern field
+        if subscription_context['subject_id'] is not None:
+            entities = u'%s"id": %s}],' % (entities, subscription_context['subject_id'])
+        elif subscription_context['subject_idPattern'] is not None:
+            entities = u'%s"idPattern": %s}],' % (entities, subscription_context['subject_idPattern'])
+
+        # condition fields
+        condition = u'"condition": {'
+        # attributes field
+        if subscription_context['condition_attrs'] is not None:
+            if remove_quote(subscription_context['condition_attrs']) == "array is empty":
+                subscription_context['condition_attrs'] = ''
+            condition = u'%s "attrs": [%s]' % (condition, subscription_context['condition_attrs'])
+            if subscription_context['condition_expression'] is not None:
+                condition = "%s," % condition
+        # expression field
+        if subscription_context['condition_expression'] is not None:
+            exp_op = subscription_context['condition_expression'].split("&")
+            internal_conditions = ''
+            for op in exp_op:
+                exp_split = op.split(">>>")
+                internal_conditions = u' %s %s: %s,' % (internal_conditions, exp_split[0], exp_split[1])
+            condition = u'%s "expression": {%s}' % (condition, internal_conditions[:-1])
+        condition = u'%s }' % condition
+        return  u'"subject": {%s %s}' % (entities, condition)
+
+
+    def __create_subsc_notification_raw(self, subscription_context):
+        """
+        create notification fields (callback, attributes, throttling, headers, query and attrsFormat) to subscription in raw mode
+        :return string
+        """
+        url = ''
+        attributes = ''
+        throttling = ''
+        headers = ''
+        query = ''
+        attrsFormat = ''
+        notification = ''
+        http_custom_field_exist = False
+        http_custom = 'httpCustom'
+        # http url field
+        if subscription_context['notification_http_url'] is not None:
+            notification = u'"http": { "url": %s,' % (subscription_context['notification_http_url'])
+
+        ## httpCustom fields
+        # httpCustom url field
+        if subscription_context['notification_http_custom_url'] is not None:
+            if not http_custom_field_exist:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                #notification = u'"%s": {' % http_custom
+            notification = u'"%s": { "url": %s,' % (http_custom, subscription_context['notification_http_custom_url'])
+        # httpCustom headers field
+        if subscription_context['notification_http_custom_headers'] is not None:
+            if not http_custom_field_exist:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                notification = u'"%s": {' % http_custom
+            notification = u'%s "headers": %s,' % (notification, subscription_context['notification_http_custom_headers'])
+        # httpCustom qs field
+        if subscription_context['notification_http_custom_qs'] is not None:
+            if not http_custom_field_exist:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                notification = u'"%s": {' % http_custom
+            notification = u'%s "qs": %s,' % (notification, subscription_context['notification_http_custom_qs'])
+       # httpCustom method field
+        if subscription_context['notification_http_custom_method'] is not None:
+            if not http_custom_field_exist:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                notification = u'"%s": {' % http_custom
+            notification = u'%s "method": %s,' % (notification, subscription_context['notification_http_custom_method'])
+        # httpCustom payload field
+        if subscription_context['notification_http_custom_payload'] is not None:
+            if not http_custom_field_exist:
+                http_custom_field_exist = True  # used to determine whether httpCustom dict is created or not
+                notification = u'"%s": {' % http_custom
+            notification = u'%s "payload": %s,' % (notification, subscription_context['notification_http_custom_payload'])
+        if notification != '':
+            notification = u'%s},' % notification[:-1]
+
+        # attrsFormat field
+        if subscription_context['notification_attrsFormat'] is not None:
+            attrsFormat = u'"attrsFormat": %s,' % subscription_context['notification_attrsFormat']
+            notification = "%s %s" % (notification, attrsFormat)
+
+        # attributes field
+        if subscription_context['notification_attrs'] is not None:
+            attributes = u'"attrs": [%s],' % (subscription_context['notification_attrs'])
+            notification = "%s %s" % (notification, attributes)
+
+        # exceptAttributes field
+        if subscription_context['notification_except_attrs'] is not None:
+            attributes = u'"exceptAttrs": [%s],' % (subscription_context['notification_except_attrs'])
+            notification = "%s %s" % (notification, attributes)
+
+        # metadata field
+        if subscription_context['notification_metadata'] is not None:
+            metadata = u'"metadata": %s,' % (subscription_context['notification_metadata'])
+            notification = "%s %s" % (notification, metadata)
+
+        if notification != '':
+            notification = u'{%s}' % notification[:-1]
+
+        return u'"notification": %s' % notification
+
+
+    def __random_values(self, random_labels, dictionary):
+        """
+        generate a random string if a label in a dict has "random=xxx" value
+        "attr_name", "attr_value", "attr_type", "meta_name", "meta_type" and "meta_value" could be random values in entities
+        "op" could be random values in queries parameters
+              The number after of "=" is the number of random chars
+        :param random_labels: labels to verify
+        :param dictionary: dictionary with key-values
+        :return (string) random
+        """
+        for random_label in dictionary:
+            if random_label in random_labels:
+                if (dictionary[random_label] is not None) and (dictionary[random_label].find('random') >= 0):
+                    temp = dictionary[random_label].split(u'random=')
+                    label_final = ''
+                    for pos in range(len(temp)-1):
+                        rn = self.__get_random_number(temp[pos+1])
+                        label_final = string_generator(rn) + temp[pos+1][rn:]
+                        rns = str(rn)
+                    if temp[-1] != rns:  # used mainly with values with quotes
+                        label_final = "%s%s" % (label_final, temp[-1][len(rns):])
+                    dictionary[random_label] = "%s%s" % (temp[0], label_final)
+        return dictionary
+
+
+    @staticmethod
+    def __get_random_number(label):
+        """
+        get random number
+        :param label: ex: random=10 return: 10
+        :return int
+        """
+        number = u'0123456789'
+        c = 0
+        length = len(label)-1
+        while (length >= c) and (label[c] in number):
+            c=c+1
+        return int(label[:c])
+
+
     def set_service(self, service):
         self.headers['Fiware-Service'] = service
 
@@ -148,7 +456,7 @@ class CbNgsi10v2Utils(object):
             self.headers['Fiware-Servicepath'] = subservice
 
     def set_auth_token(self, auth_token):
-        self.headers['x-auth-token'] = auth_token
+        self.headers['X-Auth-Token'] = auth_token
 
     def remove_content_type_header(self):
         """
@@ -161,6 +469,400 @@ class CbNgsi10v2Utils(object):
             return True
         else:
             return False
+
+    def append_new_header(self, header, value):
+        self.headers[header] = value
+
+    def modification_headers(self, context, prev):
+        """
+        modification or append of headers
+           | parameter          | value            |
+           | Fiware-Service     | happy_path       |
+           | Fiware-ServicePath | /test            |
+           | Content-Type       | application/json |
+           | Accept             | application/json |
+        :param context: context variable with headers
+        :param prev:determine if the previous headers are kept or not ( true | false )
+        """
+        header_temp = {}
+        for item in self.headers:
+            header_temp[item] = self.headers[item]
+        if prev.lower() != 'true':
+            self.headers.clear()
+        for row in context.table:
+            if row['value'] == "the same value of the previous request":
+                self.headers[row['parameter']] = header_temp[row['parameter']]
+            else:
+                self.headers[row['parameter']] = row['value']
+
+
+    def definition_headers(self, context):
+        """
+        definition of headers
+           | parameter          | value            |
+           | Fiware-Service     | happy_path       |
+           | Fiware-ServicePath | /test            |
+           | Content-Type       | application/json |
+           | Accept             | application/json |
+        Hint: if value is "max length allowed", per example, it is random value with max length allowed and characters
+              allowed
+        :param context: context variable with headers
+        """
+        if context.table is not None:
+            for row in context.table:
+                self.headers[row['parameter']] = row['value']
+
+    def get_headers(self):
+        """
+        return headers
+            {
+                "Fiware-Service": "service",
+                "Fiware-ServicePath": "/service_path'
+            }
+        :return: dict (see "definition_headers" method by dict fields)
+        """
+        return self.headers
+
+    def properties_to_entities(self, context):
+        """
+        definition of properties to entities
+          | parameter         | value                   |
+          | entities_type     | room                    |
+          | entities_id       | room2                   |
+          | attributes_number | 2                       |
+          | attributes_name   | random=5                |
+          | attributes_value  | 017-06-17T07:21:24.238Z |
+          | attributes_type   | date                    |
+          | metadatas_number  | 2                       |
+          | metadatas_name    | very_hot                |
+          | metadatas_type    | alarm                   |
+          | metadatas_value   | hot                     |
+          #  query parameter
+          | qp_options        | keyvalue                |
+        Hint: - If attributes number is equal "1", the attribute name has not suffix, ex: `attributes_name=temperature`
+                else attributes number is major than "1" the attributes name are value plus a suffix (consecutive), ex:
+                  `attributes_name=temperature_0, attributes_name=temperature_1, ..., temperature_N`
+              - If would like a query parameter name, use `qp_` prefix into `properties to entities` step
+              - It is possible to use the same value of the previous request in another request using this string:
+                  `the same value of the previous request`.
+              - "attr_name", "attr_value", "attr_type", "meta_name", "meta_type" and "meta_value" could be random values.
+                 The number after "=" is the number of chars
+                     ex: | attributes_name | random=10 |
+              - if we wanted an empty payload in a second request, use:
+                      | parameter          |
+                      | without_properties |
+              - if "attr_value" has "timestamp in last minutes" as value is generate a timestamp with N last minutes of current timestamp
+        :param context: context variable with properties to entities
+        """
+        # store previous entities context dict temporally (used in update request)
+        self.dict_temp = {}
+        for item in self.entity_context:
+            self.dict_temp[item] = self.entity_context[item]
+
+        # store parameters in entities contexts
+        self.__init_entity_context_dict()  # reinit context dict (used in update request)
+        if context.table is not None:
+            for row in context.table:
+                if row['parameter'] in self.entity_context:
+                    self.entity_context[row['parameter']] = row['value']
+                elif row['parameter'] == u'without_properties':
+                    break
+                elif row['parameter'].find("qp_") >= 0:
+                    qp = str(row['parameter']).split("qp_")[1]
+                    self.entities_parameters[qp] = row['value']
+                else:
+                    __logger__.warn("Wrong parameter: %s" % row['parameter'])
+
+        # The same value from create request (used in update request)
+        for item in self.entity_context:
+            if self.entity_context[item] == 'the same value of the previous request':
+                self.entity_context[item] = self.dict_temp[item]
+
+        self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
+        self.entities_parameters = self.__random_values(RANDOM_QUERIES_PARAMETERS_LABELS, self.entities_parameters)
+
+        # timestamp on last minutes ex: "timestamp in last minutes=20"
+        if (self.entity_context['attributes_value'] is not None) and (self.entity_context['attributes_value'].find("timestamp in last minutes") >= 0):
+            ts_split = remove_quote(self.entity_context['attributes_value']).split("=")
+            last_minutes = int(ts_split[1])*60
+            self.entity_context['attributes_value'] = '"%s"' % generate_date_zulu(generate_timestamp() - last_minutes)
+
+        if self.entity_context['attributes_name'] is not None and self.entity_context['attributes_number'] == 0:
+            self.entity_context['attributes_number'] = 1
+        if self.entity_context['metadatas_name'] is not None and self.entity_context['metadatas_number'] == 0:
+            self.entity_context['metadatas_number'] = 1
+
+        # log entities contexts
+        __logger__.debug("entity context properties:")
+        for item in self.entity_context:
+            __logger__.debug("   - %s: %s" % (item, self.entity_context[item]))
+
+        # log entities_parameters
+        __logger__.debug("queries parameters:")
+        for item in self.entities_parameters:
+            __logger__.debug("   - %s: %s" % (item, self.entities_parameters[item]))
+
+    def create_entity_raw(self, context, mode):
+        """
+        create an entity with an attribute and raw values (compound, vector, boolean, integer, etc) in differents modes
+        :request -> POST /v2/entities/
+        :payload --> Yes
+        :query parameters --> Yes
+        :param mode: mode in that will be created the entity (normalized | keyValues | values),
+                     it is not the query parameter (options), else the mode to generate the request.
+                     normalized:
+                                "attr": {
+                                     "value": "45",
+                                     ...
+                                }
+                     keyValues:
+                                "attr": "45"
+        Some cases are not parsed correctly to dict in python.
+           ex of raw values:
+             "value": true
+             "value": false
+             "value": 34
+             "value": 5.00002
+             "value": [ "json", "vector", "of", 6, "strings", "and", 2, "integers" ]
+             "value": {"x": {"x1": "a","x2": "b"}}
+             "value": "41.3763726, 2.1864475,14"  -->  "type": "geo:point"
+             "value": "2017-06-17T07:21:24.238Z"  -->  "type: "date"
+        :return responses list
+        """
+        entity = ''
+        attribute_str = ''
+        self.entity_context['entities_number'] = 1
+        self.entity_context['attributes_number'] = 1
+
+        # create attribute with/without attribute type and metadatas (with/without type)
+        attribute_str = self.__create_attribute_raw(self.entity_context, mode)
+
+        # if options=keyValues the attribute values is all. Attribute_type and metadata(s) are restarted
+        if 'options' in self.entities_parameters and self.entities_parameters['options'] == 'keyValues':
+            key_value_attr = attribute_str.split(":")[1]
+            self.entity_context['attributes_value'] = key_value_attr
+            self.entity_context['attributes_type'] = 'none'
+            self.entity_context['metadatas_number'] = 0
+            self.entity_context['metadatas_name'] = None
+
+        # create entity with attribute value in raw
+        if self.entity_context['entities_type'] != 'Thing':
+            entity = '"type": %s' % self.entity_context['entities_type']
+        if self.entity_context['entities_id'] is not None:
+            if entity != '':
+                entity = '%s, "id": %s' % (entity, self.entity_context['entities_id'])
+            else:
+                entity = '"id": %s' % self.entity_context['entities_id']
+        if attribute_str != '':
+            payload = u'{%s, %s}' % (entity, attribute_str)
+        else:
+            payload = u'{%s}' % entity
+
+        resp = self.__send_request('post', self.path_entities, headers=self.headers, payload=json.loads(payload),
+                                   query=self.entities_parameters)
+        self.action_type = 'append'
+        return resp
+
+
+    def get_entity_context(self):
+        """
+        get entities contexts
+        :return dict (see "constructor" method by dict fields)
+        """
+        return self.entity_context
+
+    def properties_to_subcription(self, context, listener_host, listener_port, listener_port_https, cep_url):
+        """
+        definition of properties to entities
+          | parameter                      | value                   |
+          | description                    | my first subscription   |
+          | subject_type                   | room                    |
+          | subject_id                     | room2                   |
+          | subject_idPattern              | .*                      |
+          | subject_entities_number        | 2                       |
+          | subject_entities_suffix        | type                    |
+          | condition_attrs                | temperature             |
+          | condition_attrs_number         | 3                       |
+          | condition_expression           | q>>>temperature>40      |
+          | notification_http_url          | http://localhost:1234   |
+          | notification_http_headers      | My-Header: activated    |
+          | notification_http_qs           | options=myValues        |
+          | notification_http_method       | My-Header: activated    |
+          | notification_http_payload      | options=myValues        |
+          | notification_attrs             | temperature             |
+          | notification_attrs_number      | 3                       |
+          | notification_attrsFormat       | options=keyValues       |
+          | throttling                     | 5                       |
+          | expires                        | 2016-04-05T14:00:00.00Z |
+          | status                         | active                  |
+        Hint: - If `subject_entities_number` is major than "1" will have N entities object using `subject_entities_prefix` to differentiate.
+              - If `condition_attributes_number` is equal "1", the attribute name has not suffix, ex: `"attributes": ["temperature"]`
+                else `condition_attributes_number` is major than "1" the attributes name are value plus a suffix (consecutive), ex:
+                `"attributes": ["temperature", "temperature_0", "temperature_1", ..., "temperature_N"]`
+              - If `notification_attributes_number` is equal "1", the attribute name has not suffix, ex: `"attributes": ["temperature"]`
+                else `notification_attributes_number` is major than "1" the attributes name are value plus a suffix (consecutive), ex:
+                `"attributes": ["temperature", "temperature_0", "temperature_1", ..., "temperature_N"]`
+              - It is possible to use the same value of the previous request in another request using this string:
+                  `the same value of the previous request`.
+              - "type", "id", "attributes" could be random values.
+                 The number after "=" is the number of chars
+                     ex: | attributes_name | random=10 |
+              - if we wanted an empty payload in a second request, use:
+                      | parameter          |
+                      | without_properties |
+              - If would you like that `subject` field is missing, use `subject_type` equals to `without subject field`
+              - If would you like that `entities` field is missing, use `subject_type` equals to `without entities field`
+              - If would you like that `conditions` field is missing, use `condition_attributes` equals to `without condition field`
+              - If would you like that `conditions attributes` field is empty, use `condition_attributes` equals to `array is empty`
+              - If would you like that `conditions expression` field is empty, use `condition_expression` equals to `object is empty`
+              - If would you like that `notification` field is missing, use `notification_callback` equals to `without notification field`
+              - If would you like that `notification attributes` field is empty, use `notification_attributes` equals to `array is empty`
+              - In expression value have multiples expressions uses `&` as separator, and in each operation use `>>>` as separator between the key and the value,
+                 ex:
+                     `| condition_expression | q>>>temperature>40&georel>>>near&geometry>>>point&coords>>>40.6391 |`
+              - If notification_http_url has `replace_host` value, ex: http://replace_host:1234/notify, it string is replaced by the hostname (used to notifications).
+        :param context: context variable with properties to entities
+        :param listener_host: listener host from properties.json
+        :param listener_port: listener port from properties.json
+        :param listener_port_https: listener port https from properties.json
+        :param cep_url: used to replace CEP used as notify_url
+        """
+        # store previous subsciption context dict temporally (used in update request)
+        self.subsc_dict_temp = {}
+        for item in self.subscription_context:
+            self.subsc_dict_temp[item] = self.subscription_context[item]
+
+        # store parameters in entities contexts
+        self.__init_subscription_context_dict()  # reinit context dict (used in update request)
+        if context.table is not None:
+            for row in context.table:
+                if row['parameter'] in self.subscription_context:
+                    self.subscription_context[row['parameter']] = row['value']
+                elif row['parameter'] == u'without_properties':
+                    break
+                else:
+                    __logger__.warn("Wrong parameter: %s" % row['parameter'])
+
+        # The same value from create request (used in update request)
+        for item in self.subscription_context:
+            if self.subscription_context[item] == 'the same value of the previous request':
+                self.subscription_context[item] = self.subsc_dict_temp[item]
+
+        # replace_host string in url is replaced to the listener property (used in notification field)
+        if (self.subscription_context['notification_http_url'] is not None) and (
+                self.subscription_context['notification_http_url'].find('replace_host') >= 0):
+            self.subscription_context['notification_http_url'] = self.subscription_context['notification_http_url'].replace(
+                'replace_host', listener_host)
+        if (self.subscription_context['notification_http_custom_url'] is not None) and (
+                self.subscription_context['notification_http_custom_url'].find('replace_host') >= 0):
+            self.subscription_context['notification_http_custom_url'] = self.subscription_context[
+                'notification_http_custom_url'].replace('replace_host', listener_host)
+
+        # replace_port string in url is replaced to the listener property (used in notification field)
+        if (self.subscription_context['notification_http_url'] is not None) and (
+                self.subscription_context['notification_http_url'].find('replace_port') >= 0):
+            self.subscription_context['notification_http_url'] = self.subscription_context['notification_http_url'].replace(
+                'replace_port', listener_port)
+        if (self.subscription_context['notification_http_custom_url'] is not None) and (
+                self.subscription_context['notification_http_custom_url'].find('replace_port') >= 0):
+            self.subscription_context['notification_http_custom_url'] = self.subscription_context[
+                'notification_http_custom_url'].replace('replace_port', listener_port)
+
+        # replace_https_port string in url is replaced to the listener property (used in notification field)
+        if (self.subscription_context['notification_http_url'] is not None) and (
+                self.subscription_context['notification_http_url'].find('replace_https_port') >= 0):
+            self.subscription_context['notification_http_url'] = self.subscription_context['notification_http_url'].replace(
+                'replace_https_port', listener_port_https)
+        if (self.subscription_context['notification_http_custom_url'] is not None) and (
+                self.subscription_context['notification_http_custom_url'].find('replace_https_port') >= 0):
+            self.subscription_context['notification_http_custom_url'] = self.subscription_context[
+                'notification_http_custom_url'].replace('replace_https_port', listener_port_https)
+
+        # CEP url replacement
+        if (self.subscription_context['notification_http_url']) == 'CEP':
+            self.subscription_context['notification_http_url'] = '"' + cep_url + '"'
+        if (self.subscription_context['notification_http_custom_url']) == 'CEP':
+            self.subscription_context['notification_http_custom_url'] = '"' + cep_url + '"'
+
+        # Random values
+        self.subscription_context = self.__random_values(RANDOM_SUBSCRIPTION_LABEL, self.subscription_context)
+        if self.subscription_context['condition_expression'] is not None and self.subscription_context[
+            'condition_expression'].find('random') >= 0:  # random condition expression
+            exp_op = self.subscription_context['condition_expression'].split(
+                "&")  # ex: ["q>>>random=10", "georel>>>near;minDistance:5000", "geometry>>><geometry>", "coords>>>25.774,-80.190"]
+            temp = ''
+            for op in exp_op:
+                if op.find('random') >= 0:
+                    exp_split = op.split(">>>")  # ex: ["q>", "random=10"]
+                    rnd_split = exp_split[1].split("=")  # ex: ["random", "10"]
+                    op = "%s>>>%s" % (exp_split[0], string_generator(self.__get_random_number(rnd_split[1])))
+                temp = "%s%s&" % (temp, op)
+            self.subscription_context['condition_expression'] = temp[:-1]
+
+        if self.subscription_context['condition_attrs'] is not None and self.subscription_context[
+            'condition_attrs'] != "array is empty" \
+                and self.subscription_context['condition_attrs_number'] == 0:
+            self.subscription_context['condition_attrs_number'] = 1
+        if self.subscription_context['notification_attrs'] is not None and self.subscription_context[
+            'notification_attrs'] != "array is empty" \
+                and self.subscription_context['notification_attrs_number'] == 0:
+            self.subscription_context['notification_attrs_number'] = 1
+        if self.subscription_context['notification_except_attrs'] is not None and self.subscription_context[
+            'notification_except_attrs'] != "array is empty" \
+                and self.subscription_context['notification_attrs_number'] == 0:
+            self.subscription_context['notification_attrs_number'] = 1
+
+        # log entities contexts
+        __logger__.debug("subscription context properties:")
+        for item in self.subscription_context:
+            __logger__.debug("   - %s: %s" % (item, self.subscription_context[item]))
+
+    def create_subscription_in_raw_mode(self):
+        """
+        create a subscription in raw mode
+        :request -> POST /v2/subscriptions/
+        :payload --> Yes
+        :query parameters --> No
+        :return responses
+        """
+        payload = "{"
+        # description field
+        if self.subscription_context['description'] is not None:
+            payload = u'%s "description": %s,' % (payload, self.subscription_context['description'])
+
+        # subject fields
+        payload = u'%s %s,' % (payload, self.__create_subsc_subject_raw(self.subscription_context))
+
+        # notification fields
+        payload = u'%s %s,' % (payload, self.__create_subsc_notification_raw(self.subscription_context))
+
+        # expires field
+        if self.subscription_context['expires'] is not None:
+            payload = u'%s "expires": %s,' % (payload, self.subscription_context['expires'])
+
+        # status field
+        if self.subscription_context['status'] is not None:
+            payload = u'%s "status": %s,' % (payload, self.subscription_context['status'])
+
+       # throttling field
+        if self.subscription_context['throttling'] is not None:
+            payload =  u'%s "throttling": %s,'  % (payload, self.subscription_context['throttling'])
+
+        # payload
+        payload = "%s }" % payload[:-1]
+        __logger__.debug("subscription: %s" % payload)
+        resp = self.__send_request('post', self.path_subscriptions, headers=self.headers, payload=json.loads(payload),
+                                   query=self.entities_parameters)
+        return resp
+
+
+    def get_subscription_context(self):
+        """
+        get subscription contexts
+        :return dict (see "constructor" method by dict fields)
+        """
+        return self.subscription_context
+
 
     def version(self):
         """
@@ -398,7 +1100,7 @@ class CbNgsi10v2Utils(object):
                 raise Exception('Wrong type in options. Dictionary is needed')
 
         # Make request
-        return self.__send_request('get', self.path_context_subscriptions, headers=headers, verify=None, query=options)
+        return self.__send_request('get', self.path_subscriptions, headers=headers, verify=None, query=options)
 
     def retrieve_subscription_by_id(self, headers, subscription_id):
         """
@@ -445,7 +1147,7 @@ class CbNgsi10v2Utils(object):
         headers.update(self.headers)
 
         # Compose path
-        path = self.path_context_subscriptions_by_id.replace('subscriptionId', subscription_id)
+        path = self.path_subscriptions_by_id.replace('subscriptionId', subscription_id)
 
         # Make request
         return self.__send_request('get', path, headers=headers, verify=None)
@@ -490,7 +1192,7 @@ class CbNgsi10v2Utils(object):
         headers.update(self.headers)
 
         # Compose path
-        path = self.path_context_subscriptions
+        path = self.path_subscriptions
 
         # Make request
         return self.__send_request('post', path, payload=payload, headers=headers, verify=None)
@@ -510,7 +1212,7 @@ class CbNgsi10v2Utils(object):
         """
 
         # Compose path
-        path = self.path_context_subscriptions_by_id.replace('subscriptionId', sub_id)
+        path = self.path_subscriptions_by_id.replace('subscriptionId', sub_id)
 
         # Make request
         return self.__send_request('delete', path, headers=self.headers, verify=None)
