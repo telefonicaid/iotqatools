@@ -30,7 +30,7 @@ import json
 from iotqatools.iot_logger import get_logger
 from requests.exceptions import RequestException
 from iotqatools.iot_tools import PqaTools
-from helpers_utils import convert_str_to_list, remove_quote, string_generator
+from helpers_utils import convert_str_to_list, remove_quote, string_generator, mapping_quotes
 
 __logger__ = get_logger("CB Utils")
 
@@ -58,6 +58,8 @@ class CbNgsi10v2Utils(object):
                  path_types_type="/v2/types/entityType",
                  path_subscriptions="/v2/subscriptions",
                  path_subscriptions_id="/v2/subscriptions/subscriptionId",
+                 path_batch_update="/v2/op/update",
+                 path_batch_query="/v2/op/query",
                  path_statistics="/statistics",
                  path_version="/version",
                  log_instance=None,
@@ -101,10 +103,13 @@ class CbNgsi10v2Utils(object):
         self.path_delete_entity = "{}{}".format(self.default_endpoint, path_entities_id)
         self.path_statistics = path_statistics
         self.path_entities = "{}{}".format(self.default_endpoint, path_entities)
+        self.path_types = "{}{}".format(self.default_endpoint, path_types)
         self.path_update_entity = "{}{}".format(self.default_endpoint, path_entities_id_attrs)
         self.path_get_entity_attrs = "{}{}".format(self.default_endpoint, path_entities_id_attrs)
         self.path_subscriptions = "{}{}".format(self.default_endpoint, path_subscriptions)
         self.path_subscriptions_by_id = "{}{}".format(self.default_endpoint, path_subscriptions_id)
+        self.path_batch_update = "{}{}".format(self.default_endpoint, path_batch_update)
+        self.path_batch_query = "{}{}".format(self.default_endpoint, path_batch_query)
         self.path_version = path_version
         self.verify = verify
         self.check_json = check_json
@@ -113,6 +118,8 @@ class CbNgsi10v2Utils(object):
         self.entities_parameters = {}
         self.__init_entity_context_dict()
         self.__init_subscription_context_dict()
+        self.__init_query_batch_properties_dict()
+        self.previous_value = {'name': None, 'type': None, 'value': None}
 
 
     def __init_entity_context_dict(self):
@@ -164,6 +171,11 @@ class CbNgsi10v2Utils(object):
                                      'expires': None,
                                      'status': None}
 
+    def __init_query_batch_properties_dict(self):
+        """
+        initialize query batch dict (used in query batch operations)
+        """
+        self.query_batch_dict = {}
 
     def __send_request(self, method, url, headers=None, payload=None, verify=None, query=None):
         """
@@ -205,6 +217,66 @@ class CbNgsi10v2Utils(object):
         PqaTools.log_fullRequest(comp='CB', response=response, params=parameters)
 
         return response
+
+    def __create_metadata(self, metadata_number, metadata_name, metadata_type, metadata_value):
+        """
+        create N metadatas dynamically. The value could be random value ("random").
+        :param metadata_number: number of metadatas
+        :param metadata_name: name of metadatas with a prefix plus a consecutive
+        :param metadata_value: metadatas value.
+        :param metadata_typee: metadatas type.
+        :return metadatas dict
+        """
+        meta_dict = {}
+        if metadata_name is not None:
+            for i in range(int(metadata_number)):
+                if int(metadata_number) > 1:
+                    name = "%s_%s" % (metadata_name, str(i))
+                else:
+                    name = metadata_name
+                meta_dict[name] = {}
+                if metadata_value is not None:
+                    meta_dict[name]['value'] = metadata_value
+                if metadata_type != 'none':
+                    meta_dict[name]['type'] = metadata_type
+        return meta_dict
+
+
+    def __create_attributes(self, entity_context, mode):
+        """
+        create attributes with entity context
+        :return (dict) attribute list
+        """
+        attr = {}
+        attributes = {}
+        metadata = {}
+
+        # create metadatas if they exist
+        if int(entity_context['metadatas_number']) > 0:
+            metadata = self.__create_metadata(entity_context['metadatas_number'], entity_context['metadatas_name'],
+                                              entity_context['metadatas_type'], entity_context['metadatas_value'])
+        __logger__.debug("Metadatas: %s" % str(metadata))
+
+        # create attributes
+        if mode == 'normalized':
+            if metadata != {}:
+                attr['metadata'] = metadata
+            if entity_context['attributes_type'] != "none":
+                attr['type'] = entity_context['attributes_type']
+            if entity_context['attributes_value'] is not None:
+                attr['value'] = entity_context['attributes_value']
+        elif mode == 'keyValues':
+            if entity_context['attributes_value'] is not None:
+                attr = entity_context['attributes_value']
+
+        if entity_context['attributes_name'] is not None:
+            for i in range(int(entity_context['attributes_number'])):
+                if int(entity_context['attributes_number']) > 1:
+                    name = "%s_%s" % (entity_context['attributes_name'], str(i))
+                else:
+                    name = entity_context['attributes_name']
+                attributes[name] = attr
+        return attributes
 
 
     def __create_attribute_raw(self, entity_context, mode):
@@ -284,7 +356,7 @@ class CbNgsi10v2Utils(object):
                 attributes_final = "%s %s" % (attributes_final, attribute_str)
 
             # create a entity with N attributes in keyValues mode
-            elif mode == KEY_VALUES and entity_context['attributes_name'] is not None:
+            elif mode == 'keyValues' and entity_context['attributes_name'] is not None:
                 attribute_str = u'%s: %s,' % (name_list[pos], values_list[pos])
                 attributes_final = "%s %s" % (attributes_final, attribute_str)
 
@@ -672,6 +744,28 @@ class CbNgsi10v2Utils(object):
         """
         return self.entity_context
 
+    def get_action_type(self):
+        """
+        get action type, used to notification special metadata "actionType"
+        """
+        return self.action_type
+
+    def get_previous_value(self):
+        """
+        get previous value and previous type in the attributes before the update, used to notification special metadata "previousValue". Ex:
+        self.previous_value = {"name": None,
+                               "type": None,
+                               "value": None}
+        """
+        return self.previous_value
+
+    def get_entities_parameters(self):
+        """
+        return queries parameters used in list entities
+        :return: dict
+        """
+        return self.entities_parameters
+
     def properties_to_subcription(self, context, listener_host, listener_port, listener_port_https, cep_url):
         """
         definition of properties to entities
@@ -856,6 +950,62 @@ class CbNgsi10v2Utils(object):
                                    query=self.entities_parameters)
         return resp
 
+    def update_or_append_an_attribute_by_id(self, method, entity_id, mode):
+        """
+        update or append an attribute by id
+        :request -> /v2/entities/<entity_id>
+        :payload --> Yes
+        :query parameters --> Yes
+        :param method: method used in request (POST, PATCH, PUT)
+        :param entity_id: entity used to update or append
+        :param mode: mode in that will be created attributes in request ( normalized | keyValues | values)
+        Hint: if would like a query parameter name, use `qp_` prefix
+        :return http response
+        """
+        self.entity_context['entities_id'] = entity_id
+        # The same value from create request
+        for item in self.entity_context:
+            if self.entity_context['entities_id'] == 'the same value of the previous request':
+                self.entity_context['entities_id'] = self.dict_temp['entities_id']
+        self.entity_id_to_request = mapping_quotes(
+            self.entity_context['entities_id'])  # used to verify if the entity returned is the expected
+
+        # Random values
+        self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
+
+        # create attributes with entity context
+        entities = self.__create_attributes(self.entity_context, mode)
+
+        path = self.path_update_entity.replace('entityId', self.entity_context['entities_id'])
+
+        # FIXME: it doesn't make sense to send this operation without payload...
+        if entities != {}:
+            resp = self.__send_request(method, path, headers=self.headers, payload=entities, query=self.entities_parameters)
+        else:
+            resp = self.__send_request(method, path, headers=self.headers, query=self.entities_parameters)
+        # update self.entity_context with last values (ex: create request)
+        for item in self.entity_context:
+            if (self.entity_context[item] is None) or (self.entity_context[item] == 'none') or (
+                    self.entity_context[item] == 'Thing'):
+                if item not in ('attributes_type', 'metadatas_type', 'attributes_value'):
+                    self.entity_context[item] = self.dict_temp[item]
+
+        # if options=keyValues is used, the type and metadatas are not used
+        if 'options' in self.entities_parameters and self.entities_parameters['options'] == 'keyValues':
+            self.entity_context['attributes_type'] = 'none'
+            self.entity_context['metadatas_number'] = 0
+        if method == 'post':
+            if self.entity_context['attributes_name'] != self.dict_temp['attributes_name'] or self.entity_context[
+                'attributes_number'] != self.dict_temp['attributes_number']:
+                self.action_type = 'append'
+            else:
+                self.action_type = 'update'
+        else:
+            self.action_type = 'update'
+        self.previous_value['name'] = self.dict_temp['attributes_name']
+        self.previous_value['value'] = self.dict_temp['attributes_value']
+        self.previous_value['type'] = self.dict_temp['attributes_type']
+        return resp
 
     def get_subscription_context(self):
         """
@@ -864,6 +1014,102 @@ class CbNgsi10v2Utils(object):
         """
         return self.subscription_context
 
+    def batch_op_entities_properties(self, entities):
+        """
+        define a entity to update in a single batch operations
+        :param entities: entities properties to append
+        :return dict (prpperties to update batch op)
+        """
+        entity_dict = {}
+        self.__init_entity_context_dict()
+
+        for item in entities:
+            if item in self.entity_context:
+                self.entity_context[item] = entities[item]
+
+            # entity prefixes
+            PREFIX_STR = u'entities_prefix_'
+            ent_prefix = []
+            if item.find(PREFIX_STR) >= 0:
+                ent_prefix = item.split(PREFIX_STR)
+                self.entity_context['entities_prefix'][ent_prefix[1]] = entities[item]
+
+        # The same value from create request (used in update request)
+        for item in self.entity_context:
+            if self.entity_context[item] == 'the same value of the previous request':
+                self.entity_context[item] = self.dict_temp[item]
+
+        # Random values
+        self.entity_context = self.__random_values(RANDOM_ENTITIES_LABEL, self.entity_context)
+
+        if self.entity_context['attributes_name'] is not None and self.entity_context['attributes_number'] == 0:
+            self.entity_context['attributes_number'] = 1
+        if self.entity_context['metadatas_name'] is not None and self.entity_context['metadatas_number'] == 0:
+            self.entity_context['metadatas_number'] = 1
+
+        __logger__.debug("entity properties:")
+        for e in self.entity_context:
+            __logger__.debug("%s: %s" % (e, self.entity_context[e]))
+        return self.entity_context
+
+    def batch_update_in_raw(self, parameters, accumulate, op):
+        """
+        allows to create, update and/or delete several entities in a single batch operation in raw mode
+        used mainly with data type as boolean, dict, list, null, numeric, etc
+        :request -> POST /v2/op/update
+        :payload --> Yes
+        :query parameters --> Yes
+        :param parameters: queries parameters
+        :param op: specify the kind of update action to do (APPEND, APPEND_STRICT, UPDATE, DELETE)
+        :param accumulate: entities accumulate with different properties
+        :return http response
+        """
+        entity = '"entities": ['
+        self.entities_parameters = parameters
+        mode = 'normalized'
+
+        if 'options' in self.entities_parameters:
+            mode = self.entities_parameters['options']
+
+        for item in accumulate:
+            # create attributes from entity context in raw mode
+            attributes = self.__create_attribute_raw(item, mode)
+            # create entity in raw mode
+            if item['entities_type'] != 'Thing':
+                entity = '%s {"type": %s' % (entity, item['entities_type'])
+            if item['entities_id'] is not None:
+                if item['entities_type'] != 'Thing':
+                    entity = '%s, "id": %s' % (entity, item['entities_id'])
+                else:
+                    entity = '%s {"id": %s' % (entity, item['entities_id'])
+            if attributes != '':
+                entity = u'%s, %s},' % (entity, attributes)
+            else:
+                entity = u'%s},' % entity
+
+        payload = u'{"actionType": "%s", %s]}' % (mapping_quotes(op), entity[:-1]) # mapping_quote from helpers_utils.py
+        __logger__.debug("payload: %s" % payload)
+
+        resp = self.__send_request('post', self.path_batch_update, headers=self.headers, query=self.entities_parameters, payload=json.loads(payload))
+        return resp
+
+    def batch_query(self, parameters):
+        """
+        returns an Array containing one object per matching entity
+        :request -> POST /v2/op/query
+        :payload --> Yes
+        :query parameters --> Yes
+        :param parameters: queries parameters
+        :return http response
+        """
+        self.entities_parameters = parameters
+
+        # FIXME: it doesn't make sense to send this operation without payload...
+        if self.query_batch_dict != {}:
+            resp = self.__send_request('post', self.path_batch_query, headers=self.headers, query=self.entities_parameters, payload=self.query_batch_dict)
+        else:
+            resp = self.__send_request('post', self.path_batch_query, query=self.entities_parameters, headers=self.headers)
+        return resp
 
     def version(self):
         """
@@ -950,6 +1196,21 @@ class CbNgsi10v2Utils(object):
         return self.__send_request('post', path, payload=payload, headers=headers, query=params,
                                    verify=None)
 
+    def get_entity_types(self, headers={}, params=None):
+        """
+        GET /v2/types
+        """
+
+        # Add default headers to the request
+        headers.update(self.headers)
+
+        # Store params to be used in other steps after the one using this function
+        self.entities_parameters = params
+
+        path = self.path_entities
+
+        return self.__send_request('get', self.path_types, headers=headers, verify=None, query=params)
+
     def list_entities(self, headers={}, params=None):
         """
         Retrieves a list of entities which match different criteria (by id, idPattern, type or those which match a
@@ -962,6 +1223,9 @@ class CbNgsi10v2Utils(object):
 
         # Add default headers to the request
         headers.update(self.headers)
+
+        # Store params to be used in other steps after the one using this function
+        self.entities_parameters = params
 
         return self.__send_request('get', self.path_entities, headers=headers, verify=None, query=params)
 
@@ -976,7 +1240,6 @@ class CbNgsi10v2Utils(object):
         path = self.path_get_entity_attrs.replace('entityId', entity_id)
 
         return self.__send_request('get', path, headers=headers, verify=None, query=params)
-
 
     def get_attribute(self, headers, entity_id, entity_type, attribute_name):
         """
@@ -1049,7 +1312,7 @@ class CbNgsi10v2Utils(object):
         # Make request
         return self.__send_request('delete', path, headers=self.headers, verify=None, query=params)
 
-    def retrieve_subscriptions(self, headers, options=None):
+    def retrieve_subscriptions(self, headers={}, options=None):
         """
         Response
         200
