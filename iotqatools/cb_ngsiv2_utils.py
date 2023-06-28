@@ -1245,7 +1245,7 @@ class CbNgsi10v2Utils(object):
 
         return self.__send_request('get', path, headers=headers, verify=None, query=params)
 
-    def get_attribute(self, headers, entity_id, entity_type, attribute_name):
+    def get_attribute(self, headers, entity_id, entity_type, attribute_name, params={}):
         """
         GET
         http://orion.lab.fiware.org/v2/entities/entityId/attrs/attrName?type=type
@@ -1282,7 +1282,7 @@ class CbNgsi10v2Utils(object):
         path = self.path_entities_id_attrs_attr.replace('entityId', entity_id).replace('attrName', attribute_name)
 
         # Compose params
-        params = {'type': entity_type}
+        params ['type'] = entity_type
 
         # Make request
         return self.__send_request('get', path, headers=headers, verify=None, query=params)
