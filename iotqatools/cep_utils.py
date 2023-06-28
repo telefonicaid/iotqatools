@@ -137,6 +137,10 @@ class CEP:
         if 'content-type' in self.headers:
             del self.headers['content-type']
             return True
+        elif 'Content-Type' in self.headers:
+            # FIXME: convert self.headers in a case-insensitive dict
+            del self.headers['Content-Type']
+            return True
         else:
             return False
 

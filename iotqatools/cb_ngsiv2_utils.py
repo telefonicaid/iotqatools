@@ -526,7 +526,7 @@ class CbNgsi10v2Utils(object):
 
     def set_subservice(self, subservice):
         if subservice != "None" and subservice != "none" and subservice != None:
-            self.headers['Fiware-Servicepath'] = subservice
+            self.headers['Fiware-ServicePath'] = subservice
 
     def set_auth_token(self, auth_token):
         self.headers['X-Auth-Token'] = auth_token
@@ -539,6 +539,10 @@ class CbNgsi10v2Utils(object):
         """
         if 'content-type' in self.headers:
             del self.headers['content-type']
+            return True
+        elif 'Content-Type' in self.headers:
+            # FIXME: convert self.headers in a case-insensitive dict
+            del self.headers['Content-Type']
             return True
         else:
             return False
@@ -1312,7 +1316,7 @@ class CbNgsi10v2Utils(object):
         # Make request
         return self.__send_request('delete', path, headers=self.headers, verify=None, query=params)
 
-    def retrieve_subscriptions(self, headers={}, options=None):
+    def retrieve_subscriptions(self, headers={}, params=None):
         """
         Response
         200
@@ -1366,12 +1370,12 @@ class CbNgsi10v2Utils(object):
         headers.update(self.headers)
 
         # Check params is a correct dict
-        if options is not None:
-            if not isinstance(options, dict):
+        if params is not None:
+            if not isinstance(params, dict):
                 raise Exception('Wrong type in options. Dictionary is needed')
 
         # Make request
-        return self.__send_request('get', self.path_subscriptions, headers=headers, verify=None, query=options)
+        return self.__send_request('get', self.path_subscriptions, headers=headers, verify=None, query=params)
 
     def retrieve_subscription_by_id(self, headers, subscription_id):
         """
@@ -1467,6 +1471,45 @@ class CbNgsi10v2Utils(object):
 
         # Make request
         return self.__send_request('post', path, payload=payload, headers=headers, verify=None)
+
+    def update_subscription_by_id_in_raw_mode(self, subscription_id):
+        """
+        update a subscription
+        :request -> POST /v2/subscriptions/<subscriptionId>
+        :payload --> Yes
+        :query parameters --> No
+        :return http response
+        """
+        payload = "{"
+        # description field
+        if self.subscription_context['description'] is not None:
+            payload = u'%s "description": %s,' % (payload, self.subscription_context['description'])
+
+        # subject fields
+        payload = u'%s %s,' % (payload, self.__create_subsc_subject_raw(self.subscription_context))
+
+        # notification fields
+        payload = u'%s %s,' % (payload, self.__create_subsc_notification_raw(self.subscription_context))
+
+        # expires field
+        if self.subscription_context['expires'] is not None:
+            payload = u'%s "expires": %s,' % (payload, self.subscription_context[EXPIRES])
+
+        # status field
+        if self.subscription_context['status'] is not None:
+            payload = u'%s "status": %s,' % (payload, self.subscription_context[STATUS])
+
+       # throttling field
+        if self.subscription_context['throttling'] is not None:
+            payload =  u'%s "throttling": %s,'  % (payload, self.subscription_context[THROTTLING])
+
+        path = self.path_subscriptions_by_id.replace('subscriptionId', subscription_id)
+
+        # payload
+        payload = "%s }" % payload[:-1]
+        __logger__.debug("subscription: %s" % payload)
+        resp = self.__send_request('patch', path, headers=self.headers, payload=json.loads(payload))
+        return resp
 
     def delete_subscription(self, sub_id):
         """
