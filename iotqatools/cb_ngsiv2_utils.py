@@ -1167,7 +1167,7 @@ class CbNgsi10v2Utils(object):
         return self.__send_request('post', self.path_entities, payload=payload, headers=headers, query=params,
                                    verify=None)
 
-    def update_entity(self, payload, entity_id, headers={}, params=None):
+    def update_entity(self, payload, entity_id, headers={}, params=None, method='post'):
         """
         Update a entity in ContextBroker with the standard entity creation
         :param payload: the payload
@@ -1197,7 +1197,7 @@ class CbNgsi10v2Utils(object):
 
         path = self.path_update_entity.replace('entityId', entity_id)
 
-        return self.__send_request('post', path, payload=payload, headers=headers, query=params,
+        return self.__send_request(method, path, payload=payload, headers=headers, query=params,
                                    verify=None)
 
     def get_entity_types(self, headers={}, params=None):
