@@ -30,7 +30,7 @@ import json
 from iotqatools.iot_logger import get_logger
 from requests.exceptions import RequestException
 from iotqatools.iot_tools import PqaTools
-from helpers_utils import convert_str_to_list, remove_quote, string_generator, mapping_quotes
+from helpers_utils import convert_str_to_list, remove_quote, string_generator, mapping_quotes, generate_date_zulu, generate_timestamp
 
 __logger__ = get_logger("CB Utils")
 
