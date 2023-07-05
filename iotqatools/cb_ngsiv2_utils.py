@@ -187,10 +187,14 @@ class CbNgsi10v2Utils(object):
             'url': url,
         }
 
+        self.request_string = ''
+        self.response_string = ''
+
         if headers is not None:
             parameters.update({'headers': headers})
 
         if payload is not None:
+            self.request_string = str(payload)
             if self.check_json:
                 parameters.update({'data': json.dumps(payload, ensure_ascii=False).encode('utf-8')})
             else:
@@ -216,7 +220,15 @@ class CbNgsi10v2Utils(object):
         # Log data
         PqaTools.log_fullRequest(comp='CB', response=response, params=parameters)
 
+        response_string = response.text
+
         return response
+
+    def get_request_response_string(self):
+        """
+        return a string with request and another one to response
+        """
+        return self.request_string, self.response_string
 
     def __create_metadata(self, metadata_number, metadata_name, metadata_type, metadata_value):
         """
