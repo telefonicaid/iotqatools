@@ -31,7 +31,7 @@ __author__ = 'fermin'
 # It seems that for the usage of this program in the context of e2e context is ok. However,
 # take note of this if used in other context where this condition can not be assured
 
-from OpenSSL import SSL
+import ssl
 from flask import Flask, request, Response, jsonify
 from getopt import getopt, GetoptError
 import sys
@@ -251,10 +251,9 @@ def reset():
 notif_dict = {}
 
 if __name__ == '__main__':
-    if (https):
-      context = SSL.Context(SSL.SSLv23_METHOD)
-      context.use_privatekey_file(key_file)
-      context.use_certificate_file(cert_file)
-      app.run(host=host, port=port, debug=True, ssl_context=context)
+    if https:
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        ctx.load_cert_chain(cert_file, key_file)
+        app.run(host=host, port=port, debug=True, ssl_context=ctx, use_reloader=False)
     else:
-      app.run(host=host, port=port, debug=True)
+        app.run(host=host, port=port, debug=True, use_reloader=False)
