@@ -224,7 +224,7 @@ def last_notification():
 
     s = get_last(notif_dict, serv, subserv)
 
-    if s == '':
+    if s == '' or s is None:
         return Response(status=204)
 
     return jsonify(s)
