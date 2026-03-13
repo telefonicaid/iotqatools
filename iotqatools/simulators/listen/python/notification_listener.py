@@ -40,7 +40,6 @@ import os
 from threading import Lock
 import time
 
-notif_dict = {}
 notif_lock = Lock()
 
 
