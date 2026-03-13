@@ -37,6 +37,13 @@ from getopt import getopt, GetoptError
 import sys
 import os
 
+from threading import Lock
+import time
+
+notif_dict = {}
+notif_lock = Lock()
+
+
 def usage_and_exit(msg):
     """
     Print usage message and exit"
@@ -195,14 +202,15 @@ def process_notification(path=None):
     subserv = request.headers['fiware-servicepath']
 
     notif = {
+        'ts': time.time(),
         'verb': request.method,
         'url': request.base_url,
         'headers': dict(request.headers),
         'query_string': request.query_string,
         'payload': request.data
     }
-
-    store(notif_dict, notif, serv, subserv)
+    with notif_lock:
+        store(notif_dict, notif, serv, subserv)
 
     return Response(status=200)
 
@@ -230,7 +238,8 @@ def count():
 @app.route('/reset', methods=['GET'])
 def reset():
     global notif_dict
-    notif_dict = {}
+    with notif_lock:
+        notif_dict = {}
     return Response(status=200)
 
 # This is the key dictionary to store all received notifications. It is a double-key structure,
@@ -254,6 +263,6 @@ if __name__ == '__main__':
     if https:
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
         ctx.load_cert_chain(cert_file, key_file)
-        app.run(host=host, port=port, debug=True, ssl_context=ctx, use_reloader=False)
+        app.run(host=host, port=port, debug=False, ssl_context=ctx, use_reloader=False)
     else:
-        app.run(host=host, port=port, debug=True, use_reloader=False)
+        app.run(host=host, port=port, debug=False, use_reloader=False)
