@@ -106,14 +106,16 @@ def get_last(d, serv, subserv):
     :param subserv: subservice
     :return the received notification or empty string if serv/subserv is not found
     """
-
     if serv not in d:
-        return ''
+        return None
 
     if subserv not in d[serv]:
-        return ''
+        return None
 
     l = len(d[serv][subserv])
+
+    if l == 0:
+        return None
 
     return d[serv][subserv][l - 1]
 
@@ -215,13 +217,15 @@ def process_notification(path=None):
 
 @app.route('/last_notification', methods=['GET'])
 def last_notification():
-
     global notif_dict
 
-    serv = request.headers['fiware-service']
-    subserv = request.headers['fiware-servicepath']
+    serv = request.headers.get('fiware-service', '')
+    subserv = request.headers.get('fiware-servicepath', '')
 
     s = get_last(notif_dict, serv, subserv)
+
+    if s == '':
+        return Response(status=204)
 
     return jsonify(s)
 
