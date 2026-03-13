@@ -37,6 +37,12 @@ from getopt import getopt, GetoptError
 import sys
 import os
 
+from threading import Lock
+import time
+
+notif_lock = Lock()
+
+
 def usage_and_exit(msg):
     """
     Print usage message and exit"
@@ -100,14 +106,16 @@ def get_last(d, serv, subserv):
     :param subserv: subservice
     :return the received notification or empty string if serv/subserv is not found
     """
-
     if serv not in d:
-        return ''
+        return None
 
     if subserv not in d[serv]:
-        return ''
+        return None
 
     l = len(d[serv][subserv])
+
+    if l == 0:
+        return None
 
     return d[serv][subserv][l - 1]
 
@@ -195,26 +203,29 @@ def process_notification(path=None):
     subserv = request.headers['fiware-servicepath']
 
     notif = {
+        'ts': time.time(),
         'verb': request.method,
         'url': request.base_url,
         'headers': dict(request.headers),
         'query_string': request.query_string,
         'payload': request.data
     }
-
-    store(notif_dict, notif, serv, subserv)
+    with notif_lock:
+        store(notif_dict, notif, serv, subserv)
 
     return Response(status=200)
 
 @app.route('/last_notification', methods=['GET'])
 def last_notification():
-
     global notif_dict
 
-    serv = request.headers['fiware-service']
-    subserv = request.headers['fiware-servicepath']
+    serv = request.headers.get('fiware-service', '')
+    subserv = request.headers.get('fiware-servicepath', '')
 
     s = get_last(notif_dict, serv, subserv)
+
+    if not s:
+        return Response("{}", status=200, mimetype='application/json')
 
     return jsonify(s)
 
@@ -230,7 +241,8 @@ def count():
 @app.route('/reset', methods=['GET'])
 def reset():
     global notif_dict
-    notif_dict = {}
+    with notif_lock:
+        notif_dict = {}
     return Response(status=200)
 
 # This is the key dictionary to store all received notifications. It is a double-key structure,
@@ -254,6 +266,6 @@ if __name__ == '__main__':
     if https:
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
         ctx.load_cert_chain(cert_file, key_file)
-        app.run(host=host, port=port, debug=True, ssl_context=ctx, use_reloader=False)
+        app.run(host=host, port=port, debug=False, ssl_context=ctx, use_reloader=False)
     else:
-        app.run(host=host, port=port, debug=True, use_reloader=False)
+        app.run(host=host, port=port, debug=False, use_reloader=False)
