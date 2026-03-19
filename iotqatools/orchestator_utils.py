@@ -39,11 +39,14 @@ class Orchestrator(object):
 
     log = get_logger('Orchestrator', 'ERROR')
 
-    def __init__(self, host='127.0.0.1', port='8084', protocol='http', verify=False):
+    def __init__(self, host='127.0.0.1', port='8084', protocol='http', verify=False,
+                 keystone_host='127.0.0.1', keystone_port='5001'):
         self.url = '%s://%s:%s' % (protocol, host, port)
         self.ip = host
         self.verify = verify
         self.timeout = 120 # should be greather than harakiri orc option
+        self.keystone_host = keystone_host
+        self.keystone_port = keystone_port
 
     def send(self, method, url, headers=None, payload=None, query=None, verify=None):
         """
@@ -109,8 +112,8 @@ class Orchestrator(object):
             service_id = KeystoneUtils.get_service_id(admin_domain_user,
                                                       admin_domain_password,
                                                       service_name,
-                                                      ip=self.ip,
-                                                      port=5001)
+                                                      ip=self.keystone_host,
+                                                      port=self.keystone_port)
             if not isinstance(service_id, requests.Response):
                 return service_id
 
