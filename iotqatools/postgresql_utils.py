@@ -93,11 +93,17 @@ class Postgresql:
         :param sql: query
         :return: message as text
         """
+        cur = None
         try:
             cur = self.conn.cursor()
             cur.execute(sql)
             return cur
         except Exception, e:
+            if cur:
+                try:
+                    cur.close()
+                except:
+                    pass
             return self.__error_assertion('DB exception (query): %s' % (e), error)
 
     def __drop_database(self):
@@ -114,7 +120,15 @@ class Postgresql:
         Open a new postgresql connection
         """
         try:
-            self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (self.database, self.user, self.host, self.password))
+            # close previous connection if exists
+            if self.conn:
+                try:
+                    self.conn.close()
+                except:
+                    pass
+
+            self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" %
+                                         (self.database, self.user, self.host, self.password))
             self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         except Exception, e:
             return self.__error_assertion('DB exception (connect): %s' % (e))
@@ -129,23 +143,48 @@ class Postgresql:
         """
         Close a postgresql connection and drop the database before
         """
-        self.conn.commit()
-        self.conn.close()  # close postgresql connection
+        if self.conn:
+            try:
+                self.conn.commit()
+            except:
+                pass
+            try:
+                self.conn.close()  # close postgresql connection
+            except:
+                pass
+            self.conn = None
+
         gc.collect()  # invoking the Python garbage collector
 
     def get_version(self):
         """
         :return: returns postgresql version
         """
+        conn = None
+        cur = None
         try:
-            self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" % (self.database, self.user, self.host, self.password))
-            self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" %
+                                   (self.database, self.user, self.host, self.password))
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+
+            cur = conn.cursor()
+            cur.execute(SELECT_VERSION)
+            row = cur.fetchone()
+            return str(row[0])
+
         except Exception, e:
             return self.__error_assertion('DB exception (get version): %s' % (e))
-        cur = self.__query(SELECT_VERSION)
-        row = cur.fetchone()
-        cur.close()
-        return str(row[0])
+        finally:
+            if cur:
+                try:
+                    cur.close()
+                except:
+                    pass
+            if conn:
+                try:
+                    conn.close()
+                except:
+                    pass
 
     def verify_version(self):
         """
@@ -163,12 +202,12 @@ class Postgresql:
         create a new Database
         :param name:
         """
-        self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
+        self.database = name.lower()
         try:
             cur = self.__query("%s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database))
             cur.close()
         except Exception, e:
-            print ('DB exception (create database): %s' % (e))
+            print('DB exception (create database): %s' % (e))
         self.conn.commit()
 
     def drop_database(self, name):
@@ -176,10 +215,51 @@ class Postgresql:
         create a new Database
         :param name:
         """
-        self.database = name.lower()  # converted to lowercase, because cygnus always convert to lowercase per ckan
-        cur = self.__query("%s %s;" % (POSTGRESQL_DROP_DATABASE, self.database))
-        cur.close()
-        self.conn.commit()
+        self.database = name.lower()
+
+        # close current connection to avoid block
+        if self.conn:
+            try:
+                self.conn.close()
+            except:
+                pass
+            self.conn = None
+
+        tmp_conn = None
+        cur = None
+
+        try:
+            # connect to other DB to remove it
+            tmp_conn = psycopg2.connect("dbname=postgres user=%s host=%s password=%s" %
+                                       (self.user, self.host, self.password))
+            tmp_conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+
+            cur = tmp_conn.cursor()
+
+            # eliminar conexiones activas contra la DB
+            cur.execute("""
+                SELECT pg_terminate_backend(pid)
+                FROM pg_stat_activity
+                WHERE datname = '%s'
+                AND pid <> pg_backend_pid();
+            """ % self.database)
+
+            cur.execute("%s %s;" % (POSTGRESQL_DROP_DATABASE, self.database))
+
+        except Exception, e:
+            print('DB exception (drop database): %s' % (e))
+
+        finally:
+            if cur:
+                try:
+                    cur.close()
+                except:
+                    pass
+            if tmp_conn:
+                try:
+                    tmp_conn.close()
+                except:
+                    pass
 
     def generate_field_datastore_to_resource(self, attributes_number, attributes_name, attribute_type, metadata_type):
         """
@@ -188,8 +268,10 @@ class Postgresql:
         """
         field = " (recvTime text"
         for i in range(int(attributes_number)):
-            if attribute_type != WITHOUT: field = field + ", " + attributes_name + "_" + str(i) + " " + attribute_type
-            if metadata_type != WITHOUT: field = field + ", " + attributes_name + "_" + str(i) + "_md " + metadata_type
+            if attribute_type != WITHOUT:
+                field = field + ", " + attributes_name + "_" + str(i) + " " + attribute_type
+            if metadata_type != WITHOUT:
+                field = field + ", " + attributes_name + "_" + str(i) + "_md " + metadata_type
         return field + ")"
 
     def create_table(self, name, database_name, fields):
@@ -200,7 +282,7 @@ class Postgresql:
         :param fields:
         """
         self.table = name
-        cur = self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, database_name));
+        cur = self.__query("%s %s;" % (POSTGRESQL_CREATE_SCHEMA, database_name))
         cur.close()
         cur = self.__query("%s %s.%s %s;" % (POSTGRESQL_CREATE_TABLE, database_name, self.table, fields))
         cur.close()
@@ -244,13 +326,11 @@ class Postgresql:
         :param table_name:
         """
         try:
-            cur = self.__query(
-                'SELECT * FROM %s.%s LIMIT 1;' % (
-                    database_name, table_name))
+            cur = self.__query('SELECT * FROM %s.%s LIMIT 1;' % (database_name, table_name))
             cur.close()
             return [table_name]
         except Exception, e:
-            print ('DB exception (table exists): %s' % (e))
+            print('DB exception (table exists): %s' % (e))
             return None
 
     def table_search_one_row(self, database_name, table_name):
