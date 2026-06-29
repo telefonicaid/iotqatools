@@ -236,7 +236,7 @@ class Postgresql:
 
             cur = tmp_conn.cursor()
 
-            # eliminar conexiones activas contra la DB
+            # delete active connections to the DB
             cur.execute("""
                 SELECT pg_terminate_backend(pid)
                 FROM pg_stat_activity
