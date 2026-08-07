@@ -446,3 +446,22 @@ class Postgresql:
             cur.close()
             return rowcount  # return the number of records of the table
         return False
+
+
+    def execute_query(self, sql, fetch='all'):
+        """
+        Execute a custom SQL query and return fetched rows.
+
+        :param sql: SQL query to execute
+        :param fetch: 'all' or 'one'
+        :return: list of rows or single row
+        """
+        cur = self.__query(sql)
+
+        if fetch == 'one':
+            rows = cur.fetchone()
+        else:
+            rows = cur.fetchall()
+
+        cur.close()
+        return rows
