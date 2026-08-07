@@ -1212,6 +1212,40 @@ class CbNgsi10v2Utils(object):
         return self.__send_request(method, path, payload=payload, headers=headers, query=params,
                                    verify=None)
 
+    def append_entity(self, payload, headers={}, params=None):
+        """
+        Append attributes to an existing entity using NGSIv2 batch update.
+
+        This is useful when the payload contains:
+        - new attributes, for example humidity
+        - existing attributes, for example TimeInstant
+
+        It sends:
+        POST /v2/op/update
+        {
+          "actionType": "APPEND",
+          "entities": [ ... ]
+        }
+        """
+
+        headers.update(self.headers)
+        headers.update({'content-type': 'application/json'})
+
+        batch_payload = {
+            "actionType": "APPEND",
+            "entities": [payload]
+        }
+
+        return self.__send_request(
+            'post',
+            self.path_batch_update,
+            payload=batch_payload,
+            headers=headers,
+            query=params,
+            verify=None
+        )
+
+
     def get_entity_types(self, headers={}, params=None):
         """
         GET /v2/types
