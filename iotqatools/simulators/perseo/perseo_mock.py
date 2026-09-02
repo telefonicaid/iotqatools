@@ -23,7 +23,7 @@
 # please contact with:
 #   Ivan Arias (ivan.ariasleon@telefonica.com)
 #
-import BaseHTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import smtpd
 import asyncore
 import time
@@ -69,7 +69,7 @@ update_number = 0
 post_number = 0
 
 
-class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class MyHandler(BaseHTTPRequestHandler):
     """A http server"""
 
     def do_POST(self):
@@ -218,7 +218,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 if __name__ == "__main__":
     mock_config.configuration(sys.argv)
     smtp_server = FakeSMTPServer((mock_config.SMTP_BIND, mock_config.SMTP_PORT), None)
-    server_class = BaseHTTPServer.HTTPServer
+    server_class = HTTPServer
     httpd = server_class((mock_config.HTTP_BIND, mock_config.HTTP_PORT), MyHandler)
     print("Servers Starts at %s " % (time.asctime()))
     try:
