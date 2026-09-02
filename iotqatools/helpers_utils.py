@@ -246,7 +246,7 @@ def remove_quote(text):
     :param text:
     :return: text type
     """
-    if isinstance(text, basestring):
+    if isinstance(text, str):
         text = text.lstrip('"')
         text = text.rstrip('"')
     return text
