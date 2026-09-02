@@ -1020,7 +1020,7 @@ class KeystoneUtils(object):
                 return True
         except Exception as e:
             print("This is an example of platform config attribute")
-            print(""")
+            print("""
                 platform = {
                 'GlobalServiceAdmin': {
                     'user': 'admin',
@@ -1050,7 +1050,7 @@ class KeystoneUtils(object):
                     'name': 'admin'
                 }
             }
-            """
+            """)
             raise e
 
     @staticmethod
