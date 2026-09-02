@@ -51,8 +51,8 @@ def usage_and_exit(msg):
     """
 
     if msg != '':
-        print msg
-        print
+        print(msg)
+        print('')
 
     usage()
     sys.exit(1)
@@ -63,17 +63,17 @@ def usage():
     Print usage message
     """
 
-    print 'Usage: %s --host <host> --port <port> --url <server url> -v -u' % os.path.basename(__file__)
-    print ''
-    print 'Parameters:'
-    print "  --host <host>: host to use (default is '0.0.0.0')"
-    print "  --port <port>: port to use (default is 1028)"
-    print "  --url <server url>: server URL to use (default is /accumulate)"
-    print "  --https: start in https"
-    print "  --key: key file (only used if https is enabled)"
-    print "  --cert: cert file (only used if https is enabled)"
-    print "  -v: verbose mode"
-    print "  -u: print this usage message"
+    print('Usage: %s --host <host> --port <port> --url <server url> -v -u' % os.path.basename(__file__))
+    print('')
+    print('Parameters:')
+    print("  --host <host>: host to use (default is '0.0.0.0')")
+    print("  --port <port>: port to use (default is 1028)")
+    print("  --url <server url>: server URL to use (default is /accumulate)")
+    print("  --https: start in https")
+    print("  --key: key file (only used if https is enabled)")
+    print("  --cert: cert file (only used if https is enabled)")
+    print("  -v: verbose mode")
+    print("  -u: print this usage message")
 
 
 def store(d, notif, serv, subserv):
