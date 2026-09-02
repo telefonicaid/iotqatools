@@ -98,7 +98,7 @@ class Postgresql:
             cur = self.conn.cursor()
             cur.execute(sql)
             return cur
-        except Exception, e:
+        except Exception as e:
             if cur:
                 try:
                     cur.close()
@@ -130,7 +130,7 @@ class Postgresql:
             self.conn = psycopg2.connect("dbname=%s user=%s host=%s password=%s" %
                                          (self.database, self.user, self.host, self.password))
             self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-        except Exception, e:
+        except Exception as e:
             return self.__error_assertion('DB exception (connect): %s' % (e))
 
     def set_database(self, database):
@@ -172,7 +172,7 @@ class Postgresql:
             row = cur.fetchone()
             return str(row[0])
 
-        except Exception, e:
+        except Exception as e:
             return self.__error_assertion('DB exception (get version): %s' % (e))
         finally:
             if cur:
@@ -206,7 +206,7 @@ class Postgresql:
         try:
             cur = self.__query("%s %s;" % (POSTGRESQL_CREATE_DATABASE, self.database))
             cur.close()
-        except Exception, e:
+        except Exception as e:
             print('DB exception (create database): %s' % (e))
         self.conn.commit()
 
@@ -246,7 +246,7 @@ class Postgresql:
 
             cur.execute("%s %s;" % (POSTGRESQL_DROP_DATABASE, self.database))
 
-        except Exception, e:
+        except Exception as e:
             print('DB exception (drop database): %s' % (e))
 
         finally:
@@ -329,7 +329,7 @@ class Postgresql:
             cur = self.__query('SELECT * FROM %s.%s LIMIT 1;' % (database_name, table_name))
             cur.close()
             return [table_name]
-        except Exception, e:
+        except Exception as e:
             print('DB exception (table exists): %s' % (e))
             return None
 
