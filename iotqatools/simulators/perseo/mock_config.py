@@ -86,25 +86,25 @@ def __usage():
     """
     usage message
     """
-    print " ****************************************************************************************"
-    print " * This mock is used to simulate a behaviour of email client (smtp), sms client (smpp), *"
-    print " * an update context to Context Broker and send by API REST the content received (http).*"
-    print " * Keep a counter for each action (sms, email, update, post (http) and twitter).        *"
-    print " *                                                                                      *"
-    print " *  usage: python perseo_mock.py <-u> <-sp=port> <-hp=port> <-i>                        *"
-    print " *           ex: python perseo_mock.py -sp=9999 -hp=9998 -i                             *"
-    print " *  parameters:                                                                         *"
-    print " *         -u: show this usage.                                                         *"
-    print " *         -h: help to request into the mock.                                           *"
-    print " *        -sp: change smtp port (by default is 9999).                                   *"
-    print " *        -hp: change http port (by default is 9998).                                   *"
-    print " *         -i: show more info in console (by default is False).                         *"
-    print " *                                                                                      *"
-    print " *  Comments:                                                                           *"
-    print " *         In More Info: show Message addressed from and data.                          *"
-    print " *                                                                                      *"
-    print " *                                     ( use <Ctrl-C> to stop )                         *"
-    print " ****************************************************************************************"
+    print(" ****************************************************************************************")
+    print(" * This mock is used to simulate a behaviour of email client (smtp), sms client (smpp), *")
+    print(" * an update context to Context Broker and send by API REST the content received (http).*")
+    print(" * Keep a counter for each action (sms, email, update, post (http) and twitter).        *")
+    print(" *                                                                                      *")
+    print(" *  usage: python perseo_mock.py <-u> <-sp=port> <-hp=port> <-i>                        *")
+    print(" *           ex: python perseo_mock.py -sp=9999 -hp=9998 -i                             *")
+    print(" *  parameters:                                                                         *")
+    print(" *         -u: show this usage.                                                         *")
+    print(" *         -h: help to request into the mock.                                           *")
+    print(" *        -sp: change smtp port (by default is 9999).                                   *")
+    print(" *        -hp: change http port (by default is 9998).                                   *")
+    print(" *         -i: show more info in console (by default is False).                         *")
+    print(" *                                                                                      *")
+    print(" *  Comments:                                                                           *")
+    print(" *         In More Info: show Message addressed from and data.                          *")
+    print(" *                                                                                      *")
+    print(" *                                     ( use <Ctrl-C> to stop )                         *")
+    print(" ****************************************************************************************")
     exit(0)
 
 
@@ -116,9 +116,9 @@ def __help():
         try:
             content = help_file.read().splitlines()
             for i in range(len(content)):
-                print content[i]
-        except Exception, e:
-            print 'Error parsing help file: %s' % e
+                print(content[i])
+        except Exception as e:
+            print('Error parsing help file: %s' % e)
             exit(1)
     exit(0)
 
@@ -127,18 +127,18 @@ def __config_print():
     """
     show of the current configuration and te paths mocked
     """
-    print " ***********************************************************************************************************"
-    print " *                         ... Running fake smtp and http servers ...                                      *"
-    print " * Current configuration:                                                                                  *"
-    print "        Mock host  : {0}".format(str(MOCK_HOST))
-    print "        SMTP port  : {0}".format(str(SMTP_PORT))
-    print "        HTTP port  : {0}".format(str(HTTP_PORT))
+    print(" ***********************************************************************************************************")
+    print(" *                         ... Running fake smtp and http servers ...                                      *")
+    print(" * Current configuration:                                                                                  *")
+    print("        Mock host  : {0}".format(str(MOCK_HOST)))
+    print("        SMTP port  : {0}".format(str(SMTP_PORT)))
+    print("        HTTP port  : {0}".format(str(HTTP_PORT)))
     if MORE_INFO:
-        print "        More info is enabled (counter, etc)"
+        print("        More info is enabled (counter, etc)")
     else:
-        print "        More info is disabled"
-    print " *                                     ( use <Ctrl-C> to stop )                                            *"
-    print " ***********************************************************************************************************"
+        print("        More info is disabled")
+    print(" *                                     ( use <Ctrl-C> to stop )                                            *")
+    print(" ***********************************************************************************************************")
 
 
 def configuration(arguments):
@@ -163,7 +163,7 @@ def configuration(arguments):
             if arguments[i].find('-i') >= 0:
                 error_msg = "More info parameter"
                 MORE_INFO = True
-        except Exception, e:
-            print "{0} in {1} see usage below -  {2}".format(ERROR, error_msg, str(e))
+        except Exception as e:
+            print("{0} in {1} see usage below -  {2}".format(ERROR, error_msg, str(e)))
             __usage()
     __config_print()

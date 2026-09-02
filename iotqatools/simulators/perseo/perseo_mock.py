@@ -51,14 +51,14 @@ class FakeSMTPServer(smtpd.SMTPServer):
         body_email[mock_config.SMTP_MAILFROM] = mailfrom
         body_email[mock_config.SMTP_RCPTTOS] = rcpttos
         body_email[mock_config.SMTP_DATA] = data
-        print mock_config.ONE_LINE
-        print mock_config.SMTP_RECEIVING_MSG_FROM, body_email[mock_config.SMTP_PEER]
-        print mock_config.SMTP_MSG_ADDRESSED_TO, body_email[mock_config.SMTP_RCPTTOS]
-        print mock_config.SMTP_MSG_LENGTH, len(body_email[mock_config.SMTP_DATA])
+        print(mock_config.ONE_LINE)
+        print(mock_config.SMTP_RECEIVING_MSG_FROM, body_email[mock_config.SMTP_PEER])
+        print(mock_config.SMTP_MSG_ADDRESSED_TO, body_email[mock_config.SMTP_RCPTTOS])
+        print(mock_config.SMTP_MSG_LENGTH, len(body_email[mock_config.SMTP_DATA]))
         if mock_config.MORE_INFO:  # -i option
-            print mock_config.SMTP_COUNTER, str(body_email[mock_config.SMTP_COUNTER])
-            print mock_config.SMTP_MSG_ADDRESSED_FROM, body_email[mock_config.SMTP_MAILFROM]
-            print mock_config.SMTP_DATA_INFO, str(body_email[mock_config.SMTP_DATA])
+            print(mock_config.SMTP_COUNTER, str(body_email[mock_config.SMTP_COUNTER]))
+            print(mock_config.SMTP_MSG_ADDRESSED_FROM, body_email[mock_config.SMTP_MAILFROM])
+            print(mock_config.SMTP_DATA_INFO, str(body_email[mock_config.SMTP_DATA]))
 
 
 body_sms = mock_config.INITIAL_SMS_MSG
@@ -87,27 +87,27 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # get the request body
             length = int(self.headers[mock_config.CONTENT_LENGTH])
             body = self.rfile.read(length)
-            print mock_config.ONE_LINE
+            print(mock_config.ONE_LINE)
             if self.path.find(mock_config.SEND_SMS) >= 0:  # /send/sms
                 body_sms = str(body)
                 sms_number += 1
-                print body_sms
+                print(body_sms)
                 if mock_config.MORE_INFO:  # -i option
-                    print "sms counter: {0}".format(str(sms_number))
+                    print("sms counter: {0}".format(str(sms_number)))
             elif self.path.find(mock_config.SEND_UPDATE) >= 0:  # /send/update
                 body_update = str(body)
                 update_number += 1
-                print body_update
+                print(body_update)
                 if mock_config.MORE_INFO:  # -i option
-                    print "update counter: {0}".format(str(update_number))
+                    print("update counter: {0}".format(str(update_number)))
             else:  # /send/http/post
                 body_post = str(body)
                 post_number += 1
-                print body_post
+                print(body_post)
                 if mock_config.MORE_INFO:  # -i option
-                    print "http counter (last request: POST): {0}".format(str(post_number))
-        except Exception, e:
-            print "WARN - " + str(e)
+                    print("http counter (last request: POST): {0}".format(str(post_number)))
+        except Exception as e:
+            print("WARN - " + str(e))
 
     def do_GET(self):
         """
@@ -140,7 +140,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             post_number += 1
             body_temp = "http counter (last request: GET): {0}".format(str(post_number))
             if mock_config.MORE_INFO:  # -i option
-                print body_temp
+                print(body_temp)
         self.send_header(mock_config.CONTENT_LENGTH, len(str(body_temp)))
         self.end_headers()
         self.wfile.write(str(body_temp))
@@ -170,9 +170,9 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             body = self.rfile.read(length)
             body_post = str(body)
             post_number += 1
-            print body_post
+            print(body_post)
             if mock_config.MORE_INFO:  # -i option
-                print "http counter (last request: PUT): {0}".format(str(post_number))
+                print("http counter (last request: PUT): {0}".format(str(post_number)))
         self.send_header(mock_config.CONTENT_LENGTH, len(body))
         self.end_headers()
         self.wfile.write(body)
@@ -189,9 +189,9 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         body = self.rfile.read(length)
         body_post = str(body)
         post_number += 1
-        print body_post
+        print(body_post)
         if mock_config.MORE_INFO:  # -i option
-            print "http counter (last request: PATCH): {0}".format(str(post_number))
+            print("http counter (last request: PATCH): {0}".format(str(post_number)))
         self.send_header(mock_config.CONTENT_LENGTH, len(body))
         self.end_headers()
         self.wfile.write(body)
@@ -209,7 +209,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         post_number += 1
         body_temp = "http counter (last request: DELETE): {0}".format(str(post_number))
         if mock_config.MORE_INFO:  # -i option
-            print body_temp
+            print(body_temp)
         self.send_header(mock_config.CONTENT_LENGTH, len(str(body_temp)))
         self.end_headers()
         self.wfile.write(str(body_temp))
@@ -220,7 +220,7 @@ if __name__ == "__main__":
     smtp_server = FakeSMTPServer((mock_config.SMTP_BIND, mock_config.SMTP_PORT), None)
     server_class = BaseHTTPServer.HTTPServer
     httpd = server_class((mock_config.HTTP_BIND, mock_config.HTTP_PORT), MyHandler)
-    print "Servers Starts at %s " % (time.asctime())
+    print("Servers Starts at %s " % (time.asctime()))
     try:
         manager = Manager()  # share between process
         body_email = manager.dict()
@@ -237,9 +237,9 @@ if __name__ == "__main__":
         p1.terminate()
         p2.terminate()
     except:
-        print mock_config.ERROR + mock_config.MULTIPROCESSING_ERROR_MSG
+        print(mock_config.ERROR + mock_config.MULTIPROCESSING_ERROR_MSG)
     finally:
         smtp_server.close()
         httpd.server_close()
-        print "Servers Stop at %s " % (time.asctime())
+        print("Servers Stop at %s " % (time.asctime()))
 

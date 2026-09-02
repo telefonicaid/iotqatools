@@ -68,7 +68,7 @@ class Remote_Log:
                 self.file = temp[1]
                 path = temp[0]
                 self.fabric.current_directory(path)
-        except Exception, e:
+        except Exception as e:
             __logger__.error("ERROR - in log file... \n      - %s" % str(e))
 
     def delete_log_file(self):
@@ -113,7 +113,7 @@ class Remote_Log:
             try:
                 if line.find("lvl=%s" % label) >= 0:
                     label_list.append(line)
-            except Exception, e:
+            except Exception as e:
                 __logger__.debug("error message: %s" % e)
                 __logger__.debug("log line: %s" % line)
         label_list.reverse()  # list reverse because looking for the last occurrence

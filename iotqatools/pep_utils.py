@@ -148,5 +148,5 @@ if __name__ == '__main__':
         "ent_id": "Car01",
         "attributes": [{"name": "temperature", "type": "centigrade", "value": "99"}]
     }
-    print pep.request_cb_operation('octopus', 'octopus', 'atlantic', 'coral', 'entity_append',
-                                   {'service': 'atlantic', 'entity_data': entity_data})
+    print(pep.request_cb_operation('octopus', 'octopus', 'atlantic', 'coral', 'entity_append',
+                                   {'service': 'atlantic', 'entity_data': entity_data}))
