@@ -30,7 +30,7 @@ from fabric.context_managers import hide, cd
 from fabric.operations import sudo, local, put
 from StringIO import StringIO
 
-from helpers_utils import *
+from iotqatools.helpers_utils import *
 
 
 #constants
