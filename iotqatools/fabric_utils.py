@@ -28,7 +28,7 @@ import logging
 from fabric.api import env, run, get
 from fabric.context_managers import hide, cd
 from fabric.operations import sudo, local, put
-from StringIO import StringIO
+from io import StringIO
 
 from iotqatools.helpers_utils import *
 
