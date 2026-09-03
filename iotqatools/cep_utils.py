@@ -23,6 +23,7 @@ please contact with::[iot_support@tid.es]
 """
 
 import yaml
+import json
 import pystache
 import requests
 
@@ -190,30 +191,38 @@ class CEP:
         sensor_card = sensor_card.replace("'", '"')
         return yaml.load(sensor_card)
 
-    def create_value_sensor_card(self, sc_id_card, attribute_name, attribute_data_type, parameter_value, operator,
-                                 connected_to):
+    def create_value_sensor_card(
+            self,
+            sc_id_card,
+            attribute_name,
+            attribute_data_type,
+            parameter_value,
+            operator,
+            connected_to):
         """
-        Create a new sensor card
-        :param regexp: regular expression for the entity id
+        Create a new sensor card.
         :param sc_id_card: Identifier used in connectedTo field
-        :param parameter_value: value to verify
-        :param operator: GREATER_THAN|MINOR_THAN|EQUAL_TO|GREATER_OR_EQUAL_THAN|MINOR_OR_EQUAL_THAN |DIFFERENT_TO
-        :param connected_to: next card connected to this card. SHOULD BE A LIST
-        :return: sensor card dictionary
+        :param attribute_name: Attribute name
+        :param attribute_data_type: Attribute data type
+        :param parameter_value: Value to verify
+        :param operator: Comparison operator
+        :param connected_to: Next cards connected to this card
+        :return: Sensor card dictionary
         """
-        # Load template
         template = template_CEP_SensorCard_valueThreshold
+        sensor_card = pystache.render(
+            template,
+            {
+                'sc_id_card': sc_id_card,
+                'attribute_name': attribute_name,
+                'attribute_data_type': attribute_data_type,
+                'parameter_value': parameter_value,
+                'connected_to': json.dumps(connected_to),
+                'operator': operator
+            }
+        )
 
-        # fill the template with the values
-        sensor_card = pystache.render(template,
-                                      {'sc_id_card': sc_id_card,
-                                       'attribute_name': attribute_name,
-                                       'attribute_data_type': attribute_data_type,
-                                       'parameter_value': parameter_value,
-                                       'connected_to': connected_to,
-                                       'operator': operator})
-        sensor_card = sensor_card.replace("'", '"')
-        return yaml.load(sensor_card)
+        return yaml.safe_load(sensor_card)
 
     def create_action_card(self, ac_id_card, ac_name_card, action_type, ac_parameters, connected_to=[]):
         """
