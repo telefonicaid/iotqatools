@@ -75,7 +75,7 @@ template_CEP_SensorCard_valueThreshold = """{
                                 "dataType": "{{attribute_data_type}}",
                                 "uom": ""
                             },
-                            "connectedTo": {{connected_to}},
+                            "connectedTo": {{{connected_to}}},
                             "conditionList": [
                                 {
                                "scope": "OBSERVATION",
