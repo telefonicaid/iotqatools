@@ -101,5 +101,5 @@ template_CEP_ActionCard = """{
 template_CEP_Rule="""{
     "name": "{{rule_name}}",
     "active": {{active}},
-    "cards": {{cards}}
+    "cards": {{{cards}}}
 }"""

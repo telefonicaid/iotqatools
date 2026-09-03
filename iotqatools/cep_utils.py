@@ -275,7 +275,6 @@ class CEP:
         headers = self.__create_headers(service, str(subservice), token)
         headers.update({'content-type': 'application/json'})
 
-        cep_payload = cep_payload.replace("'", '"')
         url = self.default_endpoint + self.path
         return self.__send_request('post', url, payload=json.dumps(yaml.safe_load(cep_payload)), headers=headers,
                                    verify=self.verify)
