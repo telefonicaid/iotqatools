@@ -245,7 +245,7 @@ class CEP:
                                        'action_type': action_type,
                                        'userParams': ac_parameters,
                                        'connected_to': connected_to})
-        return yaml.load(action_card)
+        return yaml.safe_load(action_card)
 
     def create_visual_rule(self, rule_name, service, sensor_card_list, action_card_list, subservice='', active=1, token=''):
         """
@@ -277,7 +277,7 @@ class CEP:
 
         cep_payload = cep_payload.replace("'", '"')
         url = self.default_endpoint + self.path
-        return self.__send_request('post', url, payload=json.dumps(yaml.load(cep_payload)), headers=headers,
+        return self.__send_request('post', url, payload=json.dumps(yaml.safe_load(cep_payload)), headers=headers,
                                    verify=self.verify)
 
     def delete_visual_rule(self, rule_name, service, subservice='', token=''):
