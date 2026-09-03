@@ -221,7 +221,7 @@ class CEP:
                 'operator': operator
             }
         )
-
+        sensor_card = sensor_card.replace("'", '"')
         return yaml.safe_load(sensor_card)
 
     def create_action_card(self, ac_id_card, ac_name_card, action_type, ac_parameters, connected_to=[]):
