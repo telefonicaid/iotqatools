@@ -93,7 +93,7 @@ template_CEP_ActionCard = """{
                              "actionData": {
                                 "name": "{{ac_name_card}}",
                                 "type": "{{action_type}}",
-                                "userParams": {{userParams}}
+                                "userParams": {{{userParams}}}
                               },
                              "connectedTo": {{connected_to}}
                              }"""

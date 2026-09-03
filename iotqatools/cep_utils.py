@@ -245,7 +245,6 @@ class CEP:
                                        'action_type': action_type,
                                        'userParams': ac_parameters,
                                        'connected_to': connected_to})
-        action_card = action_card.replace("'", '"')
         return yaml.load(action_card)
 
     def create_visual_rule(self, rule_name, service, sensor_card_list, action_card_list, subservice='', active=1, token=''):
