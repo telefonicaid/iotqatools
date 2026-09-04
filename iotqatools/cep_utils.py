@@ -163,10 +163,10 @@ class CEP:
         sensor_card = pystache.render(template,
                                       {'sc_id_card': sc_id_card,
                                        'parameter_value': parameter_value,
-                                       'connected_to': connected_to,
+                                       'connected_to': json.dumps(connected_to),
                                        'operator': operator})
         sensor_card = sensor_card.replace("'", '"')
-        return yaml.load(sensor_card)
+        return yaml.safe_load(sensor_card)
 
     def create_id_sensor_card(self, sc_id_card, regexp, parameter_value, operator, connected_to):
         """
@@ -186,10 +186,10 @@ class CEP:
                                       {'sc_id_card': sc_id_card,
                                        'regexp': regexp,
                                        'parameter_value': parameter_value,
-                                       'connected_to': connected_to,
+                                       'connected_to': json.dumps(connected_to),
                                        'operator': operator})
         sensor_card = sensor_card.replace("'", '"')
-        return yaml.load(sensor_card)
+        return yaml.safe_load(sensor_card)
 
     def create_value_sensor_card(
             self,
@@ -244,7 +244,7 @@ class CEP:
                                        'ac_name_card': ac_name_card,
                                        'action_type': action_type,
                                        'userParams': ac_parameters,
-                                       'connected_to': connected_to})
+                                       'connected_to': json.dumps(connected_to)})
         return yaml.safe_load(action_card)
 
     def create_visual_rule(self, rule_name, service, sensor_card_list, action_card_list, subservice='', active=1, token=''):

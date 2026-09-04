@@ -30,7 +30,7 @@ template_CEP_SensorCard_type = """{
                                 "dataType": "Text",
                             },
                             "configData": {},
-                            "connectedTo": {{connected_to}},
+                            "connectedTo": {{{connected_to}}},
                             "conditionList": [
                                 {
                                "scope": "XPATH",
@@ -51,7 +51,7 @@ template_CEP_SensorCard_regexp = """{
                                 "parameterValue": "{{regexp}}"
                             },
                             "configData": {},
-                            "connectedTo": {{connected_to}},
+                            "connectedTo": {{{connected_to}}},
                             "conditionList": [
                                 {
                                "scope": "XPATH",
@@ -95,7 +95,7 @@ template_CEP_ActionCard = """{
                                 "type": "{{action_type}}",
                                 "userParams": {{{userParams}}}
                               },
-                             "connectedTo": {{connected_to}}
+                             "connectedTo": {{{connected_to}}}
                              }"""
 
 template_CEP_Rule="""{
