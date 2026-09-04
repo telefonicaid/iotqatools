@@ -104,7 +104,7 @@ def convert_dict_to_str(body, content):
         if content == XML:
             return xmltodict.unparse(body)
         else:
-            return str(json.dumps(body, ensure_ascii=False).encode('utf-8'))
+            return json.dumps(body, ensure_ascii=False)
     except Exception as e:
         assert False,  " ERROR - converting %s dictionary to string: \n" \
                        "  %s \n" \
