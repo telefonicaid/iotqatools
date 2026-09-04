@@ -339,7 +339,6 @@ def list_swap(l, init_pos, end_pos):
         raise "ERROR - trying to swap items in a list: \n      - %s" % e
     return l
 
-
 def get_type_value(value):
     """
     get a value with a given type
@@ -348,26 +347,27 @@ def get_type_value(value):
     """
     if (value.lower() == "true") or (value.lower() == "false"):
         return bool(convert_str_to_bool(value)), "Bool"
-    elif value.find(u'{') >= 0:
+
+    elif "{" in value:
         return json.loads(value), "Dict"
-    elif value.find(u'[') >= 0:
+
+    elif "[" in value:
         return json.loads(value), "List"
+
     else:
         try:
             temp = float(value)
             numeric = True
         except Exception:
             numeric = False
+
         if numeric:
             if temp.is_integer():
                 return int(temp), "Int"
             else:
                 return temp, "Float"
-        else:
-            if isinstance(value, str):
-                return value, "Unicode"
-            else:
-                return value, "String"
+
+        return value, "String"
 
 class LogLevelConfiguration:
     """
