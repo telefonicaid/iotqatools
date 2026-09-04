@@ -83,25 +83,25 @@ class MyHandler(BaseHTTPRequestHandler):
             self.send_header(mock_config.CONTENT_TYPE, mock_config.APPLICATION_JSON)
             self.send_header(mock_config.CONTENT_LENGTH, 0)
             self.end_headers()
-            self.wfile.write("")
+            self.wfile.write(b"")
             # get the request body
             length = int(self.headers[mock_config.CONTENT_LENGTH])
-            body = self.rfile.read(length)
+            body = self.rfile.read(length).decode("utf-8")
             print(mock_config.ONE_LINE)
             if self.path.find(mock_config.SEND_SMS) >= 0:  # /send/sms
-                body_sms = str(body)
+                body_sms = body
                 sms_number += 1
                 print(body_sms)
                 if mock_config.MORE_INFO:  # -i option
                     print("sms counter: {0}".format(str(sms_number)))
             elif self.path.find(mock_config.SEND_UPDATE) >= 0:  # /send/update
-                body_update = str(body)
+                body_sms = body
                 update_number += 1
                 print(body_update)
                 if mock_config.MORE_INFO:  # -i option
                     print("update counter: {0}".format(str(update_number)))
             else:  # /send/http/post
-                body_post = str(body)
+                body_sms = body
                 post_number += 1
                 print(body_post)
                 if mock_config.MORE_INFO:  # -i option
@@ -141,9 +141,14 @@ class MyHandler(BaseHTTPRequestHandler):
             body_temp = "http counter (last request: GET): {0}".format(str(post_number))
             if mock_config.MORE_INFO:  # -i option
                 print(body_temp)
-        self.send_header(mock_config.CONTENT_LENGTH, len(str(body_temp)))
+
+        body_bytes = str(body_temp).encode("utf-8")
+        self.send_header(
+            mock_config.CONTENT_LENGTH,
+            str(len(body_bytes))
+        )
         self.end_headers()
-        self.wfile.write(str(body_temp))
+        self.wfile.write(body_bytes)
 
     def do_PUT(self):
         """
@@ -173,9 +178,10 @@ class MyHandler(BaseHTTPRequestHandler):
             print(body_post)
             if mock_config.MORE_INFO:  # -i option
                 print("http counter (last request: PUT): {0}".format(str(post_number)))
-        self.send_header(mock_config.CONTENT_LENGTH, len(body))
+        body_bytes = body.encode("utf-8")
+        self.send_header(mock_config.CONTENT_LENGTH, len(body_bytes))
         self.end_headers()
-        self.wfile.write(body)
+        self.wfile.write(body_bytes)
 
     def do_PATCH(self):
         """
@@ -187,7 +193,7 @@ class MyHandler(BaseHTTPRequestHandler):
         # /send/http_patch
         length = int(self.headers[mock_config.CONTENT_LENGTH])
         body = self.rfile.read(length)
-        body_post = str(body)
+        body_post = body.decode("utf-8")
         post_number += 1
         print(body_post)
         if mock_config.MORE_INFO:  # -i option
@@ -210,9 +216,13 @@ class MyHandler(BaseHTTPRequestHandler):
         body_temp = "http counter (last request: DELETE): {0}".format(str(post_number))
         if mock_config.MORE_INFO:  # -i option
             print(body_temp)
-        self.send_header(mock_config.CONTENT_LENGTH, len(str(body_temp)))
+        body_bytes = body_temp.encode("utf-8")
+        self.send_header(
+            mock_config.CONTENT_LENGTH,
+            len(body_bytes)
+        )
         self.end_headers()
-        self.wfile.write(str(body_temp))
+        self.wfile.write(body_bytes)
 
 
 if __name__ == "__main__":
@@ -236,7 +246,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         p1.terminate()
         p2.terminate()
-    except:
+    except Exception as e:
+        print(str(e))
         print(mock_config.ERROR + mock_config.MULTIPROCESSING_ERROR_MSG)
     finally:
         smtp_server.close()

@@ -65,16 +65,15 @@ def number_generator(size=5, decimals="%0.1f"):
     """
     return float(decimals % (random.random() * (10**size)))
 
-
 def convert_str_to_bool(value):
     """
     convert string to boolean
     :return boolean
     """
-    if type(value) == str or type(value) == unicode:
+    if isinstance(value, str):
         return value.lower() in ("yes", "true", "t", "1", "y")
-    return value
 
+    return value
 
 def convert_str_to_dict(body, content):
     """
@@ -365,7 +364,7 @@ def get_type_value(value):
             else:
                 return temp, "Float"
         else:
-            if isinstance(value, unicode):
+            if isinstance(value, str):
                 return value, "Unicode"
             else:
                 return value, "String"
