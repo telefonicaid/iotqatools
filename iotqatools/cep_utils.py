@@ -522,7 +522,10 @@ class CEP:
 
         # url
         url = "%s/rules" % self.default_endpoint
-
+        logger.debug("CEP URL: %s", url)
+        logger.debug("CEP Headers: %s", headers)
+        logger.debug("CEP Payload type: %s", type(payload))
+        logger.debug("CEP Payload: %s", payload)
         # request
         return self.__send_request('post', url, payload=payload, headers=headers, verify=self.verify)
 
