@@ -178,8 +178,15 @@ class MyHandler(BaseHTTPRequestHandler):
             print(body_post)
             if mock_config.MORE_INFO:  # -i option
                 print("http counter (last request: PUT): {0}".format(str(post_number)))
-        body_bytes = body.encode("utf-8")
-        self.send_header(mock_config.CONTENT_LENGTH, len(body_bytes))
+        if isinstance(body, str):
+            body_bytes = body.encode("utf-8")
+        else:
+            body_bytes = body
+
+        self.send_header(
+            mock_config.CONTENT_LENGTH,
+            str(len(body_bytes))
+        )
         self.end_headers()
         self.wfile.write(body_bytes)
 
