@@ -65,16 +65,15 @@ def number_generator(size=5, decimals="%0.1f"):
     """
     return float(decimals % (random.random() * (10**size)))
 
-
 def convert_str_to_bool(value):
     """
     convert string to boolean
     :return boolean
     """
-    if type(value) == str or type(value) == unicode:
+    if isinstance(value, str):
         return value.lower() in ("yes", "true", "t", "1", "y")
-    return value
 
+    return value
 
 def convert_str_to_dict(body, content):
     """
@@ -105,7 +104,7 @@ def convert_dict_to_str(body, content):
         if content == XML:
             return xmltodict.unparse(body)
         else:
-            return str(json.dumps(body, ensure_ascii=False).encode('utf-8'))
+            return json.dumps(body, ensure_ascii=False)
     except Exception as e:
         assert False,  " ERROR - converting %s dictionary to string: \n" \
                        "  %s \n" \
@@ -246,7 +245,7 @@ def remove_quote(text):
     :param text:
     :return: text type
     """
-    if isinstance(text, basestring):
+    if isinstance(text, str):
         text = text.lstrip('"')
         text = text.rstrip('"')
     return text
@@ -340,7 +339,6 @@ def list_swap(l, init_pos, end_pos):
         raise "ERROR - trying to swap items in a list: \n      - %s" % e
     return l
 
-
 def get_type_value(value):
     """
     get a value with a given type
@@ -349,26 +347,27 @@ def get_type_value(value):
     """
     if (value.lower() == "true") or (value.lower() == "false"):
         return bool(convert_str_to_bool(value)), "Bool"
-    elif value.find(u'{') >= 0:
+
+    elif "{" in value:
         return json.loads(value), "Dict"
-    elif value.find(u'[') >= 0:
+
+    elif "[" in value:
         return json.loads(value), "List"
+
     else:
         try:
             temp = float(value)
             numeric = True
         except Exception:
             numeric = False
+
         if numeric:
             if temp.is_integer():
                 return int(temp), "Int"
             else:
                 return temp, "Float"
-        else:
-            if isinstance(value, unicode):
-                return value, "Unicode"
-            else:
-                return value, "String"
+
+        return value, "String"
 
 class LogLevelConfiguration:
     """

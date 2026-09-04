@@ -179,17 +179,17 @@ for opt, arg in opts:
 
 if https:
     if key_file is None or cert_file is None:
-        print "if --https is used then you have to provide --key and --cert"
+        print("if --https is used then you have to provide --key and --cert")
         os.exit(1)
 
 if verbose:
-    print "verbose mode is on"
-    print "port: " + str(port)
-    print "host: " + str(host)
-    print "server_url: " + str(server_url)
-    print "https: " + str(https)
-    print "key file: " + str(key_file)
-    print "cert file: " + str(cert_file)
+    print("verbose mode is on")
+    print("port: " + str(port))
+    print("host: " + str(host))
+    print("server_url: " + str(server_url))
+    print("https: " + str(https))
+    print("key file: " + str(key_file))
+    print("cert file: " + str(cert_file))
 
 app = Flask(__name__)
 

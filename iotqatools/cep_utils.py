@@ -23,6 +23,7 @@ please contact with::[iot_support@tid.es]
 """
 
 import yaml
+import json
 import pystache
 import requests
 
@@ -162,10 +163,10 @@ class CEP:
         sensor_card = pystache.render(template,
                                       {'sc_id_card': sc_id_card,
                                        'parameter_value': parameter_value,
-                                       'connected_to': connected_to,
+                                       'connected_to': json.dumps(connected_to),
                                        'operator': operator})
         sensor_card = sensor_card.replace("'", '"')
-        return yaml.load(sensor_card)
+        return yaml.safe_load(sensor_card)
 
     def create_id_sensor_card(self, sc_id_card, regexp, parameter_value, operator, connected_to):
         """
@@ -185,35 +186,42 @@ class CEP:
                                       {'sc_id_card': sc_id_card,
                                        'regexp': regexp,
                                        'parameter_value': parameter_value,
-                                       'connected_to': connected_to,
+                                       'connected_to': json.dumps(connected_to),
                                        'operator': operator})
         sensor_card = sensor_card.replace("'", '"')
-        return yaml.load(sensor_card)
+        return yaml.safe_load(sensor_card)
 
-    def create_value_sensor_card(self, sc_id_card, attribute_name, attribute_data_type, parameter_value, operator,
-                                 connected_to):
+    def create_value_sensor_card(
+            self,
+            sc_id_card,
+            attribute_name,
+            attribute_data_type,
+            parameter_value,
+            operator,
+            connected_to):
         """
-        Create a new sensor card
-        :param regexp: regular expression for the entity id
+        Create a new sensor card.
         :param sc_id_card: Identifier used in connectedTo field
-        :param parameter_value: value to verify
-        :param operator: GREATER_THAN|MINOR_THAN|EQUAL_TO|GREATER_OR_EQUAL_THAN|MINOR_OR_EQUAL_THAN |DIFFERENT_TO
-        :param connected_to: next card connected to this card. SHOULD BE A LIST
-        :return: sensor card dictionary
+        :param attribute_name: Attribute name
+        :param attribute_data_type: Attribute data type
+        :param parameter_value: Value to verify
+        :param operator: Comparison operator
+        :param connected_to: Next cards connected to this card
+        :return: Sensor card dictionary
         """
-        # Load template
         template = template_CEP_SensorCard_valueThreshold
-
-        # fill the template with the values
-        sensor_card = pystache.render(template,
-                                      {'sc_id_card': sc_id_card,
-                                       'attribute_name': attribute_name,
-                                       'attribute_data_type': attribute_data_type,
-                                       'parameter_value': parameter_value,
-                                       'connected_to': connected_to,
-                                       'operator': operator})
-        sensor_card = sensor_card.replace("'", '"')
-        return yaml.load(sensor_card)
+        sensor_card = pystache.render(
+            template,
+            {
+                'sc_id_card': sc_id_card,
+                'attribute_name': attribute_name,
+                'attribute_data_type': attribute_data_type,
+                'parameter_value': parameter_value,
+                'connected_to': json.dumps(connected_to),
+                'operator': operator
+            }
+        )
+        return yaml.safe_load(sensor_card)
 
     def create_action_card(self, ac_id_card, ac_name_card, action_type, ac_parameters, connected_to=[]):
         """
@@ -236,9 +244,8 @@ class CEP:
                                        'ac_name_card': ac_name_card,
                                        'action_type': action_type,
                                        'userParams': ac_parameters,
-                                       'connected_to': connected_to})
-        action_card = action_card.replace("'", '"')
-        return yaml.load(action_card)
+                                       'connected_to': json.dumps(connected_to)})
+        return yaml.safe_load(action_card)
 
     def create_visual_rule(self, rule_name, service, sensor_card_list, action_card_list, subservice='', active=1, token=''):
         """
@@ -268,9 +275,8 @@ class CEP:
         headers = self.__create_headers(service, str(subservice), token)
         headers.update({'content-type': 'application/json'})
 
-        cep_payload = cep_payload.replace("'", '"')
         url = self.default_endpoint + self.path
-        return self.__send_request('post', url, payload=json.dumps(yaml.load(cep_payload)), headers=headers,
+        return self.__send_request('post', url, payload=json.dumps(yaml.safe_load(cep_payload)), headers=headers,
                                    verify=self.verify)
 
     def delete_visual_rule(self, rule_name, service, subservice='', token=''):
@@ -495,7 +501,7 @@ class CEP:
             action_dict["access_token_key"] = rule_properties["access_token_key"]
             action_dict["access_token_secret"] = rule_properties["access_token_secret"]
         else:
-            __logger__.warn("the %s action does not exist..." % action)
+            __logger__.warning("the %s action does not exist..." % action)
 
         #rule
         rule = {"name": name,
@@ -516,7 +522,10 @@ class CEP:
 
         # url
         url = "%s/rules" % self.default_endpoint
-
+        __logger__.debug("CEP URL: %s", url)
+        __logger__.debug("CEP Headers: %s", headers)
+        __logger__.debug("CEP Payload type: %s", type(payload))
+        __logger__.debug("CEP Payload: %s", payload)
         # request
         return self.__send_request('post', url, payload=payload, headers=headers, verify=self.verify)
 

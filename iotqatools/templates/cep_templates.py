@@ -30,7 +30,7 @@ template_CEP_SensorCard_type = """{
                                 "dataType": "Text",
                             },
                             "configData": {},
-                            "connectedTo": {{connected_to}},
+                            "connectedTo": {{{connected_to}}},
                             "conditionList": [
                                 {
                                "scope": "XPATH",
@@ -51,7 +51,7 @@ template_CEP_SensorCard_regexp = """{
                                 "parameterValue": "{{regexp}}"
                             },
                             "configData": {},
-                            "connectedTo": {{connected_to}},
+                            "connectedTo": {{{connected_to}}},
                             "conditionList": [
                                 {
                                "scope": "XPATH",
@@ -75,7 +75,7 @@ template_CEP_SensorCard_valueThreshold = """{
                                 "dataType": "{{attribute_data_type}}",
                                 "uom": ""
                             },
-                            "connectedTo": {{connected_to}},
+                            "connectedTo": {{{connected_to}}},
                             "conditionList": [
                                 {
                                "scope": "OBSERVATION",
@@ -93,13 +93,13 @@ template_CEP_ActionCard = """{
                              "actionData": {
                                 "name": "{{ac_name_card}}",
                                 "type": "{{action_type}}",
-                                "userParams": {{userParams}}
+                                "userParams": {{{userParams}}}
                               },
-                             "connectedTo": {{connected_to}}
+                             "connectedTo": {{{connected_to}}}
                              }"""
 
 template_CEP_Rule="""{
     "name": "{{rule_name}}",
     "active": {{active}},
-    "cards": {{cards}}
+    "cards": {{{cards}}}
 }"""
