@@ -501,7 +501,7 @@ class CEP:
             action_dict["access_token_key"] = rule_properties["access_token_key"]
             action_dict["access_token_secret"] = rule_properties["access_token_secret"]
         else:
-            __logger__.warn("the %s action does not exist..." % action)
+            __logger__.warning("the %s action does not exist..." % action)
 
         #rule
         rule = {"name": name,
