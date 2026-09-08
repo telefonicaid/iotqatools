@@ -207,8 +207,8 @@ def process_notification(path=None):
         'verb': request.method,
         'url': request.base_url,
         'headers': dict(request.headers),
-        'query_string': request.query_string,
-        'payload': request.data
+        'query_string': request.query_string.decode('utf-8', errors='replace'),
+        'payload': request.data.decode('utf-8', errors='replace')
     }
     with notif_lock:
         store(notif_dict, notif, serv, subserv)
