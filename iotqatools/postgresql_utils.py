@@ -416,10 +416,8 @@ class Postgresql:
         count = 0
         rows = tuple(rows)
         for cd in cur.description:
-            if count in empty_values and empty_values[count] is False:
-                width.append(max(cd[2], len(cd[0])))
-                cols.append(cd[0])
-            count += 1
+            width.append(max(cd[2] or 0, len(cd[0])))
+            cols.append(cd[0])
         for w in width:
             tavnit += " %-"+"%ss |" % (w,)
             separator += '-'*w + '--+'

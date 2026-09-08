@@ -28,7 +28,7 @@ __author__ = 'gtsa07'
 # imports 3rd party libs
 import requests
 from iotqatools.iot_tools import PqaTools
-import urllib2
+from urllib.parse import quote
 
 # Params GW
 SERVER_ROOT = 'http://localhost:8002'
@@ -69,8 +69,8 @@ class Gw_Measures_Utils(object):
 #            elif url_type == 'UL2CmdResp':
 #                url += path.format(apikey, idDevice, command)
             else:
-                url += path.format(urllib2.quote(apikey.encode('utf8')),
-                                   urllib2.quote(idDevice.encode('utf8')),
+                url += path.format(quote(apikey),
+                                   quote(idDevice),
                                    command)
         else:
             if apikey:

@@ -103,7 +103,7 @@ def treat_client_json_cmd():
     if (request.data is not None) and (len(request.data) != 0):
         try:
             my_data = json.loads(request.data)
-        except ValueError, e:
+        except ValueError as e:
             return Response(response="Json decode error: {}".format(e.message), status=500, content_type='text/plain;charset=UTF-8')
         app.logger.debug('Data received: {}'.format(my_data))
         cmd_name = my_data.keys()[0]
