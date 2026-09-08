@@ -76,7 +76,7 @@ setup(
         'Intended Audience :: Quality Assurance',
         'Operating System :: OS Independent',
         'Topic :: Software Development',
-        'Programming Language :: Python :: 3.9'
+        'Programming Language :: Python :: 3.11'
     ],
     py_modules=[
         'iotqatools.ac_utils',
