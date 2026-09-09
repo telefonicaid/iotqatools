@@ -42,10 +42,11 @@ class FakeSMTPServer(smtpd.SMTPServer):
         """
         smtpd.SMTPServer.__init__(*args, **kwargs)
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
         """
         receive a email
         """
+        print("SMTP kwargs =", kwargs, flush=True)
         body_email[mock_config.SMTP_COUNTER] += 1
         body_email[mock_config.SMTP_PEER] = peer
         body_email[mock_config.SMTP_MAILFROM] = mailfrom
