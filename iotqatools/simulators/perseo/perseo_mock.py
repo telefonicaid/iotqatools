@@ -24,7 +24,7 @@
 #   Ivan Arias (ivan.ariasleon@telefonica.com)
 #
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import smtpd
+from standard_smtpd import SMTPServer
 import asyncore
 import time
 import mock_config
