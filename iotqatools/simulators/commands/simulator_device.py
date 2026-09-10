@@ -106,7 +106,7 @@ def treat_client_json_cmd():
         except ValueError as e:
             return Response(response="Json decode error: {}".format(e.message), status=500, content_type='text/plain;charset=UTF-8')
         app.logger.debug('Data received: {}'.format(my_data))
-        cmd_name = my_data.keys()[0]
+        cmd_name = next(iter(my_data))
         app.logger.debug('Command name: {}'.format(cmd_name))
         cmd_resp = {cmd_name: '{} OK'.format(cmd_name)}
         app.logger.debug('Data responded: {}'.format(json.dumps(cmd_resp)))
