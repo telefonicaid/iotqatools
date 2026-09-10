@@ -51,7 +51,11 @@ class FakeSMTPServer(smtpd.SMTPServer):
         body_email[mock_config.SMTP_PEER] = peer
         body_email[mock_config.SMTP_MAILFROM] = mailfrom
         body_email[mock_config.SMTP_RCPTTOS] = rcpttos
-        body_email[mock_config.SMTP_DATA] = data
+        body_email[mock_config.SMTP_DATA] = (
+            data.decode("utf-8", errors="replace")
+            if isinstance(data, bytes)
+            else data
+        )
         print(mock_config.ONE_LINE)
         print(mock_config.SMTP_RECEIVING_MSG_FROM, body_email[mock_config.SMTP_PEER])
         print(mock_config.SMTP_MSG_ADDRESSED_TO, body_email[mock_config.SMTP_RCPTTOS])
