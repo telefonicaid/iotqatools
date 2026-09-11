@@ -26,7 +26,7 @@ __author__ = 'jmab20'
 import json
 from iotqatools.iot_tools import PqaTools
 
-from nose.tools import eq_, ok_, assert_in
+from iotqatools.tests.nose_compat import eq_, ok_, assert_in
 from iotqatools.iota_utils import Rest_Utils_IoTA
 import unittest
 try:
