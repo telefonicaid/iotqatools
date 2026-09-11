@@ -25,7 +25,8 @@ please contact with::[iot_support@tid.es]
 __author__ = 'jmab20'
 import json
 
-from nose.tools import eq_, ok_, assert_in
+#from nose.tools import eq_, ok_, assert_in
+from iotqatools.tests.nose_compat import eq_, ok_, assert_in
 from iotqatools.cb_utils import CBUtils
 import unittest
 try:
