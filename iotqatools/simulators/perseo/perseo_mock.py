@@ -24,7 +24,7 @@
 #   Ivan Arias (ivan.ariasleon@telefonica.com)
 #
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import smtpd
+from smtpd import SMTPServer
 import asyncore
 import time
 import mock_config
@@ -33,14 +33,14 @@ import json
 from multiprocessing import Process, Manager
 
 
-class FakeSMTPServer(smtpd.SMTPServer):
+class FakeSMTPServer(SMTPServer):
     """A Fake smtp server"""
 
     def __init__(*args, **kwargs):
         """
         constructor
         """
-        smtpd.SMTPServer.__init__(*args, **kwargs)
+        SMTPServer.__init__(*args, **kwargs)
 
     def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
         """
