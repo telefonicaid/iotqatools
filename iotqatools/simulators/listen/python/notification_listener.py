@@ -264,7 +264,8 @@ notif_dict = {}
 
 if __name__ == '__main__':
     if https:
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
         ctx.load_cert_chain(cert_file, key_file)
         app.run(host=host, port=port, debug=False, ssl_context=ctx, use_reloader=False)
     else:
